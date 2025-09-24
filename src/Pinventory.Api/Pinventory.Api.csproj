@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Modules\Accesing\" />
     <Folder Include="Modules\Notifications\" />
     <Folder Include="Modules\Searching\" />
     <Folder Include="Modules\Syncing\" />
