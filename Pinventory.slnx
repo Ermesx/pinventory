@@ -7,7 +7,9 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src\Pinventory.Api\Pinventory.Api.csproj" Type="Classic C#" />
+  </Folder>
   <Folder Name="/tests/" />
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />
