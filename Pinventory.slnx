@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
+  <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />
+</Solution>
