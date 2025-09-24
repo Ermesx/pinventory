@@ -4,5 +4,4 @@ namespace Pinventory.Api.Modules.Identity;
 
 public sealed class User : IdentityUser
 {
-    
 }

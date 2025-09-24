@@ -1,6 +1,6 @@
-var builder = DistributedApplication.CreateBuilder(args);
+IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-var databse = builder.AddPostgres("database")
+IResourceBuilder<PostgresDatabaseResource> databse = builder.AddPostgres("database")
     .WithPgAdmin()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume()
