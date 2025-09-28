@@ -1,3 +1,6 @@
-@Pinventory.Api_HostAddress = http://localhost:5034
+@Pinventory.Api_HostAddress = http://localhost:5124
+
+GET {{Pinventory.Api_HostAddress}}/weatherforecast/
+Accept: application/json
 
 ###

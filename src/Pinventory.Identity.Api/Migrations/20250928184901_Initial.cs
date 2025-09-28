@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Pinventory.Api.Migrations
+namespace Pinventory.Identity.Api.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration

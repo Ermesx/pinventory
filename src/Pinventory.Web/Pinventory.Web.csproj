@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>9aff365a-5c1c-4508-8f93-0c941625c265</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pinventory.ServiceDefaults\Pinventory.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

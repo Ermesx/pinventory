@@ -1,0 +1,6 @@
+@Pinventory.Pins.Api_HostAddress = http://localhost:5077
+
+GET {{Pinventory.Pins.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

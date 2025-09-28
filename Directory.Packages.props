@@ -3,18 +3,21 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Worker packages -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
+    
     <!-- ASP.NET Core packages -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.4.2" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.5.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.9" />
     <!-- Aspire packages -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.4.2" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.4.2" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.7.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.0" />
     <PackageVersion Include="Npgsql.OpenTelemetry" Version="9.0.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />

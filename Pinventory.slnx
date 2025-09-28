@@ -1,16 +1,29 @@
 <Solution>
   <Folder Name="/Solution Items/">
-    <File Path=".editorconfig"/>
-    <File Path=".gitattributes"/>
-    <File Path=".gitignore"/>
-    <File Path="README.md"/>
-    <File Path="Directory.Build.props"/>
-    <File Path="Directory.Packages.props"/>
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src\Pinventory.Api\Pinventory.Api.csproj" Type="Classic C#"/>
+    <Project Path="src\Pinventory.Api\Pinventory.Api.csproj" />
+    <Project Path="src\Pinventory.Web\Pinventory.Web.csproj" />
   </Folder>
-  <Folder Name="/tests/"/>
-  <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj"/>
-  <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj"/>
+  <Folder Name="/src/apis/">
+    <Project Path="src\Pinventory.Identity.Api\Pinventory.Identity.Api.csproj" />
+    <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
+    <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/common/">
+    <Project Path="src/Pinventory.Pins.Model/Pinventory.Pins.Model.csproj" />
+  </Folder>
+  <Folder Name="/src/workers/">
+    <Project Path="src/Pinventory.DataSync.Worker/Pinventory.DataSync.Worker.csproj" />
+    <Project Path="src/Pinventory.Taging.Worker/Pinventory.Taging.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
+  <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />
 </Solution>

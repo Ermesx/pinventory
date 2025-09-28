@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.4.2"/>
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.0" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,12 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost"/>
-    <PackageReference Include="Aspire.Hosting.PostgreSQL"/>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Pinventory.Api\Pinventory.Api.csproj"/>
+    <ProjectReference Include="..\Pinventory.Api\Pinventory.Api.csproj" />
+    <ProjectReference Include="..\Pinventory.DataSync.Worker\Pinventory.DataSync.Worker.csproj" />
+    <ProjectReference Include="..\Pinventory.Identity.Api\Pinventory.Identity.Api.csproj" />
+    <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
+    <ProjectReference Include="..\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
+    <ProjectReference Include="..\Pinventory.Taging.Worker\Pinventory.Taging.Worker.csproj" />
+    <ProjectReference Include="..\Pinventory.Web\Pinventory.Web.csproj" />
   </ItemGroup>
 
 </Project>
