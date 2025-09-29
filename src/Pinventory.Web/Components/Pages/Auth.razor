@@ -1,0 +1,54 @@
+﻿@page "/auth"
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Pinventory.Web.Model
+@inject UserManager<User> UserManager
+
+@attribute [Authorize]
+
+<PageTitle>Auth</PageTitle>
+
+<h1>You are authenticated</h1>
+
+@if (accessToken is null)
+{
+    <p>No tokens (not authenticated or no SaveTokens).</p>
+}
+else
+{
+    
+    <p><b>Token type</b>: @tokenType</p>
+    <p><b>Access token</b>: @accessToken</p>
+    <p><b>Refresh token</b>: @refreshToken</p>
+    <p><b>Expires at</b>: @expiresAt</p>
+}
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+</AuthorizeView>
+
+
+@code {
+    private string? accessToken;
+    private string? tokenType;
+    private string? expiresAt;
+    private string? refreshToken;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserManager.GetUserAsync(HttpContext.User);
+
+        // pulls from AuthenticationProperties created during external login
+        if (user is not null)
+        {
+            tokenType = await UserManager.GetAuthenticationTokenAsync(user, "Google", "token_type");
+            accessToken = await UserManager.GetAuthenticationTokenAsync(user, "Google", "access_token");
+            refreshToken = await UserManager.GetAuthenticationTokenAsync(user, "Google", "refresh_token");
+            expiresAt = await UserManager.GetAuthenticationTokenAsync(user, "Google", "expires_at");
+        }
+    }
+}

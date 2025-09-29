@@ -16,7 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Pinventory.Api\Pinventory.Api.csproj" />
     <ProjectReference Include="..\Pinventory.DataSync.Worker\Pinventory.DataSync.Worker.csproj" />
-    <ProjectReference Include="..\Pinventory.Identity.Api\Pinventory.Identity.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Taging.Worker\Pinventory.Taging.Worker.csproj" />

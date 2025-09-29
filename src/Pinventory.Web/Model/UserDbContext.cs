@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Pinventory.Identity.Api.Database;
+namespace Pinventory.Web.Model;
 
 public class UserDbContext(DbContextOptions<UserDbContext> options)
     : IdentityDbContext<User>(options)

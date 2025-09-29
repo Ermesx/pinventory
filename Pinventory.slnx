@@ -8,11 +8,10 @@
     <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Pinventory.Web/Pinventory.Web.csproj" />
     <Project Path="src\Pinventory.Api\Pinventory.Api.csproj" />
-    <Project Path="src\Pinventory.Web\Pinventory.Web.csproj" />
   </Folder>
   <Folder Name="/src/apis/">
-    <Project Path="src\Pinventory.Identity.Api\Pinventory.Identity.Api.csproj" />
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
   </Folder>
