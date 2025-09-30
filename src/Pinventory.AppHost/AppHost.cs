@@ -1,3 +1,5 @@
+using Scalar.Aspire;
+
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
 var pgAdminPort = 5050;
@@ -25,7 +27,7 @@ var pinsDatabase = builder.AddPostgres("pins-db")
     .WithDataVolume()
     .AddDatabase("pinventory-pins-db");
 
-var pinventoryApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-api")
+var pinApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-api")
     .WithReference(pinsDatabase)
     .WithReference(rabbitMq)
     .WaitFor(pinsDatabase)
@@ -44,12 +46,10 @@ builder.AddProject<Projects.Pinventory_Taging_Worker>("pinventory-taging-worker"
     .WaitFor(rabbitMq);
 
 var api = builder.AddProject<Projects.Pinventory_Api>("pinventory-api")
-    // .WithReference(identityApi)
     .WithReference(notificationsApi)
-    .WithReference(pinventoryApi)
-    // .WaitFor(identityApi)
+    .WithReference(pinApi)
     .WaitFor(notificationsApi)
-    .WaitFor(pinventoryApi);
+    .WaitFor(pinApi);
 
 var identityDatabase = builder.AddPostgres("identity-db")
     .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(pgAdminPort))
@@ -62,5 +62,19 @@ builder.AddProject<Projects.Pinventory_Web>("pinventory-web")
     .WithReference(api)
     .WaitFor(api)
     .WaitFor(identityDatabase);
+
+builder.AddScalarApiReference(options =>
+    {
+        options
+            .WithTheme(ScalarTheme.BluePlanet)
+            .PreferHttpsEndpoint()
+            .AllowSelfSignedCertificates();
+    })
+    .WithApiReference(notificationsApi)
+    .WithApiReference(pinApi)
+    .WithApiReference(api)
+    .WaitFor(notificationsApi)
+    .WaitFor(pinApi)
+    .WaitFor(api);
 
 builder.Build().Run();
