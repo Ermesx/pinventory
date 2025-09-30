@@ -11,11 +11,11 @@
     <PackageReference Include="Aspire.Hosting.AppHost" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Yarp" />
     <PackageReference Include="Scalar.Aspire" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Pinventory.Api\Pinventory.Api.csproj" />
     <ProjectReference Include="..\Pinventory.DataSync.Worker\Pinventory.DataSync.Worker.csproj" />
     <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />

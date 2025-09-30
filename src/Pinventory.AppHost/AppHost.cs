@@ -1,3 +1,4 @@
+using Aspire.Hosting.Yarp.Transforms;
 using Scalar.Aspire;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
@@ -45,11 +46,36 @@ builder.AddProject<Projects.Pinventory_Taging_Worker>("pinventory-taging-worker"
     .WaitFor(pinsDatabase)
     .WaitFor(rabbitMq);
 
-var api = builder.AddProject<Projects.Pinventory_Api>("pinventory-api")
-    .WithReference(notificationsApi)
+var scalar = builder.AddScalarApiReference(options =>
+    {
+        options
+            .WithTheme(ScalarTheme.BluePlanet)
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.AsyncHttp)
+            .PreferHttpsEndpoint()
+            .AllowSelfSignedCertificates()
+            .WithProxyUrl("/scalar/scalar-proxy");
+    })
+    .WithApiReference(notificationsApi)
+    .WithApiReference(pinApi);
+
+var yarp = builder.AddYarp("api")
+    .WithHostPort(9000)
+    .WithConfiguration(config =>
+    {
+        // https://github.com/dotnet/aspire/issues/10333
+        config.AddRoute("/pins/{**catch-all}", pinApi.GetEndpoint("http"))
+            .WithTransformPathRemovePrefix("/pins");
+        config.AddRoute("/notifications/{**catch-all}", notificationsApi.GetEndpoint("http"))
+            .WithTransformPathRemovePrefix("/notifications");
+        config.AddRoute("/scalar/{**catch-all}", scalar)
+            .WithTransformPathRemovePrefix("/scalar");
+    })
     .WithReference(pinApi)
+    .WithReference(notificationsApi)
+    .WithReference(scalar)
+    .WaitFor(pinApi)
     .WaitFor(notificationsApi)
-    .WaitFor(pinApi);
+    .WaitFor(scalar);
 
 var identityDatabase = builder.AddPostgres("identity-db")
     .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(pgAdminPort))
@@ -59,22 +85,8 @@ var identityDatabase = builder.AddPostgres("identity-db")
 
 builder.AddProject<Projects.Pinventory_Web>("pinventory-web")
     .WithReference(identityDatabase)
-    .WithReference(api)
-    .WaitFor(api)
+    .WithReference(yarp)
+    .WaitFor(yarp)
     .WaitFor(identityDatabase);
-
-builder.AddScalarApiReference(options =>
-    {
-        options
-            .WithTheme(ScalarTheme.BluePlanet)
-            .PreferHttpsEndpoint()
-            .AllowSelfSignedCertificates();
-    })
-    .WithApiReference(notificationsApi)
-    .WithApiReference(pinApi)
-    .WithApiReference(api)
-    .WaitFor(notificationsApi)
-    .WaitFor(pinApi)
-    .WaitFor(api);
 
 builder.Build().Run();
