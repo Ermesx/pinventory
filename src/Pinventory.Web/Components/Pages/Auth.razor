@@ -1,9 +1,9 @@
 ﻿@page "/auth"
 
+@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Identity
-@using Pinventory.Web.Model
-@inject UserManager<User> UserManager
+@using Pinventory.Web.Components.Account
+@inject IdentityUserAccessor UserAccessor
 
 @attribute [Authorize]
 
@@ -19,6 +19,7 @@ else
 {
     
     <p><b>Token type</b>: @tokenType</p>
+    <p><b>Id token</b>: @idToken</p>
     <p><b>Access token</b>: @accessToken</p>
     <p><b>Refresh token</b>: @refreshToken</p>
     <p><b>Expires at</b>: @expiresAt</p>
@@ -30,9 +31,10 @@ else
 
 
 @code {
+    private string? idToken;
     private string? accessToken;
     private string? tokenType;
-    private string? expiresAt;
+    private DateTime? expiresAt;
     private string? refreshToken;
 
     [CascadingParameter]
@@ -40,15 +42,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var user = await UserManager.GetUserAsync(HttpContext.User);
-
-        // pulls from AuthenticationProperties created during external login
-        if (user is not null)
+        var tokens = await UserAccessor.GetGoogleTokensAsync(HttpContext);
+        if (tokens is not null)
         {
-            tokenType = await UserManager.GetAuthenticationTokenAsync(user, "Google", "token_type");
-            accessToken = await UserManager.GetAuthenticationTokenAsync(user, "Google", "access_token");
-            refreshToken = await UserManager.GetAuthenticationTokenAsync(user, "Google", "refresh_token");
-            expiresAt = await UserManager.GetAuthenticationTokenAsync(user, "Google", "expires_at");
+            tokenType = tokens.AccessToken.TokenType;
+            idToken = tokens.IdToken.Token;
+            accessToken = tokens.AccessToken.Token;
+            expiresAt = tokens.AccessToken.ExpiresAt;
+            refreshToken = tokens.RefreshToken.Token;
         }
     }
 }

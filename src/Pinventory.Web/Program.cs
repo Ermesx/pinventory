@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,19 @@ builder.Services.AddAuthentication(IdentityConstants.ExternalScheme)
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
         options.SaveTokens = true;
+
+        // Extend AuthProperties to store the id_token
+        options.Events.OnCreatingTicket = context =>
+        {
+            const string tokenName = "id_token";
+            var idToken = context.TokenResponse.Response!.RootElement.GetString(tokenName);
+            context.Properties.Items.Add($".Token.{tokenName}", idToken);
+
+            var tokenNames = context.Properties.Items[".TokenNames"] + ";" + tokenName;;
+            context.Properties.Items[".TokenNames"] = tokenNames;
+            
+            return Task.CompletedTask;
+        };
     });
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
@@ -56,8 +70,6 @@ else
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAntiforgery();
 
 app.MapStaticAssets();

@@ -4,6 +4,7 @@
 @using System.Security.Claims
 @using System.Text
 @using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using Pinventory.Web.Model
@@ -79,6 +80,9 @@
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
         }
+        
+        // Extend AuthenticationTokens with id_token because it was added by event
+        info.AuthenticationTokens = info.AuthenticationProperties!.GetTokens();
         
         var result = await SignInManager.UpdateExternalAuthenticationTokensAsync(info);
         if (!result.Succeeded)

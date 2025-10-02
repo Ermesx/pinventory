@@ -56,7 +56,9 @@ var scalar = builder.AddScalarApiReference(options =>
             .WithProxyUrl("/scalar/scalar-proxy");
     })
     .WithApiReference(notificationsApi)
-    .WithApiReference(pinApi);
+    .WithApiReference(pinApi)
+    .WaitFor(notificationsApi)
+    .WaitFor(pinApi);
 
 var yarp = builder.AddYarp("api")
     .WithHostPort(9000)
