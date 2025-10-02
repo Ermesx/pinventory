@@ -5,13 +5,13 @@ using Pinventory.Web.Model;
 
 namespace Pinventory.Web.Components.Account;
 
-record GoogleToken(string Token, string TokenType);
+public record GoogleToken(string Token, string TokenType);
 
-record GoogleAccessToken(string Token, string TokenType, DateTime ExpiresAt) : GoogleToken(Token, TokenType);
+public record GoogleAccessToken(string Token, string TokenType, DateTime ExpiresAt) : GoogleToken(Token, TokenType);
 
-record GoogleTokens(GoogleToken IdToken, GoogleAccessToken AccessToken, GoogleToken RefreshToken);
+public record GoogleTokens(GoogleToken IdToken, GoogleAccessToken AccessToken, GoogleToken RefreshToken);
 
-internal sealed class IdentityUserAccessor(UserManager<User> userManager, IdentityRedirectManager redirectManager)
+public sealed class IdentityUserAccessor(UserManager<User> userManager, IdentityRedirectManager redirectManager)
 {
     public async Task<User> GetRequiredUserAsync(HttpContext context)
     {
@@ -36,7 +36,7 @@ internal sealed class IdentityUserAccessor(UserManager<User> userManager, Identi
 
         // pulls from AuthenticationProperties created during external login
         var tokenType = await GetTokenAsync("token_type");
-        var idToken = await GetTokenAsync("id_token") ?? "null-token";
+        var idToken = await GetTokenAsync("id_token");
         var accessToken = await GetTokenAsync("access_token");
         var refreshToken = await GetTokenAsync("refresh_token");
         var expiresAt = await GetTokenAsync("expires_at");

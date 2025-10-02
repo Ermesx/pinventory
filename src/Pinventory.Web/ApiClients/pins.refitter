@@ -1,0 +1,18 @@
+{
+  "openApiPath": "../../Pinventory.Pins.Api/openapi/Pinventory.Pins.Api.json",
+  "namespace": "Pinventory.Web.ApiClients.Pins.GeneratedCode",
+  "contractsNamespace": "Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts",
+  "naming": {
+    "useOpenApiTitle": false,
+    "interfaceName": "PinsHttpClient"
+  },
+  "outputFilename": "PinsHttpClient.cs",
+  "generateXmlDocCodeComments": false,
+  "generateStatusCodeComments": false,
+  "generateDefaultAdditionalProperties": false,
+  "codeGeneratorSettings": {
+    "arrayType": "System.Collections.Generic.IEnumerable",
+    "arrayInstanceType": "System.Collections.Generic.List",
+    "arrayBaseType": "System.Collections.ObjectModel.List"
+  }
+}

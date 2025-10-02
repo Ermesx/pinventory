@@ -1,0 +1,18 @@
+{
+  "openApiPath": "../../Pinventory.Notifications.Api/openapi/Pinventory.Notifications.Api.json",
+  "namespace": "Pinventory.Web.ApiClients.Notifications.GeneratedCode",
+  "contractsNamespace": "Pinventory.Web.ApiClients.Notifications.GeneratedCode.Contracts",
+  "naming": {
+    "useOpenApiTitle": false,
+    "interfaceName": "NotificationsHttpClient"
+  },
+  "outputFilename": "NotificationsHttpClient.cs",
+  "generateXmlDocCodeComments": false,
+  "generateStatusCodeComments": false,
+  "generateDefaultAdditionalProperties": false,
+  "codeGeneratorSettings": {
+    "arrayType": "System.Collections.Generic.IEnumerable",
+    "arrayInstanceType": "System.Collections.Generic.List",
+    "arrayBaseType": "System.Collections.ObjectModel.List"
+  }
+}

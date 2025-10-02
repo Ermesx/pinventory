@@ -3,9 +3,13 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using Pinventory.Web.ApiClients.Notifications.GeneratedCode;
+using Pinventory.Web.ApiClients.Pins.GeneratedCode;
 using Pinventory.Web.Components;
 using Pinventory.Web.Components.Account;
 using Pinventory.Web.Model;
+
+using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,14 +48,25 @@ builder.Services.AddAuthentication(IdentityConstants.ExternalScheme)
             var idToken = context.TokenResponse.Response!.RootElement.GetString(tokenName);
             context.Properties.Items.Add($".Token.{tokenName}", idToken);
 
-            var tokenNames = context.Properties.Items[".TokenNames"] + ";" + tokenName;;
+            var tokenNames = context.Properties.Items[".TokenNames"] + ";" + tokenName;
+            ;
             context.Properties.Items[".TokenNames"] = tokenNames;
-            
+
             return Task.CompletedTask;
         };
     });
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+
+builder.Services.AddScoped<IdTokenHttpMessageHandler>();
+
+builder.Services.AddRefitClient<IPinsHttpClient>()
+    .ConfigureHttpClient(client => client.BaseAddress = new Uri("http://api/pins"))
+    .AddHttpMessageHandler<IdTokenHttpMessageHandler>();
+
+builder.Services.AddRefitClient<INotificationsHttpClient>()
+    .ConfigureHttpClient(client => client.BaseAddress = new Uri("http://api/notifications"))
+    .AddHttpMessageHandler<IdTokenHttpMessageHandler>();
 
 var app = builder.Build();
 

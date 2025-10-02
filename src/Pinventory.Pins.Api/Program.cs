@@ -1,33 +1,19 @@
-var builder = WebApplication.CreateBuilder(args);
+using Pinventory.ApiDefaults;
 
-builder.AddServiceDefaults();
+var builder = WebApplication.CreateBuilder(args);
+builder.AddApiDefaults();
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-builder.Services.AddProblemDetails();
-
-builder.AddJwtBearerGoogleAuthentication();
-builder.Services.AddAuthorization();
-
+    
 var app = builder.Build();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapDefaultEndpoints();
+app.UseDefaultPipeline();
+app.MapApiDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
-// https://github.com/dotnet/aspire/issues/10333
-// app.UseHttpsRedirection();
-
+// --------------------------------------------------
 var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-
 app.MapGet("/weatherforecast", () =>
     {
         var forecast = Enumerable.Range(1, 5).Select(index =>

@@ -11,6 +11,7 @@
     <Project Path="src/Pinventory.Web/Pinventory.Web.csproj" />
   </Folder>
   <Folder Name="/src/apis/">
+    <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="Classic C#" />
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
   </Folder>
