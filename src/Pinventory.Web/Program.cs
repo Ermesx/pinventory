@@ -1,3 +1,5 @@
+using System.Linq;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -45,12 +47,22 @@ builder.Services.AddAuthentication(IdentityConstants.ExternalScheme)
         options.Events.OnCreatingTicket = context =>
         {
             const string tokenName = "id_token";
-            var idToken = context.TokenResponse.Response!.RootElement.GetString(tokenName);
-            context.Properties.Items.Add($".Token.{tokenName}", idToken);
+            if (context.TokenResponse.Response?.RootElement.TryGetProperty(tokenName, out var tokenElement) == true)
+            {
+                var tokenValue = tokenElement.GetString();
 
-            var tokenNames = context.Properties.Items[".TokenNames"] + ";" + tokenName;
-            ;
-            context.Properties.Items[".TokenNames"] = tokenNames;
+                if (!string.IsNullOrEmpty(tokenValue))
+                {
+                    var tokens = context.Properties.GetTokens().ToList();
+                    tokens.Add(new AuthenticationToken
+                    {
+                        Name = tokenName,
+                        Value = tokenValue,
+                    });
+
+                    context.Properties.StoreTokens(tokens);
+                }
+            }
 
             return Task.CompletedTask;
         };
