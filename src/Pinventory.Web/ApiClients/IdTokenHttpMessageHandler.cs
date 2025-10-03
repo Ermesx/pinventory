@@ -1,15 +1,17 @@
 ﻿using System.Net.Http.Headers;
 
-using Pinventory.Web.Components.Account;
+using Pinventory.Web.Tokens;
 
-public class IdTokenHttpMessageHandler(IdentityUserAccessor userAccessor, IHttpContextAccessor httpContextAccessor) : DelegatingHandler
+namespace Pinventory.Web.ApiClients;
+
+public class IdTokenHttpMessageHandler(TokenService tokenService, IHttpContextAccessor httpContextAccessor) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        GoogleTokens? tokens = await userAccessor.GetGoogleTokensAsync(httpContextAccessor.HttpContext!);
+        var context = httpContextAccessor.HttpContext!;
+        GoogleTokens? tokens = await tokenService.GetGoogleTokensAsync(context.User);
         if (tokens is not null)
         {
-            // Add the access token to the outgoing request
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.IdToken.Token);
         }
 

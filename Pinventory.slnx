@@ -17,6 +17,7 @@
   </Folder>
   <Folder Name="/src/common/">
     <Project Path="src/Pinventory.Pins.Model/Pinventory.Pins.Model.csproj" />
+    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/workers/">
     <Project Path="src/Pinventory.DataSync.Worker/Pinventory.DataSync.Worker.csproj" />

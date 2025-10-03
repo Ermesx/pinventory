@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+
 using Microsoft.AspNetCore.Components;
 
 namespace Pinventory.Web.Components.Account;

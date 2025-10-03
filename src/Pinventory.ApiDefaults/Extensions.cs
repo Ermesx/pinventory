@@ -11,7 +11,7 @@ public static class Extensions
     public static TBuilder AddApiDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.AddServiceDefaults();
-        
+
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
@@ -20,7 +20,7 @@ public static class Extensions
         builder.Services.AddAuthorization();
         return builder;
     }
-    
+
     public static TBuilder AddJwtBearerGoogleAuthentication<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -46,7 +46,7 @@ public static class Extensions
     {
         app.UseAuthentication();
         app.UseAuthorization();
-        
+
         // https://github.com/dotnet/aspire/issues/10333
         // app.UseHttpsRedirection();
 
@@ -56,7 +56,7 @@ public static class Extensions
     public static WebApplication MapApiDefaultEndpoints(this WebApplication app)
     {
         app.MapDefaultEndpoints();
-        
+
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
