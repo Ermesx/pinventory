@@ -19,7 +19,7 @@ public static class Extensions
 
     public static GoogleAuthOptions GetGoogleAuthOptions(this IConfigurationManager configuration)
     {
-        return configuration.GetSection("Authentication:Google").Get<GoogleAuthOptions>()!;
+        return configuration.GetSection(GoogleConfiguration.Section).Get<GoogleAuthOptions>()!;
     }
 
     public static TBuilder AddGoogleAuthentication<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
