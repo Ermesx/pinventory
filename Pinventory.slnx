@@ -15,8 +15,9 @@
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
   </Folder>
-  <Folder Name="/src/common/">
+  <Folder Name="/src/shared/">
     <Project Path="src/Pinventory.Pins.Model/Pinventory.Pins.Model.csproj" />
+    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/workers/">
     <Project Path="src/Pinventory.DataSync.Worker/Pinventory.DataSync.Worker.csproj" />

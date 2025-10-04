@@ -1,4 +1,5 @@
 using Aspire.Hosting.Yarp.Transforms;
+
 using Scalar.Aspire;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);

@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Web.ApiClients.Notifications.GeneratedCode;
-using Pinventory.Web.ApiClients.Pins.GeneratedCode;
+using Pinventory.Google;
+using Pinventory.Google.Token;
+using Pinventory.Web.ApiClients;
 using Pinventory.Web.Components;
 using Pinventory.Web.Components.Account;
 using Pinventory.Web.Model;
-
-using Refit;
+using Pinventory.Web.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,50 +33,19 @@ builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.Requi
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication(IdentityConstants.ExternalScheme)
-    .AddGoogle(options =>
-    {
-        options.AccessType = "offline";
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-        options.SaveTokens = true;
-
-        // Extend AuthProperties to store the id_token
-        options.Events.OnCreatingTicket = context =>
-        {
-            const string tokenName = "id_token";
-            if (context.TokenResponse.Response?.RootElement.TryGetProperty(tokenName, out var tokenElement) == true)
-            {
-                var tokenValue = tokenElement.GetString();
-
-                if (!string.IsNullOrEmpty(tokenValue))
-                {
-                    var tokens = context.Properties.GetTokens().ToList();
-                    tokens.Add(new AuthenticationToken
-                    {
-                        Name = tokenName,
-                        Value = tokenValue,
-                    });
-
-                    context.Properties.StoreTokens(tokens);
-                }
-            }
-
-            return Task.CompletedTask;
-        };
-    });
+builder.AddGoogleAuthentication();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
 builder.Services.AddScoped<IdTokenHttpMessageHandler>();
+builder.Services.AddScoped<TokenService>();
 
-builder.Services.AddRefitClient<IPinsHttpClient>()
-    .ConfigureHttpClient(client => client.BaseAddress = new Uri("http://api/pins"))
-    .AddHttpMessageHandler<IdTokenHttpMessageHandler>();
+builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddRefitClient<INotificationsHttpClient>()
-    .ConfigureHttpClient(client => client.BaseAddress = new Uri("http://api/notifications"))
-    .AddHttpMessageHandler<IdTokenHttpMessageHandler>();
+builder.Services.AddPinventoryApiHttpClients();
+
+builder.Services.AddHttpClient<IGoogleTokenEndpoint, GoogleTokenEndpoint>()
+    .ConfigureHttpClient(client => client.BaseAddress = new Uri(GoogleDefaults.TokenEndpoint));
 
 var app = builder.Build();
 

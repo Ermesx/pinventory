@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddApiDefaults();
 
 // Add services to the container.
-    
+
 var app = builder.Build();
 
 app.UseDefaultPipeline();

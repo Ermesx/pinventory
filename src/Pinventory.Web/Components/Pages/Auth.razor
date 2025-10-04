@@ -1,9 +1,8 @@
 ﻿@page "/auth"
-
-@using Microsoft.AspNetCore.Authentication
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
-@using Pinventory.Web.Components.Account
-@inject IdentityUserAccessor UserAccessor
+@using Pinventory.Web.Tokens
+@inject TokenService TokenService
 
 @attribute [Authorize]
 
@@ -17,12 +16,15 @@
 }
 else
 {
-    
     <p><b>Token type</b>: @tokenType</p>
     <p><b>Id token</b>: @idToken</p>
     <p><b>Access token</b>: @accessToken</p>
     <p><b>Refresh token</b>: @refreshToken</p>
     <p><b>Expires at</b>: @expiresAt</p>
+
+    <p>
+        <button class="btn btn-primary" @onclick="RefreshAccessToken">Refresh Access Token</button>
+    </p>
 }
 
 <AuthorizeView>
@@ -34,15 +36,20 @@ else
     private string? idToken;
     private string? accessToken;
     private string? tokenType;
-    private DateTime? expiresAt;
+    private DateTimeOffset? expiresAt;
     private string? refreshToken;
 
+    private bool _loaded;
+
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    private Task<AuthenticationState> AuthState { get; set; } = null!;
 
     protected override async Task OnInitializedAsync()
     {
-        var tokens = await UserAccessor.GetGoogleTokensAsync(HttpContext);
+        if (_loaded) return;
+
+        var authState = await AuthState;
+        var tokens = await TokenService.GetGoogleTokensAsync(authState.User);
         if (tokens is not null)
         {
             tokenType = tokens.AccessToken.TokenType;
@@ -51,5 +58,20 @@ else
             expiresAt = tokens.AccessToken.ExpiresAt;
             refreshToken = tokens.RefreshToken.Token;
         }
+
+        _loaded = true;
     }
+
+    private async Task RefreshAccessToken()
+    {
+        var authState = await AuthState;
+        var token = await TokenService.RefreshGoogleAccessTokenAsync(authState.User, CancellationToken.None);
+        if (token is not null)
+        {
+            tokenType = token.TokenType;
+            accessToken = token.Token;
+            expiresAt = token.ExpiresAt;
+        }
+    }
+
 }
