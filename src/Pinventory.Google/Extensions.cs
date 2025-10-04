@@ -47,7 +47,7 @@ public static class Extensions
                         if (!string.IsNullOrEmpty(tokenValue))
                         {
                             var tokens = context.Properties.GetTokens().ToList();
-                            tokens.Add(new AuthenticationToken { Name = tokenName, Value = tokenValue, });
+                            tokens.Add(new AuthenticationToken { Name = tokenName, Value = tokenValue });
 
                             context.Properties.StoreTokens(tokens);
                         }
