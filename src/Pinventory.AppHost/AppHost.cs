@@ -4,47 +4,52 @@ using Scalar.Aspire;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-var pgAdminPort = 5050;
+
 
 var rabbitMq = builder.AddRabbitMQ("rabbit-mq")
     .WithManagementPlugin()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
-var notificationDatabase = builder.AddPostgres("notification-db")
-    .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(pgAdminPort))
+var postgres = builder.AddPostgres("pinventory-db")
+    .WithPgWeb()
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume()
-    .AddDatabase("pinventory-notification-db");
+    .WithDataVolume();
+
+var identityDb = postgres.AddDatabase("pinventory-identity-db");
+var notificationsDb = postgres.AddDatabase("pinventory-notification-db");
+var pinsDb = postgres.AddDatabase("pinventory-pins-db");
+
+var migrations = builder.AddProject<Projects.Pinventory_MigrationService>("pinventory-migration-service")
+    .WithReference(identityDb)
+    .WaitFor(identityDb);
+
+var tokensGrpc = builder.AddProject<Projects.Pinventory_Identity_Tokens_Grpc>("pinventory-tokens-grpc")
+    .WithReference(identityDb)
+    .WithReference(migrations)
+    .WaitFor(identityDb)
+    .WaitForCompletion(migrations);
 
 var notificationsApi = builder.AddProject<Projects.Pinventory_Notifications_Api>("pinventory-notifications-api")
-    .WithReference(notificationDatabase)
+    .WithReference(notificationsDb)
     .WithReference(rabbitMq)
-    .WaitFor(notificationDatabase)
+    .WaitFor(notificationsDb)
     .WaitFor(rabbitMq);
-
-var pinsDatabase = builder.AddPostgres("pins-db")
-    .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(pgAdminPort))
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume()
-    .AddDatabase("pinventory-pins-db");
 
 var pinApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-api")
-    .WithReference(pinsDatabase)
+    .WithReference(pinsDb)
     .WithReference(rabbitMq)
-    .WaitFor(pinsDatabase)
+    .WaitFor(pinsDb)
     .WaitFor(rabbitMq);
 
-builder.AddProject<Projects.Pinventory_DataSync_Worker>("pinventory-datasync-worker")
-    .WithReference(pinsDatabase)
-    .WithReference(rabbitMq)
-    .WaitFor(pinsDatabase)
-    .WaitFor(rabbitMq);
+builder.AddProject<Projects.Pinventory_Pins_DataSync_Worker>("pinventory-datasync-worker")
+    .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
+    .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
 
-builder.AddProject<Projects.Pinventory_Taging_Worker>("pinventory-taging-worker")
-    .WithReference(pinsDatabase)
+builder.AddProject<Projects.Pinventory_Pins_Taging_Worker>("pinventory-taging-worker")
+    .WithReference(pinsDb)
     .WithReference(rabbitMq)
-    .WaitFor(pinsDatabase)
+    .WaitFor(pinsDb)
     .WaitFor(rabbitMq);
 
 var scalar = builder.AddScalarApiReference(options =>
@@ -80,16 +85,12 @@ var yarp = builder.AddYarp("api")
     .WaitFor(notificationsApi)
     .WaitFor(scalar);
 
-var identityDatabase = builder.AddPostgres("identity-db")
-    .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(pgAdminPort))
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume()
-    .AddDatabase("pinventory-identity-db");
-
 builder.AddProject<Projects.Pinventory_Web>("pinventory-web")
-    .WithReference(identityDatabase)
+    .WithReference(identityDb)
+    .WithReference(migrations)
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WaitFor(identityDatabase);
+    .WaitFor(identityDb)
+    .WaitForCompletion(migrations);
 
 builder.Build().Run();

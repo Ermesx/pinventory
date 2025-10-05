@@ -5,15 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-
-using Pinventory.Web.Model;
+using Pinventory.Identity;
 
 #nullable disable
 
-namespace Pinventory.Identity.Api.Migrations
+namespace Pinventory.MigrationService.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250928184901_Initial")]
+    [Migration("20251005183108_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -159,7 +158,7 @@ namespace Pinventory.Identity.Api.Migrations
                     b.ToTable("AspNetUserTokens", "identity");
                 });
 
-            modelBuilder.Entity("Pinventory.Identity.Api.Database.User", b =>
+            modelBuilder.Entity("Pinventory.Identity.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -234,7 +233,7 @@ namespace Pinventory.Identity.Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Pinventory.Identity.Api.Database.User", null)
+                    b.HasOne("Pinventory.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -243,7 +242,7 @@ namespace Pinventory.Identity.Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Pinventory.Identity.Api.Database.User", null)
+                    b.HasOne("Pinventory.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -258,7 +257,7 @@ namespace Pinventory.Identity.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Pinventory.Identity.Api.Database.User", null)
+                    b.HasOne("Pinventory.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -267,7 +266,7 @@ namespace Pinventory.Identity.Api.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Pinventory.Identity.Api.Database.User", null)
+                    b.HasOne("Pinventory.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

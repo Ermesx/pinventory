@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Pinventory.Web.Model;
+namespace Pinventory.Identity;
 
 public sealed class User : IdentityUser
 {

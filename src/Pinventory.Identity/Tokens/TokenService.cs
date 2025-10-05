@@ -4,9 +4,8 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 
 using Pinventory.Google.Token;
-using Pinventory.Web.Model;
 
-namespace Pinventory.Web.Tokens;
+namespace Pinventory.Identity.Tokens;
 
 public sealed class TokenService(UserManager<User> userManager, IGoogleTokenEndpoint tokenEndpoint)
 {

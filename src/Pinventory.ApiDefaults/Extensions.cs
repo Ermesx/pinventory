@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 
+using Pinventory.ServiceDefaults;
+
 namespace Pinventory.ApiDefaults;
 
 public static class Extensions

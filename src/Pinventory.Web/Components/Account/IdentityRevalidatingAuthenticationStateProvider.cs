@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-using Pinventory.Web.Model;
+using Pinventory.Identity;
 
 namespace Pinventory.Web.Components.Account;
 
