@@ -37,8 +37,8 @@ builder.AddGoogleAuthentication();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
-builder.Services.AddScoped<IdTokenHttpMessageHandler>();
-builder.Services.AddScoped<TokenService>();
+builder.Services.AddTransient<IdTokenHttpMessageHandler>();
+builder.Services.AddTransient<TokenService>();
 
 builder.Services.AddHttpContextAccessor();
 
