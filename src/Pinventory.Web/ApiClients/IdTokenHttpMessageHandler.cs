@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-using Pinventory.Web.Tokens;
+using Pinventory.Identity.Tokens;
 
 namespace Pinventory.Web.ApiClients;
 

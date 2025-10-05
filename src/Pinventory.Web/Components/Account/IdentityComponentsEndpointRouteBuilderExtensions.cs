@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 
+using Pinventory.Identity;
 using Pinventory.Web.Components.Account.Pages;
 using Pinventory.Web.Components.Account.Pages.Manage;
-using Pinventory.Web.Model;
 
-namespace Microsoft.AspNetCore.Routing;
+namespace Pinventory.Web.Components.Account;
 
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {

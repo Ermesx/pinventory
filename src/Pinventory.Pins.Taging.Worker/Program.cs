@@ -1,3 +1,4 @@
+using Pinventory.ServiceDefaults;
 using Pinventory.Taging.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);

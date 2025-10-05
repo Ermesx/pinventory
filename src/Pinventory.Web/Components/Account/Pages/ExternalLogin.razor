@@ -7,7 +7,7 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Pinventory.Web.Model
+@using Pinventory.Identity
 
 @inject SignInManager<User> SignInManager
 @inject UserManager<User> UserManager
@@ -19,12 +19,12 @@
 
 <PageTitle>Register</PageTitle>
 
-<StatusMessage Message="@message" />
+<StatusMessage Message="@message"/>
 <h1>Register</h1>
 <h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
+<hr/>
 
-<div  class="alert alert-info">
+<div class="alert alert-info">
     You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
     Please enter an email address for this site below and click the Register button to finish
     logging in.
@@ -33,12 +33,12 @@
 <div class="row">
     <div class="col-md-4">
         <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
+            <DataAnnotationsValidator/>
+            <ValidationSummary class="text-danger" role="alert"/>
             <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
+                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email."/>
                 <label for="Input.Email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
+                <ValidationMessage For="() => Input.Email"/>
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
@@ -80,15 +80,6 @@
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
         }
-        
-        // Extend AuthenticationTokens with id_token because it was added by event
-        info.AuthenticationTokens = info.AuthenticationProperties!.GetTokens();
-        
-        var result = await SignInManager.UpdateExternalAuthenticationTokensAsync(info);
-        if (!result.Succeeded)
-        {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error saving external login tokens.", HttpContext);
-        }
 
         externalLoginInfo = info;
 
@@ -112,7 +103,7 @@
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
         }
-        
+
         // Sign in the user with this external login provider if the user already has a login.
         var result = await SignInManager.ExternalLoginSignInAsync(
             externalLoginInfo.LoginProvider,
@@ -123,9 +114,12 @@
         if (result.Succeeded)
         {
             Logger.LogInformation(
-                "{Name} logged in with {LoginProvider} provider.",
+                "{Name} logged in with {LoginProvider} provider",
                 externalLoginInfo.Principal.Identity?.Name,
                 externalLoginInfo.LoginProvider);
+
+            await SaveTokens();
+
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)
@@ -177,11 +171,28 @@
                 }
 
                 await SignInManager.SignInAsync(user, isPersistent: false, externalLoginInfo.LoginProvider);
+
+                await SaveTokens();
+                
                 RedirectManager.RedirectTo(ReturnUrl);
             }
         }
 
         message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+    }
+
+    private async Task SaveTokens()
+    {
+        if (externalLoginInfo is null)
+        {
+            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information during saving tokens.", HttpContext);
+        }
+
+        var tokensResult = await SignInManager.UpdateExternalAuthenticationTokensAsync(externalLoginInfo);
+        if (!tokensResult.Succeeded)
+        {
+            RedirectManager.RedirectToWithStatus("Account/Login", "Error saving external login tokens.", HttpContext);
+        }
     }
 
     private User CreateUser()
@@ -193,7 +204,7 @@
         catch
         {
             throw new InvalidOperationException($"Can't create an instance of '{nameof(User)}'. " +
-                $"Ensure that '{nameof(User)}' is not an abstract class and has a parameterless constructor");
+                                                $"Ensure that '{nameof(User)}' is not an abstract class and has a parameterless constructor");
         }
     }
 
@@ -203,6 +214,7 @@
         {
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
+
         return (IUserEmailStore<User>)UserStore;
     }
 
@@ -212,4 +224,5 @@
         [EmailAddress]
         public string Email { get; set; } = "";
     }
+
 }

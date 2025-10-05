@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
-using Pinventory.Web.Model;
+using Pinventory.Identity;
 
 namespace Pinventory.Web.Components.Account;
 

@@ -10,18 +10,23 @@
   <Folder Name="/src/">
     <Project Path="src/Pinventory.Web/Pinventory.Web.csproj" />
   </Folder>
-  <Folder Name="/src/apis/">
-    <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="Classic C#" />
+  <Folder Name="/src/identity/">
+    <Project Path="src\Pinventory.Identity.Tokens.Grpc\Pinventory.Identity.Tokens.Grpc.csproj" />
+    <Project Path="src\Pinventory.Identity\Pinventory.Identity.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/notifications/">
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/pins/">
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
+    <Project Path="src\Pinventory.Pins.DataSync.Worker\Pinventory.Pins.DataSync.Worker.csproj" />
+    <Project Path="src\Pinventory.Pins.Taging.Worker\Pinventory.Pins.Taging.Worker.csproj" />
+    <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
-    <Project Path="src/Pinventory.Pins.Model/Pinventory.Pins.Model.csproj" />
-    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj" Type="Classic C#" />
-  </Folder>
-  <Folder Name="/src/workers/">
-    <Project Path="src/Pinventory.DataSync.Worker/Pinventory.DataSync.Worker.csproj" />
-    <Project Path="src/Pinventory.Taging.Worker/Pinventory.Taging.Worker.csproj" />
+    <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="C#" />
+    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj" Type="C#" />
+    <Project Path="src\Pinventory.MigrationService\Pinventory.MigrationService.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/tests/" />
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />

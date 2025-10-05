@@ -5,11 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Google;
 using Pinventory.Google.Token;
+using Pinventory.Identity;
+using Pinventory.Identity.Tokens;
+using Pinventory.ServiceDefaults;
 using Pinventory.Web.ApiClients;
 using Pinventory.Web.Components;
 using Pinventory.Web.Components.Account;
-using Pinventory.Web.Model;
-using Pinventory.Web.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +25,7 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("pinventory-identity-db")));
+builder.Services.AddDbContext<UserDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("pinventory-identity-db")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
