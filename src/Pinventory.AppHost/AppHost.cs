@@ -4,8 +4,6 @@ using Scalar.Aspire;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-
-
 var rabbitMq = builder.AddRabbitMQ("rabbit-mq")
     .WithManagementPlugin()
     .WithLifetime(ContainerLifetime.Persistent)
@@ -24,7 +22,7 @@ var migrations = builder.AddProject<Projects.Pinventory_MigrationService>("pinve
     .WithReference(identityDb)
     .WaitFor(identityDb);
 
-var tokensGrpc = builder.AddProject<Projects.Pinventory_Identity_Tokens_Grpc>("pinventory-tokens-grpc")
+var tokensGrpc = builder.AddProject<Projects.Pinventory_Identity_Tokens_Grpc>("pinventory-identity-tokens-grpc")
     .WithReference(identityDb)
     .WithReference(migrations)
     .WaitFor(identityDb)
@@ -42,11 +40,11 @@ var pinApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-a
     .WaitFor(pinsDb)
     .WaitFor(rabbitMq);
 
-builder.AddProject<Projects.Pinventory_Pins_DataSync_Worker>("pinventory-datasync-worker")
+builder.AddProject<Projects.Pinventory_Pins_DataSync_Worker>("pinventory-pins-datasync-worker")
     .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
     .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
 
-builder.AddProject<Projects.Pinventory_Pins_Taging_Worker>("pinventory-taging-worker")
+builder.AddProject<Projects.Pinventory_Pins_Taging_Worker>("pinventory-pins-taging-worker")
     .WithReference(pinsDb)
     .WithReference(rabbitMq)
     .WaitFor(pinsDb)
