@@ -1,0 +1,21 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Pinventory.Identity.Tokens.Grpc";
+
+package TokenEndpoint;
+
+import "google/protobuf/timestamp.proto";
+
+service Tokens {
+  rpc GetAccessToken (UserRequest) returns (TokenResponse);
+  rpc RefreshAccessToken (UserRequest) returns (TokenResponse);
+}
+
+message UserRequest {
+  string userId = 1;
+}
+
+message TokenResponse {
+  string accessToken = 1;
+  google.protobuf.Timestamp expiresAt = 2;
+}
