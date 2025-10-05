@@ -1,7 +1,5 @@
 using Grpc.Core;
 
-using Pinventory.Tokens.Grpc;
-
 namespace Pinventory.Identity.Tokens.Grpc.Services;
 
 public class GreeterService : Greeter.GreeterBase
