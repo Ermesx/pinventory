@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option csharp_namespace = "Pinventory.Tokens.Grpc";
+option csharp_namespace = "Pinventory.Identity.Tokens.Grpc";
 
 package greet;
 
