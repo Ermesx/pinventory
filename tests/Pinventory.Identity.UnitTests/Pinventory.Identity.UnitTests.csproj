@@ -1,11 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <PackageReference Include="Microsoft.Testing.Platform" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="Moq" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Pinventory.Identity/Pinventory.Identity.csproj" />
+    <ProjectReference Include="../../src/Pinventory.Google/Pinventory.Google.csproj" />
   </ItemGroup>
 </Project>
-

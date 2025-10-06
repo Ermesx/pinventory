@@ -1,16 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Testing.Platform" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Shouldly" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../../src/Pinventory.Pins/Pinventory.Pins.csproj" />
   </ItemGroup>
-  
-</Project>
 
+</Project>

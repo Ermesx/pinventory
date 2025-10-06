@@ -1,11 +1,14 @@
-﻿namespace Pinventory.Pins.UnitTests;
+﻿using Shouldly;
+using TUnit;
+
+namespace Pinventory.Pins.UnitTests;
 
 public class SampleDomainTests
 {
-    // [Test] // from TUnit
+    [Test]
     public void Placeholder()
     {
-        // true.ShouldBeTrue();
+        true.ShouldBeTrue();
     }
 }
 

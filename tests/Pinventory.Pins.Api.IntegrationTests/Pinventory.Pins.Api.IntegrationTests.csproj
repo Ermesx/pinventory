@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Testing.Platform" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Respawn" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../../src/Pinventory.Pins.Api/Pinventory.Pins.Api.csproj" />
     <ProjectReference Include="..//Pinventory.Testing/Pinventory.Testing.csproj" />
   </ItemGroup>
-  
+
 </Project>
 
