@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Identity;
 using Pinventory.Identity.Tokens;
-using Pinventory.ServiceDefaults;
 using Pinventory.Identity.Tokens.Grpc.Services;
+using Pinventory.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -13,4 +13,3 @@ namespace Pinventory.Pins.Api.IntegrationTests;
 //         // TODO: Replace external auth handlers with a test scheme.
 //     }
 // }
-
