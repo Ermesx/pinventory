@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Platform" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pinventory.Identity/Pinventory.Identity.csproj" />
+  </ItemGroup>
+</Project>
+
