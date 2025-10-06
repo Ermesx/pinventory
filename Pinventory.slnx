@@ -32,11 +32,12 @@
     <Project Path="src\Pinventory.MigrationService\Pinventory.MigrationService.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
     <Project Path="tests/Pinventory.Pins.Api.IntegrationTests/Pinventory.Pins.Api.IntegrationTests.csproj" />
     <Project Path="tests/Pinventory.Pins.UnitTests/Pinventory.Pins.UnitTests.csproj" />
     <Project Path="tests/Pinventory.Testing/Pinventory.Testing.csproj" />
-    <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
     <File Path="tests\Directory.Build.props" />
+
   </Folder>
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />
