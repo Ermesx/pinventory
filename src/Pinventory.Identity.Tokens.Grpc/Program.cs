@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Google.Token;
 using Pinventory.Identity;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
@@ -20,9 +19,6 @@ builder.Services.AddDbContext<UserDbContext>(options => options.UseNpgsql(builde
 
 builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<UserDbContext>();
-
-builder.Services.AddHttpClient<IGoogleTokenEndpoint, GoogleTokenEndpoint>()
-    .ConfigureHttpClient(client => client.BaseAddress = new Uri(GoogleDefaults.TokenEndpoint));
 
 var app = builder.Build();
 
