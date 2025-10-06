@@ -7,6 +7,9 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
+  <Folder Name="/Solution Items/github/">
+    <File Path=".github\workflows\dotnet.yml" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Pinventory.Web/Pinventory.Web.csproj" />
   </Folder>
