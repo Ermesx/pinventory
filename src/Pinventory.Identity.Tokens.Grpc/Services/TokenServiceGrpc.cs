@@ -9,9 +9,11 @@ namespace Pinventory.Identity.Tokens.Grpc.Services;
 public class TokenServiceGrpc(TokenService service) : Tokens.TokensBase
 {
     private static RpcException NotFound => new(new Status(StatusCode.NotFound, "User or tokens not found"));
-    
+
     public override async Task<TokenResponse> GetAccessToken(UserRequest request, ServerCallContext context)
     {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
         var principal = CreatePrincipal(request.UserId);
         var tokens = await service.GetGoogleTokensAsync(principal);
 
@@ -19,7 +21,7 @@ public class TokenServiceGrpc(TokenService service) : Tokens.TokensBase
             ? CreateTokenResponse(tokens.AccessToken)
             : throw NotFound;
     }
-    
+
     private static TokenResponse CreateTokenResponse(GoogleAccessToken token) =>
         new() { AccessToken = token.Token, ExpiresAt = token.ExpiresAt.ToTimestamp() };
 

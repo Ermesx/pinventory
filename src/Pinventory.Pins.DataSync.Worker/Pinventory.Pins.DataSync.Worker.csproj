@@ -1,14 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <RootNamespace>Pinventory.DataSync.Worker</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
+    <PackageReference Include="Grpc.Tools">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Pinventory.ServiceDefaults\Pinventory.ServiceDefaults.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="..\Pinventory.Identity.Tokens.Grpc\Protos\tokens.proto" GrpcServices="Client" />
+  </ItemGroup>
+
 </Project>

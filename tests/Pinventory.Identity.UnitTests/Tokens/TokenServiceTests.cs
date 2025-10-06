@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 
 using Moq;
 
-using Shouldly;
-
 using Pinventory.Identity.Tokens;
+
+using Shouldly;
 
 namespace Pinventory.Identity.UnitTests.Tokens;
 

@@ -1,21 +1,19 @@
-namespace Pinventory.DataSync.Worker;
+using Pinventory.Identity.Tokens.Grpc;
 
-public class Worker : BackgroundService
+namespace Pinventory.Pins.DataSync.Worker;
+
+public class Worker(ILogger<Worker> logger, Tokens.TokensClient client) : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger)
-    {
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var response = await client.GetAccessTokenAsync(new UserRequest { UserId = "7d047a61-cae8-45cf-b82e-1d32533bb82d" }, cancellationToken: stoppingToken);
+        
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            
+            if (logger.IsEnabled(LogLevel.Information))
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                logger.LogInformation("Worker running at: {Time} {AccessToken}", DateTimeOffset.Now, response.AccessToken);
             }
             await Task.Delay(1000, stoppingToken);
         }
