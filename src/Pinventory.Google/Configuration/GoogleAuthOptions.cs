@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Pinventory.Google;
+namespace Pinventory.Google.Configuration;
 
 public class GoogleAuthOptions
 {

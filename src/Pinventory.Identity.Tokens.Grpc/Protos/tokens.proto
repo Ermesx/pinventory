@@ -16,5 +16,6 @@ message UserRequest {
 
 message TokenResponse {
   string accessToken = 1;
-  google.protobuf.Timestamp expiresAt = 2;
+  string refreshToken = 2;
+  google.protobuf.Timestamp expiresAt = 3;
 }

@@ -18,12 +18,12 @@ public class TokenServiceGrpc(TokenService service) : Tokens.TokensBase
         var tokens = await service.GetGoogleTokensAsync(principal);
 
         return tokens is not null
-            ? CreateTokenResponse(tokens.AccessToken)
+            ? CreateTokenResponse(tokens.AccessToken, tokens.RefreshToken)
             : throw NotFound;
     }
 
-    private static TokenResponse CreateTokenResponse(GoogleAccessToken token) =>
-        new() { AccessToken = token.Token, ExpiresAt = token.ExpiresAt.ToTimestamp() };
+    private static TokenResponse CreateTokenResponse(GoogleAccessToken accessToken, GoogleToken refreshToken) =>
+        new() { AccessToken = accessToken.Token, RefreshToken = refreshToken.Token, ExpiresAt = accessToken.ExpiresAt.ToTimestamp() };
 
     private static ClaimsPrincipal CreatePrincipal(string userId) =>
         new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId)]));
