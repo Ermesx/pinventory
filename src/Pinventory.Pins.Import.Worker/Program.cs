@@ -1,4 +1,4 @@
-using Pinventory.Pins.DataSync.Worker;
+using Pinventory.Pins.Import.Worker;
 using Pinventory.ServiceDefaults;
 
 var builder = Host.CreateApplicationBuilder(args);

@@ -1,7 +1,5 @@
 ﻿using Shouldly;
 
-using TUnit;
-
 namespace Pinventory.Pins.Api.IntegrationTests;
 
 public class CreatePinEndpointTests

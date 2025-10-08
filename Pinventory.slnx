@@ -22,7 +22,7 @@
   </Folder>
   <Folder Name="/src/pins/">
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
-    <Project Path="src\Pinventory.Pins.DataSync.Worker\Pinventory.Pins.DataSync.Worker.csproj" />
+    <Project Path="src\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
     <Project Path="src\Pinventory.Pins.Taging.Worker\Pinventory.Pins.Taging.Worker.csproj" />
     <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
@@ -37,7 +37,6 @@
     <Project Path="tests/Pinventory.Pins.UnitTests/Pinventory.Pins.UnitTests.csproj" />
     <Project Path="tests/Pinventory.Testing/Pinventory.Testing.csproj" />
     <File Path="tests\Directory.Build.props" />
-
   </Folder>
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />
