@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-
-namespace Pinventory.Pins.Api.IntegrationTests;
+﻿namespace Pinventory.Pins.Api.IntegrationTests;
 
 
 // public sealed class PinsApiWebAppFactory : WebApplicationFactory<Program>
@@ -13,4 +10,3 @@ namespace Pinventory.Pins.Api.IntegrationTests;
 //         // TODO: Replace external auth handlers with a test scheme.
 //     }
 // }
-

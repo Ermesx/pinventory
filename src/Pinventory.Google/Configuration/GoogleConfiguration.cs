@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Google;
+﻿namespace Pinventory.Google.Configuration;
 
 public static class GoogleConfiguration
 {

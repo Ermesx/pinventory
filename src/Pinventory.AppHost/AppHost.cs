@@ -10,7 +10,7 @@ var rabbitMq = builder.AddRabbitMQ("rabbit-mq")
     .WithDataVolume();
 
 var postgres = builder.AddPostgres("pinventory-db")
-    .WithPgWeb()
+    .WithPgWeb(options => options.WithHostPort(5050).WithLifetime(ContainerLifetime.Persistent))
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
@@ -40,7 +40,7 @@ var pinApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-a
     .WaitFor(pinsDb)
     .WaitFor(rabbitMq);
 
-builder.AddProject<Projects.Pinventory_Pins_DataSync_Worker>("pinventory-pins-datasync-worker")
+builder.AddProject<Projects.Pinventory_Pins_Import_Worker>("pinventory-pins-import-worker")
     .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
     .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
 

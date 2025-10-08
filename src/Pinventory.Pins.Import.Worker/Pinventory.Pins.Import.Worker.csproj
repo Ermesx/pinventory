@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
+    <PackageReference Include="Grpc.Tools">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Google.Apis.DataPortability.v1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pinventory.Google\Pinventory.Google.csproj" />
+    <ProjectReference Include="..\Pinventory.ServiceDefaults\Pinventory.ServiceDefaults.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Protobuf Include="..\Pinventory.Identity.Tokens.Grpc\Protos\tokens.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+</Project>

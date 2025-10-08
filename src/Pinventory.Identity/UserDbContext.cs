@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Pinventory.Identity;
 
-public class UserDbContext(DbContextOptions<UserDbContext> options)
-    : IdentityDbContext<User>(options)
+public class UserDbContext(DbContextOptions<UserDbContext> options)  : IdentityDbContext<User>(options)
 {
     protected override void OnModelCreating(ModelBuilder builder)
     {

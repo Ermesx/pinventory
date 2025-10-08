@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 
 service Tokens {
   rpc GetAccessToken (UserRequest) returns (TokenResponse);
-  rpc RefreshAccessToken (UserRequest) returns (TokenResponse);
 }
 
 message UserRequest {
@@ -17,5 +16,6 @@ message UserRequest {
 
 message TokenResponse {
   string accessToken = 1;
-  google.protobuf.Timestamp expiresAt = 2;
+  string refreshToken = 2;
+  google.protobuf.Timestamp expiresAt = 3;
 }

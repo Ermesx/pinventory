@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Pinventory.Google.Configuration;
+
 namespace Pinventory.Google;
 
 public static class Extensions
@@ -35,6 +37,9 @@ public static class Extensions
                 options.ClientId = config.ClientId;
                 options.ClientSecret = config.ClientSecret;
                 options.SaveTokens = true;
+                
+                // Add required data scopes
+                options.Scope.Add(GoogleScopes.DataportabilityMapsStarredPlaces);
 
                 // Extend AuthProperties to store the id_token
                 options.Events.OnCreatingTicket = context =>

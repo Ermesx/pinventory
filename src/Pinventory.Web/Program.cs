@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Google;
-using Pinventory.Google.Token;
 using Pinventory.Identity;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
@@ -43,9 +41,6 @@ builder.Services.AddTransient<TokenService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddPinventoryApiHttpClients();
-
-builder.Services.AddHttpClient<IGoogleTokenEndpoint, GoogleTokenEndpoint>()
-    .ConfigureHttpClient(client => client.BaseAddress = new Uri(GoogleDefaults.TokenEndpoint));
 
 var app = builder.Build();
 
