@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Pinventory.Pins.Api/Pinventory.Pins.Api.csproj" />
-    <ProjectReference Include="..//Pinventory.Testing/Pinventory.Testing.csproj" />
+    <ProjectReference Include="../Pinventory.Testing/Pinventory.Testing.csproj" />
   </ItemGroup>
 
 </Project>
