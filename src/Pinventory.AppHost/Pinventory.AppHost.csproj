@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pinventory.MigrationService\Pinventory.MigrationService.csproj" />
-    <ProjectReference Include="..\Pinventory.Pins.DataSync.Worker\Pinventory.Pins.DataSync.Worker.csproj" />
+    <ProjectReference Include="..\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
     <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Taging.Worker\Pinventory.Pins.Taging.Worker.csproj" />
