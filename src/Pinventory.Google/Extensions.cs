@@ -37,7 +37,7 @@ public static class Extensions
                 options.ClientId = config.ClientId;
                 options.ClientSecret = config.ClientSecret;
                 options.SaveTokens = true;
-                
+
                 // Add required data scopes
                 options.Scope.Add(GoogleScopes.DataportabilityMapsStarredPlaces);
 
