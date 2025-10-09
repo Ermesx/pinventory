@@ -2,6 +2,6 @@
 
 public interface IImportService
 {
-    Task<string> InitiateDataArchive(Period? period);
-    Task<DataArchiveState> CheckDataArchive(string archiveJobId);
+    Task<string> InitiateDataArchive(Period? period, CancellationToken cancellationToken = default);
+    Task<DataArchiveResult> CheckDataArchive(string archiveJobId, CancellationToken cancellationToken = default);
 }

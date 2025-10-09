@@ -2,5 +2,5 @@
 
 public interface IImportServiceFactory
 {
-    IImportService Create(ApiTokens tokens);
+    Task<IImportService> Create(string userId, CancellationToken cancellationToken = default);
 }
