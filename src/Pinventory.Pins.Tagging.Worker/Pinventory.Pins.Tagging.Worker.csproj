@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <RootNamespace>Pinventory.Taging.Worker</RootNamespace>
+    <RootNamespace>Pinventory.Tagging.Worker</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

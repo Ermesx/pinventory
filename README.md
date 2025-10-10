@@ -16,7 +16,7 @@ Main components:
   - API (src/Pinventory.Pins.Api): Minimal API hosting pin-related endpoints.
   - Workers
     - Data Sync (src/Pinventory.Pins.DataSync.Worker): Synchronizes pin data from external sources.
-    - Tagging (src/Pinventory.Pins.Taging.Worker): Applies tagging/classification to pins in the background.
+    - Tagging (src/Pinventory.Pins.Tagging.Worker): Applies tagging/classification to pins in the background.
 - Notifications (src/Pinventory.Notifications.Api): Minimal API for notifications.
 - Shared libraries
   - ApiDefaults (src/Pinventory.ApiDefaults): Common API pipeline and endpoint conventions.

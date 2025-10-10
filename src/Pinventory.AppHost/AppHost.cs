@@ -44,7 +44,7 @@ builder.AddProject<Projects.Pinventory_Pins_Import_Worker>("pinventory-pins-impo
     .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
     .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
 
-builder.AddProject<Projects.Pinventory_Pins_Taging_Worker>("pinventory-pins-taging-worker")
+builder.AddProject<Projects.Pinventory_Pins_Tagging_Worker>("pinventory-pins-tagging-worker")
     .WithReference(pinsDb)
     .WithReference(rabbitMq)
     .WaitFor(pinsDb)
