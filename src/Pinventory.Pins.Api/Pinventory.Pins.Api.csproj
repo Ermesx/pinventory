@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" />
+      <ProjectReference Include="..\Pinventory.Pins\Pinventory.Pins.csproj" />
     </ItemGroup>
 
 </Project>

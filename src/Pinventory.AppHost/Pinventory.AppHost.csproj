@@ -20,7 +20,7 @@
     <ProjectReference Include="..\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
     <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
-    <ProjectReference Include="..\Pinventory.Pins.Taging.Worker\Pinventory.Pins.Taging.Worker.csproj" />
+    <ProjectReference Include="..\Pinventory.Pins.Tagging.Worker\Pinventory.Pins.Tagging.Worker.csproj" />
     <ProjectReference Include="..\Pinventory.Identity.Tokens.Grpc\Pinventory.Identity.Tokens.Grpc.csproj" />
     <ProjectReference Include="..\Pinventory.Web\Pinventory.Web.csproj" />
   </ItemGroup>

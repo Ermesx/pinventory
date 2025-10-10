@@ -7,6 +7,10 @@
     <File Path="Directory.Packages.props" />
     <File Path="Directory.Build.props" />
   </Folder>
+  <Folder Name="/Solution Items/doc/">
+    <File Path="doc\pins-ubiquitous-language.md" />
+    <File Path="doc\pin-invariants.md" />
+  </Folder>
   <Folder Name="/Solution Items/github/">
     <File Path=".github\workflows\dotnet.yml" />
   </Folder>
@@ -19,11 +23,12 @@
   </Folder>
   <Folder Name="/src/notifications/">
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
+    <Project Path="src\Pinventory.Notifications\Pinventory.Notifications.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/src/pins/">
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
     <Project Path="src\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
-    <Project Path="src\Pinventory.Pins.Taging.Worker\Pinventory.Pins.Taging.Worker.csproj" />
+    <Project Path="src\Pinventory.Pins.Tagging.Worker\Pinventory.Pins.Tagging.Worker.csproj" />
     <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
   <Folder Name="/src/shared/">

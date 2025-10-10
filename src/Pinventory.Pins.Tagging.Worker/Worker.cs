@@ -1,4 +1,4 @@
-namespace Pinventory.Taging.Worker;
+namespace Pinventory.Tagging.Worker;
 
 public class Worker : BackgroundService
 {
