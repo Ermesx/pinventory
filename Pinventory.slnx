@@ -27,7 +27,9 @@
   </Folder>
   <Folder Name="/src/pins/">
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
+    <Project Path="src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" Type="Classic C#" />
     <Project Path="src\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
+    <Project Path="src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" Type="Classic C#" />
     <Project Path="src\Pinventory.Pins.Tagging.Worker\Pinventory.Pins.Tagging.Worker.csproj" />
     <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
