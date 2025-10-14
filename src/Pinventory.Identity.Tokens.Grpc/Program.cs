@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Identity;
+using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.Identity.Tokens.Grpc.Services;
 using Pinventory.ServiceDefaults;

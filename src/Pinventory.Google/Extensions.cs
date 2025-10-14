@@ -38,9 +38,6 @@ public static class Extensions
                 options.ClientSecret = config.ClientSecret;
                 options.SaveTokens = true;
 
-                // Add required data scopes
-                options.Scope.Add(GoogleScopes.DataportabilityMapsStarredPlaces);
-
                 // Extend AuthProperties to store the id_token
                 options.Events.OnCreatingTicket = context =>
                 {

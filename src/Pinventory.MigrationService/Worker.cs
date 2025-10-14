@@ -2,7 +2,8 @@ using System.Diagnostics;
 
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Identity;
+using Pinventory.Identity.Infrastructure;
+using Pinventory.Pins.Infrastructure;
 
 namespace Pinventory.MigrationService;
 
@@ -21,9 +22,16 @@ public class Worker(
         try
         {
             using var scope = serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
+            IEnumerable<DbContext> dbContexts =
+                [
+                    scope.ServiceProvider.GetRequiredService<UserDbContext>(), 
+                    scope.ServiceProvider.GetRequiredService<PinsDbContext>()
+                ];
 
-            await RunMigrationAsync(dbContext, cancellationToken);
+            foreach (var dbContext in dbContexts)
+            {
+                await RunMigrationAsync(dbContext, cancellationToken);
+            }
         }
         catch (Exception ex)
         {
@@ -34,13 +42,9 @@ public class Worker(
         hostApplicationLifetime.StopApplication();
     }
 
-    private static async Task RunMigrationAsync(UserDbContext dbContext, CancellationToken cancellationToken)
+    private static async Task RunMigrationAsync(DbContext dbContext, CancellationToken cancellationToken)
     {
         var strategy = dbContext.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
-        {
-            // Run migration in a transaction to avoid partial migration if it fails.
-            await dbContext.Database.MigrateAsync(cancellationToken);
-        });
+        await strategy.ExecuteAsync(async ct => await dbContext.Database.MigrateAsync(ct), cancellationToken);
     }
 }

@@ -1,12 +1,10 @@
-﻿using System;
+﻿#nullable disable
 
 using Microsoft.EntityFrameworkCore.Migrations;
 
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-#nullable disable
-
-namespace Pinventory.MigrationService.Migrations
+namespace Pinventory.MigrationService.Migrations.Identity
 {
     /// <inheritdoc />
     public partial class Initial : Migration

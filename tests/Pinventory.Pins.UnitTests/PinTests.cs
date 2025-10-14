@@ -1,7 +1,5 @@
-﻿using Pinventory.Pins.Domain.Pins;
-using System.Threading;
-
-using Pinventory.Pins.Domain.Pins.Events;
+﻿using Pinventory.Pins.Domain.Places;
+using Pinventory.Pins.Domain.Places.Events;
 using Pinventory.Pins.UnitTests.TestUtils;
 
 using Shouldly;
