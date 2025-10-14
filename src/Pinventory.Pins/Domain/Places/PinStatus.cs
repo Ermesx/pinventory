@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Domain.Pins;
+﻿namespace Pinventory.Pins.Domain.Places;
 
 public enum PinStatus
 {

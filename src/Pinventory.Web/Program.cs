@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Google;
 using Pinventory.Identity;
+using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
 using Pinventory.Web.ApiClients;

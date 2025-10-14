@@ -1,7 +1,9 @@
-﻿namespace Pinventory.Pins.Domain.Pins;
+﻿namespace Pinventory.Pins.Domain.Places;
 
 public sealed record Location
 {
+    public static readonly Location Default = new(0, 0);
+    
     public double Latitude { get; private set; }
     public double Longitude { get; private set;  }
 

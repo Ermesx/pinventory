@@ -1,11 +1,9 @@
-﻿using System.Runtime.InteropServices;
-
-using FluentResults;
+﻿using FluentResults;
 
 using Pinventory.Pins.Abstractions;
-using Pinventory.Pins.Domain.Tagging;
+using Pinventory.Pins.Domain.Pins;
 
-namespace Pinventory.Pins.Domain.Pins;
+namespace Pinventory.Pins.Domain.Places;
 
 public sealed class Pin(
     GooglePlaceId googlePlaceId,
@@ -14,16 +12,18 @@ public sealed class Pin(
     PinStatus status = PinStatus.Unknown,
     Guid? id = null) : AggregateRoot(id)
 {
+    private Pin() : this(GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
+
     private readonly HashSet<Tag> _tags = [];
-    
-    public GooglePlaceId PlaceId { get; } = googlePlaceId;
-    public Address Address { get; } = address;
-    public Location Location { get; } = location;
+
+    public GooglePlaceId PlaceId { get; private set; } = googlePlaceId;
+    public Address Address { get; private set; } = address;
+    public Location Location { get; private set; } = location;
 
     public PinStatus Status { get; private set; } = status;
     public DateTimeOffset StatusUpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
-    public IReadOnlySet<Tag> Tags => _tags;
+    public IReadOnlyCollection<Tag> Tags => _tags;
     
     public Result<IEnumerable<Tag>> AssignTags(IEnumerable<string> tags, ITagVerifier tagVerifier)
     {

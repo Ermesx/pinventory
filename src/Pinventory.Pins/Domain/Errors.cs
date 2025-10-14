@@ -1,5 +1,7 @@
 ﻿using FluentResults;
 
+using Pinventory.Pins.Domain.Places;
+
 namespace Pinventory.Pins.Domain.Pins;
 
 public static class Errors

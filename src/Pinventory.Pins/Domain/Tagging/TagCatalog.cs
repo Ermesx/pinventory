@@ -9,10 +9,12 @@ public sealed class TagCatalog(
     Guid? ownerUserId = null,
     Guid? id = null) : AggregateRoot(id)
 {
+    private TagCatalog() : this(null) { }
+
     private readonly HashSet<Tag> _tags = [];
 
     public Guid? OwnerUserId { get; private set; } = ownerUserId;
-    public IReadOnlySet<Tag> Tags => _tags;
+    public IReadOnlyCollection<Tag> Tags => _tags;
     
     public Result<IEnumerable<Tag>> DefineTags(IEnumerable<string> tags)
     {

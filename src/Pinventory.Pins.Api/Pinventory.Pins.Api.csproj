@@ -9,6 +9,10 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="WolverineFx.EntityFrameworkCore" />
+      <PackageReference Include="WolverineFx.MemoryPack" />
+      <PackageReference Include="WolverineFx.Postgresql" />
+      <PackageReference Include="WolverineFx.RabbitMQ" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,7 +1,4 @@
-﻿using Moq;
-
-using Pinventory.Pins.Domain.Pins;
-using Pinventory.Pins.Domain.Tagging;
+﻿using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.UnitTests.TestUtils;
 

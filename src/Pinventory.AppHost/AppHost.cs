@@ -20,7 +20,11 @@ var pinsDb = postgres.AddDatabase("pinventory-pins-db");
 
 var migrations = builder.AddProject<Projects.Pinventory_MigrationService>("pinventory-migration-service")
     .WithReference(identityDb)
-    .WaitFor(identityDb);
+    .WithReference(pinsDb)
+    .WithReference(notificationsDb)
+    .WaitFor(identityDb)
+    .WaitFor(pinsDb)
+    .WaitFor(notificationsDb);
 
 var tokensGrpc = builder.AddProject<Projects.Pinventory_Identity_Tokens_Grpc>("pinventory-identity-tokens-grpc")
     .WithReference(identityDb)
