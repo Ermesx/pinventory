@@ -7,7 +7,7 @@ public sealed record GooglePlaceId
 
     public GooglePlaceId(string Id)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace("Id is required", nameof(Id));
+        ArgumentException.ThrowIfNullOrWhiteSpace(Id, nameof(Id));
         this.Id = Id;
     }
 }
