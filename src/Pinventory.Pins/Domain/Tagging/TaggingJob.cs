@@ -5,7 +5,7 @@ public sealed class TaggingJob
     public Guid Id { get; private set; } = Guid.NewGuid();
 
     public RunState State { get; private set; } = RunState.Started;
-    
+
     public DateTimeOffset StartedAt { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CompletedAt { get; private set; }
 

@@ -1,3 +1,3 @@
-namespace Pinventory.Identity.Tokens;
+namespace Pinventory.Google.Tokens;
 
 public record GoogleToken(string Token, string TokenType);

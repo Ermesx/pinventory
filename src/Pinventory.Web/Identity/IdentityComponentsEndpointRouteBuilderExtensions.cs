@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text.Json;
 
 using Microsoft.AspNetCore.Authentication;
@@ -12,7 +11,7 @@ using Pinventory.Identity;
 using Pinventory.Web.Components.Account.Pages;
 using Pinventory.Web.Components.Account.Pages.Manage;
 
-namespace Pinventory.Web.Components.Account;
+namespace Pinventory.Web.Identity;
 
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {
@@ -43,7 +42,6 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         });
 
         accountGroup.MapPost("/Logout", async (
-            ClaimsPrincipal user,
             [FromServices] SignInManager<User> signInManager,
             [FromForm] string returnUrl) =>
         {
@@ -85,7 +83,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             }
 
             var userId = await userManager.GetUserIdAsync(user);
-            downloadLogger.LogInformation("User with ID '{UserId}' asked for their personal data.", userId);
+            downloadLogger.LogInformation("User with ID '{UserId}' asked for their personal data", userId);
 
             // Only include personal data for download
             var personalData = new Dictionary<string, string>();

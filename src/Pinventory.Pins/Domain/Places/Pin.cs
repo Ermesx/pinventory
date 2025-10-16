@@ -24,7 +24,7 @@ public sealed class Pin(
     public DateTimeOffset StatusUpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     public IReadOnlyCollection<Tag> Tags => _tags;
-    
+
     public Result<IEnumerable<Tag>> AssignTags(IEnumerable<string> tags, ITagVerifier tagVerifier)
     {
         var distinctTags = tags
@@ -58,7 +58,7 @@ public sealed class Pin(
             PinStatus.Closed => Result.Ok(),
             _ => Result.Fail(Errors.Pin.PinCannotBeClosed(Status))
         };
-            
+
         Result<Success> DoClose()
         {
             var status = isTemporary ? PinStatus.TemporaryClosed : PinStatus.Closed;
@@ -82,7 +82,7 @@ public sealed class Pin(
             PinStatus.Open => Result.Ok(),
             _ => Result.Fail(Errors.Pin.PinCannotBeOpened(Status))
         };
-        
+
         Result<Success> DoOpen()
         {
             var previousStatus = Status;

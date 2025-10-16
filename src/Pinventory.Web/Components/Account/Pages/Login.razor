@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Pinventory.Identity
+@using Pinventory.Web.Identity
 
 @inject SignInManager<User> SignInManager
 @inject ILogger<Login> Logger
@@ -92,7 +93,7 @@
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-            Logger.LogInformation("User logged in.");
+            Logger.LogInformation("User logged in");
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)
@@ -103,7 +104,7 @@
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            Logger.LogWarning("User account locked out");
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else

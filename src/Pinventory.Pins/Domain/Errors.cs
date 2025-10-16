@@ -12,7 +12,7 @@ public static class Errors
 
         public static Error PinCannotBeClosed(PinStatus status) => new($"Pin cannot be closed from status {status}");
     }
-    
+
     public static class Tag
     {
         public static Error TagCannotBeEmpty() => new("Tag cannot be empty");

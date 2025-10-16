@@ -13,6 +13,13 @@
     </p>
 }
 
+@if (ShowMessage)
+{
+    <p>
+        <strong>Message:</strong> <code>@Message</code>
+    </p>
+}
+
 <h3>Development Mode</h3>
 <p>
     Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
@@ -27,9 +34,13 @@
 @code{
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
+    
+    [SupplyParameterFromQuery]
+    private string? Message { get; set; }
 
     private string? RequestId { get; set; }
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    private bool ShowMessage => !string.IsNullOrEmpty(Message);
 
     protected override void OnInitialized() =>
         RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;

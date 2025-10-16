@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 @using Pinventory.Identity
+@using Pinventory.Web.Identity
 
 @inject UserManager<User> UserManager
 @inject SignInManager<User> SignInManager
@@ -73,7 +74,7 @@
         await SignInManager.SignOutAsync();
 
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
+        Logger.LogInformation("User with ID '{UserId}' deleted themselves", userId);
 
         RedirectManager.RedirectToCurrentPage();
     }

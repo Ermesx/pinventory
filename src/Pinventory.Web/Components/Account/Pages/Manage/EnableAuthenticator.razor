@@ -6,6 +6,7 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Pinventory.Identity
+@using Pinventory.Web.Identity
 
 @inject UserManager<User> UserManager
 @inject IdentityUserAccessor UserAccessor
@@ -104,7 +105,7 @@ else
 
         await UserManager.SetTwoFactorEnabledAsync(user, true);
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
+        Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app", userId);
 
         message = "Your authenticator app has been verified.";
 

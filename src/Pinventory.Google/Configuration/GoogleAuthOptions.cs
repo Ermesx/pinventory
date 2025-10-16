@@ -2,11 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Pinventory.Google.Configuration;
 
-public class GoogleAuthOptions
+public record GoogleAuthOptions
 {
-    [Required]
-    public required string ClientId { get; set; }
+    public const string Section = "Authentication:Google";
 
     [Required]
-    public required string ClientSecret { get; set; }
+    public required string ClientId { get; init; }
+
+    [Required]
+    public required string ClientSecret { get; init; }
 }

@@ -7,9 +7,11 @@ using Pinventory.Identity;
 using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
+using Pinventory.Web;
 using Pinventory.Web.ApiClients;
 using Pinventory.Web.Components;
-using Pinventory.Web.Components.Account;
+using Pinventory.Web.Google;
+using Pinventory.Web.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +35,15 @@ builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.Requi
     .AddDefaultTokenProviders();
 
 builder.AddGoogleAuthentication();
+builder.Services.AddOptions<PinventoryOptions>()
+    .BindConfiguration(PinventoryOptions.Section, options => options.ErrorOnUnknownConfiguration = true)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+
+builder.Services.AddSingleton<GoogleDataPortabilityClient>();
+builder.Services.AddSingleton<IGoogleAuthStateService, GoogleAuthStateService>();
 
 builder.Services.AddTransient<IdTokenHttpMessageHandler>();
 builder.Services.AddTransient<TokenService>();
@@ -68,5 +77,8 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// Incremental Google consent endpoints for Data Portability scope
+app.MapGoogleDataPortabilityConsentEndpoints();
 
 app.Run();

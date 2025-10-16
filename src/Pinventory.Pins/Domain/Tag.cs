@@ -4,11 +4,11 @@ using Pinventory.Pins.Domain.Pins;
 
 namespace Pinventory.Pins.Domain;
 
-public sealed record Tag 
+public sealed record Tag
 {
     public string Value { get; private set; }
 
-    
+
     public static Result<Tag> Create(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? Result.Fail(Errors.Tag.TagCannotBeEmpty()) : new Tag(value);

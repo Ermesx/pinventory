@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 
 using Pinventory.Identity;
 
-namespace Pinventory.Web.Components.Account;
+namespace Pinventory.Web.Identity;
 
 // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
 internal sealed class IdentityNoOpEmailSender : IEmailSender<User>
