@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.DataProtection;
-
-using FluentResults;
+﻿using FluentResults;
 
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Pinventory.Web.Google;
 
-public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor) 
+public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor)
     : IGoogleAuthStateService
 {
     private const string CookieName = "gdp_state";
@@ -26,7 +25,7 @@ public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectio
             IsEssential = true,
             Expires = DateTimeOffset.UtcNow.Add(lifetime ?? DefaultLifetime)
         };
-        
+
         var context = httpContextAccessor.HttpContext!;
         context.Response.Cookies.Append(CookieName, state, cookieOptions);
         return state;
@@ -49,7 +48,7 @@ public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectio
             ClearStateCookie();
             return Result.Fail(Errors.GoogleAuthState.StateMismatch());
         }
-        
+
         // Unprotect
         AuthenticationProperties? properties;
         try
@@ -61,7 +60,7 @@ public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectio
             ClearStateCookie();
             return Result.Fail(Errors.GoogleAuthState.StateInvalid());
         }
-        
+
         if (properties is null)
         {
             ClearStateCookie();

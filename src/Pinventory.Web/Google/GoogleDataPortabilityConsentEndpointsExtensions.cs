@@ -25,10 +25,10 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
         {
             var properties = new AuthenticationProperties { RedirectUri = returnUrl };
             var state = stateService.CreateAndStoreState(properties);
-            
+
             var redirectUri = CreateRedirectUri(context);
             var authUrl = client.CreateAuthorizationUrlAsync(redirectUri, state);
-            
+
             return Results.Redirect(authUrl.ToString());
         });
 
@@ -68,7 +68,7 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
                 var target = AppendQuery(returnUrl, "consentError", "invalid_response");
                 return Results.Redirect(target);
             }
-            
+
             TokenResponse tokenResponse;
             try
             {
@@ -94,7 +94,7 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
 
         return group;
     }
-    
+
     private static string CreateRedirectUri(HttpContext context) =>
         UriHelper.BuildAbsolute(
             context.Request.Scheme,
