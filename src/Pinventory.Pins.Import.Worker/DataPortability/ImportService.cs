@@ -5,22 +5,31 @@ using Microsoft.Extensions.Options;
 
 using Pinventory.Google;
 using Pinventory.Google.Configuration;
+using Pinventory.Google.Tokens;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
-public sealed class ImportService(IOptions<GoogleAuthOptions> options, ApiTokens tokens) : IImportService, IDisposable
+public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAccessToken token) : IImportService, IDisposable
 {
-    private static readonly string[] Scopes = [GoogleScopes.DataportabilityMapsStarredPlaces];
-
+    private static readonly string[] Scopes = [GoogleScopes.DataPortabilityMapsStarredPlaces];
+    private static readonly string[] Resources = [GoogleScopes.DataPortabilityResources.MapsStarredPlaces];
+    
     private readonly DataPortabilityService _service = new(new BaseClientService.Initializer
     {
         HttpClientInitializer = new UserCredential(new AuthorizationCodeFlow(
                 new GoogleAuthorizationCodeFlow.Initializer
                 {
-                    ClientSecrets = new ClientSecrets { ClientId = options.Value.ClientId, ClientSecret = options.Value.ClientSecret },
+                    ClientSecrets = new ClientSecrets
+                    {
+                        ClientId = options.Value.ClientId, 
+                        ClientSecret = options.Value.ClientSecret
+                    },
                     Scopes = Scopes
                 }), "user",
-            new TokenResponse { AccessToken = tokens.AccessToken, RefreshToken = tokens.RefreshToken, ExpiresInSeconds = 3600, }),
+            new TokenResponse { 
+                AccessToken = token.Token, 
+                RefreshToken = token.RefreshToken.Token, 
+                ExpiresInSeconds = 3600, }),
         ApplicationName = "Pinventory"
     });
 
@@ -29,19 +38,22 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, ApiTokens
         _service.Dispose();
     }
 
-    public async Task<string> InitiateDataArchive(Period? period, CancellationToken cancellationToken = default)
+    public async Task<string> InitiateDataArchiveAsync(Period? period = null, CancellationToken cancellationToken = default)
     {
         var initiate = new InitiatePortabilityArchiveRequest
         {
-            Resources = Scopes, StartTimeDateTimeOffset = period?.Start, EndTimeDateTimeOffset = period?.End,
+            Resources = Resources,
+            StartTimeDateTimeOffset = period?.Start,
+            EndTimeDateTimeOffset = period?.End,
         };
         var initResp = await _service.PortabilityArchive.Initiate(initiate).ExecuteAsync(cancellationToken);
         return initResp.ArchiveJobId;
     }
 
-    public async Task<DataArchiveResult> CheckDataArchive(string archiveJobId, CancellationToken cancellationToken = default)
+    public async Task<DataArchiveResult> CheckDataArchiveAsync(string archiveJobId, CancellationToken cancellationToken = default)
     {
-        var state = await _service.ArchiveJobs.GetPortabilityArchiveState(archiveJobId).ExecuteAsync(cancellationToken);
+        var resource = $"archiveJobs/{archiveJobId}/portabilityArchiveState";
+        var state = await _service.ArchiveJobs.GetPortabilityArchiveState(resource).ExecuteAsync(cancellationToken);
         return new DataArchiveResult(state.State, state.Urls);
     }
 }

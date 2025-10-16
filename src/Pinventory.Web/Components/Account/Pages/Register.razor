@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using Pinventory.Identity
+@using Pinventory.Web.Identity
 
 @inject UserManager<User> UserManager
 @inject IUserStore<User> UserStore
@@ -80,7 +81,7 @@
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
+        Logger.LogInformation("User created a new account with password");
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

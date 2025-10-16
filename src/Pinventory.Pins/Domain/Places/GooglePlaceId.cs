@@ -11,4 +11,3 @@ public sealed record GooglePlaceId
         this.Id = Id;
     }
 }
-

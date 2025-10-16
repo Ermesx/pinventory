@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.AspNetCore.Components;
 
-namespace Pinventory.Web.Components.Account;
+namespace Pinventory.Web.Identity;
 
 public sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {

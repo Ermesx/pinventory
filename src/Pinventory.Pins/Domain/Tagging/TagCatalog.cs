@@ -15,7 +15,7 @@ public sealed class TagCatalog(
 
     public Guid? OwnerUserId { get; private set; } = ownerUserId;
     public IReadOnlyCollection<Tag> Tags => _tags;
-    
+
     public Result<IEnumerable<Tag>> DefineTags(IEnumerable<string> tags)
     {
         var distinctTags = tags
@@ -46,11 +46,11 @@ public sealed class TagCatalog(
         var result = Tag.Create(tag);
         if (result.IsSuccess)
         {
-            if(!_tags.Add(result.Value))
+            if (!_tags.Add(result.Value))
             {
                 return Result.Fail(Errors.Tag.TagAlreadyExists(tag));
             }
-            
+
             Raise(new Events.TagCatalogTagAdded(Id, tag));
         }
 
@@ -68,7 +68,7 @@ public sealed class TagCatalog(
                 return Result.Ok();
             }
         }
-        
+
         return result;
     }
 }

@@ -1,0 +1,52 @@
+﻿@page "/import"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Options
+@attribute [Authorize]
+
+@inject IOptions<PinventoryOptions> Options
+
+<PageTitle>Import Starred Places</PageTitle>
+
+<h1>Import Starred Places</h1>
+
+@if (consentDenied)
+{
+    <div class="alert alert-warning" role="alert">
+        You denied access to the required Google permission. We cannot import your starred places without it.
+    </div>
+}
+@if (!string.IsNullOrEmpty(consentError))
+{
+    <div class="alert alert-danger" role="alert">
+        Something went wrong during Google consent (error: @consentError). 
+        Please try again.
+    </div>
+}
+
+<p>
+    Before starting the import, please grant the Google permission for accessing your starred places.
+</p>
+
+<form class="form-horizontal" action="Google/PerformGoogleDataPortabilityConsent" method="post">
+    <div>
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="/import" />
+        <p>
+            <button type="submit" class="btn btn-primary">Grant Google permission</button>
+        </p>
+    </div>
+</form>
+
+<p>
+    When access is expired or is revoked, you can renew it from your Google account.
+</p>
+<a href="https://myaccount.google.com/connections/link?project_number=@Options.Value.ProjectId" target="_blank"><button class="btn btn-primary">Renew access</button></a>
+
+@code {
+    [SupplyParameterFromQuery]
+    private bool consentDenied { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? consentError { get; set; }
+}
+

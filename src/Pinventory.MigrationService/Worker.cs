@@ -24,7 +24,7 @@ public class Worker(
             using var scope = serviceProvider.CreateScope();
             IEnumerable<DbContext> dbContexts =
                 [
-                    scope.ServiceProvider.GetRequiredService<UserDbContext>(), 
+                    scope.ServiceProvider.GetRequiredService<UserDbContext>(),
                     scope.ServiceProvider.GetRequiredService<PinsDbContext>()
                 ];
 

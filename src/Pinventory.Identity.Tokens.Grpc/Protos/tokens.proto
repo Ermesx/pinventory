@@ -15,7 +15,13 @@ message UserRequest {
 }
 
 message TokenResponse {
-  string accessToken = 1;
+  PairToken accessToken = 1;
+  PairToken dataPortabilityAccessToken = 2;
+}
+
+message PairToken {
+  string token = 1;
   string refreshToken = 2;
-  google.protobuf.Timestamp expiresAt = 3;
+  string tokenType = 3;
+  google.protobuf.Timestamp expiresAt = 4;
 }

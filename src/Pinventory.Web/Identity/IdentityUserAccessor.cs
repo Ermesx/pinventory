@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 using Pinventory.Identity;
 
-namespace Pinventory.Web.Components.Account;
+namespace Pinventory.Web.Identity;
 
 
 

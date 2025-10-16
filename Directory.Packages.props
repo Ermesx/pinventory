@@ -5,6 +5,7 @@
   <ItemGroup>
     <!-- Apps packages -->
     <PackageVersion Include="FluentResults" Version="4.0.0" />
+    <PackageVersion Include="Google.Apis.Auth" Version="1.72.0" />
     <PackageVersion Include="Google.Apis.DataPortability.v1" Version="1.70.0.3848" />
     <PackageVersion Include="Google.Protobuf" Version="3.32.1" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.71.0" />

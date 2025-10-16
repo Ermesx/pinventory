@@ -4,5 +4,5 @@ namespace Pinventory.Pins.Import.Worker.DataPortability;
 
 public interface IImportServiceFactory
 {
-    Task<Result<IImportService>> Create(string userId, CancellationToken cancellationToken = default);
+    Task<Result<IImportService>> CreateAsync(string userId, CancellationToken cancellationToken = default);
 }

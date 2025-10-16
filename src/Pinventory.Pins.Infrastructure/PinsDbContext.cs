@@ -51,7 +51,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
             entity.Navigation(x => x.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
-        
+
         // TagCatalog + TagItem
         builder.Entity<TagCatalog>(entity =>
         {

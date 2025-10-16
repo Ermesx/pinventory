@@ -14,14 +14,14 @@ public static class Extensions
     public static OptionsBuilder<GoogleAuthOptions> AddGoogleAuthOptions(this IServiceCollection services)
     {
         return services.AddOptions<GoogleAuthOptions>()
-            .BindConfiguration(GoogleConfiguration.Section, options => options.ErrorOnUnknownConfiguration = true)
+            .BindConfiguration(GoogleAuthOptions.Section, options => options.ErrorOnUnknownConfiguration = true)
             .ValidateDataAnnotations()
             .ValidateOnStart();
     }
 
     public static GoogleAuthOptions GetGoogleAuthOptions(this IConfigurationManager configuration)
     {
-        return configuration.GetSection(GoogleConfiguration.Section).Get<GoogleAuthOptions>()!;
+        return configuration.GetSection(GoogleAuthOptions.Section).Get<GoogleAuthOptions>()!;
     }
 
     public static TBuilder AddGoogleAuthentication<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder

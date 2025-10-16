@@ -90,6 +90,7 @@ User secrets (recommended during local development):
 # From repo root:
 dotnet user-secrets --project src/Pinventory.Web set "Authentication:Google:ClientId" "<your-client-id>"
 dotnet user-secrets --project src/Pinventory.Web set "Authentication:Google:ClientSecret" "<your-client-secret>"
+dotnet user-secrets --project src/Pinventory.Web set "Pinventory:ProjectId" "<your-project-id>"
 ```
 
 ---
