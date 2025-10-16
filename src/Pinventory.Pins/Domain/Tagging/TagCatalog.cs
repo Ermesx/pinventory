@@ -66,6 +66,6 @@ public sealed class TagCatalog(
                 return Result.Ok();
         }
 
-        return result;a
+        return result;
     }
 }
