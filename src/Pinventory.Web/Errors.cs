@@ -12,4 +12,3 @@ public static class Errors
         public static Error PropertiesMissing() => new("properties_missing");
     }
 }
-

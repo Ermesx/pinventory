@@ -39,7 +39,7 @@ public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, To
                 return new ImportService(options, tokens);
             });
 
-        GoogleAccessToken CreateGoogleAccessToken(PairToken token) =>
+        static GoogleAccessToken CreateGoogleAccessToken(PairToken token) =>
             GoogleAccessToken.Create(token.Token, token.TokenType, token.RefreshToken, token.ExpiresAt.ToDateTimeOffset());
     }
 

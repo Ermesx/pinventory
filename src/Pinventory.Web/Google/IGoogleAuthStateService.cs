@@ -12,4 +12,3 @@ public interface IGoogleAuthStateService
 
     void ClearStateCookie();
 }
-

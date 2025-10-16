@@ -8,7 +8,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
 {
     private bool _oneTime;
     private string _name = string.Empty;
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -44,7 +44,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
                         logger.LogError(e, "InitiateStatusCode: {StatusCode}, Archive name: {Name}", e.HttpStatusCode, _name);
                     }
                 }
-                
+
                 try
                 {
                     var archiveResult = await importService.CheckDataArchiveAsync(_name, stoppingToken);

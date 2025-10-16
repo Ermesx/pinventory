@@ -13,7 +13,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
 {
     private static readonly string[] Scopes = [GoogleScopes.DataPortabilityMapsStarredPlaces];
     private static readonly string[] Resources = [GoogleScopes.DataPortabilityResources.MapsStarredPlaces];
-    
+
     private readonly DataPortabilityService _service = new(new BaseClientService.Initializer
     {
         HttpClientInitializer = new UserCredential(new AuthorizationCodeFlow(
@@ -21,15 +21,17 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
                 {
                     ClientSecrets = new ClientSecrets
                     {
-                        ClientId = options.Value.ClientId, 
+                        ClientId = options.Value.ClientId,
                         ClientSecret = options.Value.ClientSecret
                     },
                     Scopes = Scopes
                 }), "user",
-            new TokenResponse { 
-                AccessToken = token.Token, 
-                RefreshToken = token.RefreshToken.Token, 
-                ExpiresInSeconds = 3600, }),
+            new TokenResponse
+            {
+                AccessToken = token.Token,
+                RefreshToken = token.RefreshToken.Token,
+                ExpiresInSeconds = 3600,
+            }),
         ApplicationName = "Pinventory"
     });
 
