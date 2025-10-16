@@ -50,7 +50,7 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
             var returnUrl = stateValidation.Value.RedirectUri;
             if (returnUrl is null)
             {
-                var target = AppendQuery("/Error", "message", stateValidation.Errors.First().Message);
+                var target = AppendQuery("/Error", "message", "Missing return URL");
                 return Results.Redirect(target);
             }
 
