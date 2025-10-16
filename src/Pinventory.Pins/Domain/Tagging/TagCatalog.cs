@@ -60,15 +60,12 @@ public sealed class TagCatalog(
     public Result<Tag> RemoveTag(string tag)
     {
         var result = Tag.Create(tag);
-        if (result.IsSuccess)
+        if (result.IsSuccess && _tags.Remove(result.Value))
         {
-            if (!_tags.Remove(result.Value))
-            {
                 Raise(new Events.TagCatalogTagRemoved(Id, tag));
                 return Result.Ok();
-            }
         }
 
-        return result;
+        return result;a
     }
 }
