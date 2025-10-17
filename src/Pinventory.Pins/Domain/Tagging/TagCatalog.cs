@@ -35,7 +35,7 @@ public sealed class TagCatalog(
 
         if (_tags.Any())
         {
-            Raise(new Events.TagCatalogTagsDefined(Id, distinctTags));
+            Raise(new Events.TagCatalogTagsDefined(Id, _tags.Select(t => t.Value)));
         }
 
         return results.Any(r => !r.IsSuccess) ? Result.Merge(results.ToArray()) : Result.Ok();
