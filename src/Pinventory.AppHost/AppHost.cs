@@ -61,7 +61,7 @@ var scalar = builder.AddScalarApiReference(options =>
             .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.AsyncHttp)
             .PreferHttpsEndpoint()
             .AllowSelfSignedCertificates()
-            .WithProxyUrl("/scalar/scalar-proxy");
+            .WithProxy("/scalar/scalar-proxy");
     })
     .WithApiReference(notificationsApi)
     .WithApiReference(pinApi)
