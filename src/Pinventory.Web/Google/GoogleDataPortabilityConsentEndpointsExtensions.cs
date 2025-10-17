@@ -75,7 +75,7 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
                 var redirectUri = CreateRedirectUri(context);
                 tokenResponse = await client.ExchangeCodeForTokenAsync(code, redirectUri);
             }
-            catch (TokenResponseException e)
+            catch (TokenResponseException)
             {
                 var target = AppendQuery(returnUrl, "consentError", "token_exchange_failed");
                 return Results.Redirect(target);

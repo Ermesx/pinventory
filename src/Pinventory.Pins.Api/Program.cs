@@ -1,5 +1,5 @@
 using Pinventory.ApiDefaults;
-using Pinventory.Pins.Api;
+using Pinventory.Pins.Api.TagsCatalog;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddApiDefaults();

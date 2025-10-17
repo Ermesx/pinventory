@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Api;
+﻿namespace Pinventory.Pins.Api.TagsCatalog;
 
 public static class TagsCatalogEndpoints
 {
