@@ -9,7 +9,7 @@
   </Folder>
   <Folder Name="/Solution Items/doc/">
     <File Path="doc\pins-ubiquitous-language.md" />
-    <File Path="doc\pin-invariants.md" />
+    <File Path="doc\pins-invariants.md" />
   </Folder>
   <Folder Name="/Solution Items/github/">
     <File Path=".github\workflows\dotnet.yml" />
