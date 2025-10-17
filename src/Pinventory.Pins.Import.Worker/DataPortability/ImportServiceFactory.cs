@@ -12,9 +12,10 @@ using TokenResponse = Pinventory.Identity.Tokens.Grpc.TokenResponse;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
-public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, Tokens.TokensClient client)
+public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, Tokens.TokensClient client, TimeProvider timeProvider)
     : IImportServiceFactory, IDisposable
 {
+    private const int MaxAgeMinutes = 10;
     private readonly ConcurrentDictionary<string, ImportService> _services = new();
 
     public async Task<Result<IImportService>> CreateAsync(string userId, CancellationToken cancellationToken = default)
@@ -32,15 +33,25 @@ public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, To
 
         var tokens = CreateGoogleAccessToken(response.DataPortabilityAccessToken);
         return _services.AddOrUpdate(userId,
-            _ => new ImportService(options, tokens),
+            _ => new ImportService(options, tokens, timeProvider),
             (_, s) =>
             {
                 s.Dispose();
-                return new ImportService(options, tokens);
+                return new ImportService(options, tokens, timeProvider);
             });
 
         static GoogleAccessToken CreateGoogleAccessToken(PairToken token) =>
             GoogleAccessToken.Create(token.Token, token.TokenType, token.RefreshToken, token.ExpiresAt.ToDateTimeOffset());
+    }
+
+    public void Destroy(string userId)
+    {
+        _services.TryGetValue(userId, out var service);
+        if (service is not null && service.LastUsed < timeProvider.GetUtcNow().AddMinutes(-MaxAgeMinutes))
+        {
+            _services.TryRemove(userId, out _);
+            service.Dispose();
+        }
     }
 
     public void Dispose()
