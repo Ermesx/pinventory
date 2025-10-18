@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
+using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Tags.Commands;
 using Pinventory.Pins.Domain.Tags;
 using Pinventory.Pins.Infrastructure;
@@ -10,7 +11,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Application.Tags;
 
-public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus)
+public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) : ApplicationHandler(bus)
 {
     public async Task<Result<Guid>> Handle(DefineTagCatalogCommand command)
     {
@@ -77,13 +78,5 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus)
     private async Task<TagCatalog?> GetTagCatalog(OwnerCommand command)
     {
         return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerUserId == command.OwnerUserId);
-    }
-    
-    private async Task RaiseEvents(TagCatalog tagCatalog)
-    {
-        foreach (var @event in tagCatalog.DomainEvents)
-        {
-            await bus.PublishAsync(@event);
-        }
     }
 }
