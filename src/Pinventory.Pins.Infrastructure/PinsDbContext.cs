@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Pins.Domain.Places;
-using Pinventory.Pins.Domain.Tagging;
+using Pinventory.Pins.Domain.Tags;
 
 namespace Pinventory.Pins.Infrastructure;
 

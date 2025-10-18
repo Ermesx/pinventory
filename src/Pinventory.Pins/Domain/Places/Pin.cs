@@ -1,7 +1,6 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Abstractions;
-using Pinventory.Pins.Domain.Pins;
 
 namespace Pinventory.Pins.Domain.Places;
 

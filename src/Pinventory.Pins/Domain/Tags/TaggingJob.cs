@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Domain.Tagging;
+﻿namespace Pinventory.Pins.Domain.Tags;
 
 public sealed class TaggingJob
 {

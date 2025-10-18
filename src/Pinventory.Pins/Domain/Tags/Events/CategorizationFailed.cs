@@ -1,3 +1,3 @@
-﻿namespace Pinventory.Pins.Domain.Tagging.Events;
+﻿namespace Pinventory.Pins.Domain.Tags.Events;
 
 public record TaggingFailed(Guid JobId, string Error);

@@ -1,7 +1,5 @@
 ﻿using FluentResults;
 
-using Pinventory.Pins.Domain.Pins;
-
 namespace Pinventory.Pins.Domain;
 
 public sealed record Tag

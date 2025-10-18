@@ -1,5 +1,5 @@
-﻿using Pinventory.Pins.Domain.Tagging;
-using Pinventory.Pins.Domain.Tagging.Events;
+﻿using Pinventory.Pins.Domain.Tags;
+using Pinventory.Pins.Domain.Tags.Events;
 
 using Shouldly;
 

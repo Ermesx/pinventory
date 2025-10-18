@@ -2,7 +2,7 @@
 
 using Pinventory.Pins.Domain.Places;
 
-namespace Pinventory.Pins.Domain.Pins;
+namespace Pinventory.Pins.Domain;
 
 public static class Errors
 {

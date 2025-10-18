@@ -1,3 +1,3 @@
-﻿namespace Pinventory.Pins.Domain.Tagging.Events;
+﻿namespace Pinventory.Pins.Domain.Tags.Events;
 
 public record TaggingStarted(Guid JobId, string Scope, string ModelVersion);
