@@ -18,6 +18,9 @@ public static class Extensions
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
 
+        // Add telemetry for Wolverine
+        builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddSource("Wolverine"));
+
         builder.AddJwtBearerGoogleAuthentication();
         builder.Services.AddAuthorization();
         return builder;
@@ -49,7 +52,7 @@ public static class Extensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // https://github.com/dotnet/aspire/issues/10333
+        // TODO: Re-enable once https://github.com/dotnet/aspire/issues/10333 - closed in next version
         // app.UseHttpsRedirection();
 
         return app;

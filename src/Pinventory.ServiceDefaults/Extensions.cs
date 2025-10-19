@@ -74,8 +74,7 @@ public static class Extensions
                     )
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddNpgsql()
-                    .AddSource("Wolverine");
+                    .AddNpgsql();
             });
 
         builder.AddOpenTelemetryExporters();
