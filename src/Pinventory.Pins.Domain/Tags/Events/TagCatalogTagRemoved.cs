@@ -1,4 +1,4 @@
-﻿using Pinventory.Pins.Abstractions;
+﻿using Pinventory.Pins.Domain.Abstractions;
 
 namespace Pinventory.Pins.Domain.Tags.Events;
 

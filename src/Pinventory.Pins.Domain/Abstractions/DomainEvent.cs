@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Abstractions;
+﻿namespace Pinventory.Pins.Domain.Abstractions;
 
 public abstract record DomainEvent(Guid AggregateId)
 {

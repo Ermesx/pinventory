@@ -8,8 +8,6 @@ using Pinventory.Google.Configuration;
 using Pinventory.Google.Tokens;
 using Pinventory.Identity.Tokens.Grpc;
 
-using TokenResponse = Pinventory.Identity.Tokens.Grpc.TokenResponse;
-
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
 public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, Tokens.TokensClient client, TimeProvider timeProvider)

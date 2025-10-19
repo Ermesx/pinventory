@@ -1,6 +1,5 @@
 ﻿using FluentResults;
 
-using Pinventory.Pins.Application.Tags;
 using Pinventory.Pins.Application.Tags.Commands;
 
 namespace Pinventory.Pins.Application;

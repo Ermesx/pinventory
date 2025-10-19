@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Tags.Commands;
-using Pinventory.Pins.Domain.Tags;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Domain.Tags;
 
 using Wolverine;
 

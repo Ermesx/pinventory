@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Pinventory.Pins/Pinventory.Pins.csproj" />
+    <ProjectReference Include="..\..\src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
   </ItemGroup>
 
 </Project>

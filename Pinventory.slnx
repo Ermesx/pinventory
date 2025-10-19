@@ -32,8 +32,8 @@
   </Folder>
   <Folder Name="/src/pins/libs/">
     <Project Path="src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
     <Project Path="src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" Type="Classic C#" />
-    <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="C#" />

@@ -24,7 +24,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>
+            modelBuilder.Entity("Pinventory.Pins.Domain.Domain.Places.Pin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -46,7 +46,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bigint");
 
-                    b.ComplexProperty<Dictionary<string, object>>("Address", "Pinventory.Pins.Domain.Places.Pin.Address#Address", b1 =>
+                    b.ComplexProperty<Dictionary<string, object>>("Address", "Pinventory.Pins.Domain.Domain.Places.Pin.Address#Address", b1 =>
                         {
                             b1.IsRequired();
 
@@ -56,7 +56,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
                                 .HasColumnName("Address");
                         });
 
-                    b.ComplexProperty<Dictionary<string, object>>("Location", "Pinventory.Pins.Domain.Places.Pin.Location#Location", b1 =>
+                    b.ComplexProperty<Dictionary<string, object>>("Location", "Pinventory.Pins.Domain.Domain.Places.Pin.Location#Location", b1 =>
                         {
                             b1.IsRequired();
 
@@ -77,7 +77,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
                     b.ToTable("Pins", "pins");
                 });
 
-            modelBuilder.Entity("Pinventory.Pins.Domain.Tagging.TagCatalog", b =>
+            modelBuilder.Entity("Pinventory.Pins.Domain.Domain.Tagging.TagCatalog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,9 +96,9 @@ namespace Pinventory.MigrationService.Migrations.Pins
                     b.ToTable("TagCatalogs", "pins");
                 });
 
-            modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>
+            modelBuilder.Entity("Pinventory.Pins.Domain.Domain.Places.Pin", b =>
                 {
-                    b.OwnsMany("Pinventory.Pins.Domain.Tag", "Tags", b1 =>
+                    b.OwnsMany("Pinventory.Pins.Domain.Domain.Tag", "Tags", b1 =>
                         {
                             b1.Property<Guid>("PinId")
                                 .HasColumnType("uuid");
@@ -120,9 +120,9 @@ namespace Pinventory.MigrationService.Migrations.Pins
                     b.Navigation("Tags");
                 });
 
-            modelBuilder.Entity("Pinventory.Pins.Domain.Tagging.TagCatalog", b =>
+            modelBuilder.Entity("Pinventory.Pins.Domain.Domain.Tagging.TagCatalog", b =>
                 {
-                    b.OwnsMany("Pinventory.Pins.Domain.Tag", "Tags", b1 =>
+                    b.OwnsMany("Pinventory.Pins.Domain.Domain.Tag", "Tags", b1 =>
                         {
                             b1.Property<Guid>("CatalogId")
                                 .HasColumnType("uuid");

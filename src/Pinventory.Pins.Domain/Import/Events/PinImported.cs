@@ -1,4 +1,4 @@
-﻿using Pinventory.Pins.Abstractions;
+﻿using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Domain.Import.Events;
