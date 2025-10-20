@@ -308,4 +308,3 @@ public class TagCatalogHandlerTests
         return (handler, dbContext, busMock);
     }
 }
-

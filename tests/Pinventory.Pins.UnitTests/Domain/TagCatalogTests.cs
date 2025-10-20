@@ -95,4 +95,3 @@ public class TagCatalogTests
         catalog.OwnerUserId.ShouldBe(ownerId);
     }
 }
-

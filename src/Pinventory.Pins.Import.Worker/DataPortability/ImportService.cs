@@ -40,7 +40,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
     public async Task<string> InitiateDataArchiveAsync(Period? period = null, CancellationToken cancellationToken = default)
     {
         LastUsed = timeProvider.GetUtcNow();
-        
+
         var initiate = new InitiatePortabilityArchiveRequest
         {
             Resources = Resources,
@@ -54,7 +54,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
     public async Task<DataArchiveResult> CheckDataArchiveAsync(string archiveJobId, CancellationToken cancellationToken = default)
     {
         LastUsed = timeProvider.GetUtcNow();
-        
+
         var resource = $"archiveJobs/{archiveJobId}/portabilityArchiveState";
         var state = await _service.ArchiveJobs.GetPortabilityArchiveState(resource).ExecuteAsync(cancellationToken);
         return new DataArchiveResult(state.State, state.Urls);

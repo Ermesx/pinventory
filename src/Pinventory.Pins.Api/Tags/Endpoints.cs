@@ -28,7 +28,7 @@ public static class Endpoints
                 return Results.Ok(new TagCatalogDto(tags?.Tags.Select(t => t.Value) ?? []!));
             }).WithName("GetTags")
             .Produces<TagCatalogDto>();
-            
+
 
         // Define TagCatalog
         tagsEndpoint.MapPost("/{ownerUserId:guid}/define", async (Guid? ownerUserId,
