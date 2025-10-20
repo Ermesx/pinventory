@@ -55,7 +55,7 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
         return Result.Ok();
     }
 
-    public async Task<Result<Success>> Handler(RemoveTagCommand command)
+    public async Task<Result<Success>> Handle(RemoveTagCommand command)
     {
         var tagCatalog = await GetTagCatalog(command);
         if (tagCatalog is null)

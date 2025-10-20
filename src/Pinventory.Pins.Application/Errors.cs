@@ -11,8 +11,12 @@ public static class Errors
     public static class TagCatalogHandler
     {
         public static Error CatalogAlreadyExists(DefineTagCatalogCommand command) =>
-            new($"Catalog already exists for user {(command.IsGlobal ? GlobalUser : command.OwnerUserId)}");
+            new($"Catalog already exists for user {GetOwner(command)}");
 
-        public static Error CatalogNotFound(OwnerCommand command) => new($"Catalog not found for user {command.OwnerUserId}");
+        public static Error CatalogNotFound(OwnerCommand command) => new NotFoundError($"Catalog not found for user {GetOwner(command)}");
+
+        private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerUserId.ToString();
     }
+
+    public class NotFoundError(string message) : Error(message);
 }

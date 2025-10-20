@@ -3,7 +3,7 @@ using Pinventory.Pins.Domain.Tags.Events;
 
 using Shouldly;
 
-namespace Pinventory.Pins.UnitTests;
+namespace Pinventory.Pins.UnitTests.Domain;
 
 public class TagCatalogTests
 {

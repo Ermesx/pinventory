@@ -9,6 +9,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
       <PackageReference Include="WolverineFx.EntityFrameworkCore" />
       <PackageReference Include="WolverineFx.MemoryPack" />
       <PackageReference Include="WolverineFx.Postgresql" />
@@ -21,6 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" />
+      <ProjectReference Include="..\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" />
       <ProjectReference Include="..\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
     </ItemGroup>
 
