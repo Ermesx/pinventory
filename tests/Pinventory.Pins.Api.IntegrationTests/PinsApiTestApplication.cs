@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc.Testing;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Testing.Abstractions;
 using Pinventory.Testing.Authorization;
 using Pinventory.Testing.Containers;
 
@@ -14,7 +13,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Api.IntegrationTests;
 
-public class PinsApiTestApplication : IAsyncInitializer, IAsyncDisposable
+public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IAsyncInitializer, IAsyncDisposable
 {
     private WebApplicationFactory<Program> _factory = null!;
     private IServiceScope _scope = null!;
@@ -27,7 +26,6 @@ public class PinsApiTestApplication : IAsyncInitializer, IAsyncDisposable
 
     public IServiceProvider Services => _factory.Services;
     public HttpClient Client { get; private set; } = null!;
-    public PinsDbContext DbContext { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
@@ -39,7 +37,7 @@ public class PinsApiTestApplication : IAsyncInitializer, IAsyncDisposable
 
                 builder.ConfigureTestServices(services =>
                 {
-                    ConfigureAuthentication(services);
+                    services.AddTestAuthentication();
 
                     // Run Wolverine in solo mode for faster test startup
                     services.RunWolverineInSoloMode();
@@ -52,47 +50,9 @@ public class PinsApiTestApplication : IAsyncInitializer, IAsyncDisposable
         Client = _factory.CreateClient();
 
         _scope = _factory.Services.CreateScope();
-        DbContext = _scope.ServiceProvider.GetRequiredService<PinsDbContext>();
+        var dbContext = _scope.ServiceProvider.GetRequiredService<PinsDbContext>();
 
-        await InitializeDatabaseAsync(_factory.Services);
-    }
-
-    private static async Task InitializeDatabaseAsync(IServiceProvider services)
-    {
-        using var scope = services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PinsDbContext>();
-
-        // Create the schema first
-        await dbContext.Database.ExecuteSqlRawAsync("CREATE SCHEMA IF NOT EXISTS pins");
-
-        // Then create the tables
-        await dbContext.Database.EnsureCreatedAsync();
-    }
-
-    private static void ConfigureAuthentication(IServiceCollection services)
-    {
-        // Replace authentication with test authentication
-        services.AddAuthentication(TestAuthHandler.AuthenticationScheme)
-            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.AuthenticationScheme, _ => { });
-    }
-
-    public async Task ResetDatabaseAsync()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PinsDbContext>();
-
-        // Clear all data from tables (if they exist)
-        try
-        {
-            await dbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE pins.\"CatalogTags\" CASCADE");
-            await dbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE pins.\"TagCatalogs\" CASCADE");
-            await dbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE pins.\"PinTags\" CASCADE");
-            await dbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE pins.\"Pins\" CASCADE");
-        }
-        catch
-        {
-            // Tables don't exist yet, ignore
-        }
+        await InitializeDatabaseAsync(dbContext);
     }
 
     public async ValueTask DisposeAsync()

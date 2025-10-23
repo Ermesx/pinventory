@@ -7,7 +7,11 @@ using Microsoft.Extensions.Options;
 
 namespace Pinventory.Testing.Authorization;
 
-public class TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+public class AuthenticationTestHandler(
+    IOptionsMonitor<AuthenticationSchemeOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder,
+    ISystemClock clock)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
 {
     public const string AuthenticationScheme = "TestScheme";
