@@ -6,6 +6,10 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+      <PackageReference Include="WolverineFx.EntityFrameworkCore" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild">
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

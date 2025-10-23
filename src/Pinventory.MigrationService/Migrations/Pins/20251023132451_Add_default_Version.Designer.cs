@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pinventory.Pins.Infrastructure;
@@ -12,9 +13,11 @@ using Pinventory.Pins.Infrastructure;
 namespace Pinventory.MigrationService.Migrations.Pins
 {
     [DbContext(typeof(PinsDbContext))]
-    partial class PinsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251023132451_Add_default_Version")]
+    partial class Add_default_Version
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

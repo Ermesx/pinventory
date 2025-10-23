@@ -9,7 +9,8 @@ using Pinventory.Google.Tokens;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
-public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAccessToken token, TimeProvider timeProvider) : IImportService, IDisposable
+public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAccessToken token, TimeProvider timeProvider)
+    : IImportService, IDisposable
 {
     private static readonly string[] Scopes = [GoogleScopes.DataPortabilityMapsStarredPlaces];
     private static readonly string[] Resources = [GoogleScopes.DataPortabilityResources.MapsStarredPlaces];
@@ -19,19 +20,10 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
         HttpClientInitializer = new UserCredential(new AuthorizationCodeFlow(
                 new GoogleAuthorizationCodeFlow.Initializer
                 {
-                    ClientSecrets = new ClientSecrets
-                    {
-                        ClientId = options.Value.ClientId,
-                        ClientSecret = options.Value.ClientSecret
-                    },
+                    ClientSecrets = new ClientSecrets { ClientId = options.Value.ClientId, ClientSecret = options.Value.ClientSecret },
                     Scopes = Scopes
                 }), "user",
-            new TokenResponse
-            {
-                AccessToken = token.Token,
-                RefreshToken = token.RefreshToken.Token,
-                ExpiresInSeconds = 3600,
-            }),
+            new TokenResponse { AccessToken = token.Token, RefreshToken = token.RefreshToken.Token, ExpiresInSeconds = 3600, }),
         ApplicationName = "Pinventory"
     });
 
@@ -47,6 +39,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
             StartTimeDateTimeOffset = period?.Start,
             EndTimeDateTimeOffset = period?.End,
         };
+
         var initResp = await _service.PortabilityArchive.Initiate(initiate).ExecuteAsync(cancellationToken);
         return initResp.ArchiveJobId;
     }

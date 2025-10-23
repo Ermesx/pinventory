@@ -3,6 +3,8 @@
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Tags;
 
+using Wolverine.EntityFrameworkCore;
+
 namespace Pinventory.Pins.Infrastructure;
 
 public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbContext(options)
@@ -15,6 +17,8 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.HasDefaultSchema("pins");
+
         // Pin
         builder.Entity<Pin>(entity =>
         {
@@ -38,6 +42,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             });
 
             entity.Property(x => x.Version).IsConcurrencyToken()
+                .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, b =>
@@ -59,6 +64,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.OwnerUserId);
 
             entity.Property(x => x.Version).IsConcurrencyToken()
+                .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, e =>
@@ -101,6 +107,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         // });
 
 
-        builder.HasDefaultSchema("pins");
+        // Wolverine
+        builder.MapWolverineEnvelopeStorage();
     }
 }

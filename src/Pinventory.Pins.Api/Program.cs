@@ -1,3 +1,4 @@
+using JasperFx;
 using JasperFx.Resources;
 
 using Microsoft.EntityFrameworkCore;
@@ -25,28 +26,23 @@ if (!OpenApi.IsGenerating)
 
     builder.Host.UseWolverine(options =>
     {
-        options.Services.AddResourceSetupOnStartup();
-
         options.UseMemoryPackSerialization();
 
-        options.PersistMessagesWithPostgresql(connectionString!);
         options.UseEntityFrameworkCoreTransactions();
+        options.PersistMessagesWithPostgresql(connectionString!);
 
-        var rabbitConnectionString = builder.Configuration.GetConnectionString("rabbit-mq");
-        if (!string.IsNullOrWhiteSpace(rabbitConnectionString))
-        {
-            options.UseRabbitMqUsingNamedConnection("rabbit-mq")
-                .EnableWolverineControlQueues()
-                .AutoProvision()
-                .UseConventionalRouting();
+        options.UseRabbitMqUsingNamedConnection("rabbit-mq")
+            .EnableWolverineControlQueues()
+            .AutoProvision()
+            .UseConventionalRouting();
 
-            options.Policies.UseDurableOutboxOnAllSendingEndpoints();
-            options.Policies.UseDurableInboxOnAllListeners();
-        }
-
+        options.Policies.UseDurableOutboxOnAllSendingEndpoints();
+        options.Policies.UseDurableInboxOnAllListeners();
+        options.Policies.UseDurableLocalQueues();
         options.Policies.ConventionalLocalRoutingIsAdditive();
         options.Policies.AutoApplyTransactions();
-        options.Policies.UseDurableLocalQueues();
+
+        options.Services.AddResourceSetupOnStartup();
     });
 }
 
@@ -59,3 +55,6 @@ app.MapApiDefaultEndpoints();
 app.MapTagsEndpoints();
 
 await app.RunAsync();
+
+// Make Program accessible to tests
+public partial class Program { }
