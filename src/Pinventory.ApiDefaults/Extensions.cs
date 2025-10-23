@@ -25,6 +25,9 @@ public static class Extensions
 
         builder.AddJwtBearerGoogleAuthentication();
         builder.Services.AddAuthorization();
+
+        builder.Services.AddHttpContextAccessor();
+
         return builder;
     }
 
@@ -71,5 +74,5 @@ public static class Extensions
         return app;
     }
     
-    public static string GetSub(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
+    public static string GetIdentifier(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

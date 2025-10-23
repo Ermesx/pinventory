@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Pins.Api.Tags;
+using Pinventory.Pins.Api.Tags.Dtos;
 using Pinventory.Pins.Domain.Tags;
 using Pinventory.Testing.Authorization;
 

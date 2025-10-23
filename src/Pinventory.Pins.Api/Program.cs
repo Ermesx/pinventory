@@ -1,6 +1,6 @@
-using JasperFx;
 using JasperFx.Resources;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
@@ -17,6 +17,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddApiDefaults();
 
 // Add services to the container.
+
+builder.Services.AddSingleton<IAuthorizationHandler, OwnerMatchesUserAuthorizationHandler>();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("OwnerMatchesUser", policy => policy.Requirements.Add(new OwnerMatchesUserRequirement()));
+
 if (!OpenApi.IsGenerating)
 {
     var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");

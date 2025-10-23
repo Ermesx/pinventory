@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.ApiDefaults;
+using Pinventory.Pins.Api.Tags.Dtos;
 using Pinventory.Pins.Application;
 using Pinventory.Pins.Application.Tags.Commands;
 using Pinventory.Pins.Infrastructure;
@@ -17,19 +17,14 @@ public static class Endpoints
     public static WebApplication MapTagsEndpoints(this WebApplication app)
     {
         var tagsEndpoint = app.MapGroup("/tags")
-            .RequireAuthorization()
+            .RequireAuthorization("OwnerMatchesUser")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesValidationProblem();
 
         // Get Tags from a catalog
         tagsEndpoint.MapGet("{ownerId}",
-                async (string? ownerId, HttpContext context, [FromServices] PinsDbContext dbContext) =>
+                async (string? ownerId, [FromServices] PinsDbContext dbContext) =>
                 {
-                    if (ownerId is not null && ownerId != context.User.GetSub())
-                    {
-                        return Results.Unauthorized();
-                    }
-
                     var tags = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
                     return Results.Ok(new TagCatalogDto(tags?.Tags.Select(t => t.Value) ?? []));
                 }).WithName("GetTags")
@@ -38,13 +33,8 @@ public static class Endpoints
 
         // Define TagCatalog
         tagsEndpoint.MapPost("/{ownerId}/define",
-                async (string? ownerId, [FromBody] IEnumerable<string> tags, HttpContext context, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] IEnumerable<string> tags, [FromServices] IMessageBus bus) =>
                 {
-                    if (ownerId is not null && ownerId != context.User.GetSub())
-                    {
-                        return Results.Unauthorized();
-                    }
-
                     var command = new DefineTagCatalogCommand(ownerId, tags);
                     var result = await bus.InvokeAsync<Result<Guid>>(command);
                     return result.IsSuccess
@@ -56,13 +46,8 @@ public static class Endpoints
 
         // Add Tag to catalog
         tagsEndpoint.MapPut("/{ownerId}",
-                async (string? ownerId, [FromBody] string tag, HttpContext context, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] string tag, [FromServices] IMessageBus bus) =>
                 {
-                    if (ownerId is not null && ownerId != context.User.GetSub())
-                    {
-                        return Results.Unauthorized();
-                    }
-                    
                     var command = new AddTagCommand(ownerId, tag);
                     var result = await bus.InvokeAsync<Result<Success>>(command);
                     if (result.IsSuccess)
@@ -80,13 +65,8 @@ public static class Endpoints
 
         // Remove Tag from catalog
         tagsEndpoint.MapDelete("/{ownerId}",
-                async (string? ownerId, [FromBody] string tag, HttpContext context, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] string tag, [FromServices] IMessageBus bus) =>
                 {
-                    if (ownerId is not null && ownerId != context.User.GetSub())
-                    {
-                        return Results.Unauthorized();
-                    }
-
                     var command = new RemoveTagCommand(ownerId, tag);
                     var result = await bus.InvokeAsync<Result<Success>>(command);
                     if (result.IsSuccess)
