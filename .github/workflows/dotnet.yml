@@ -24,11 +24,13 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: Install dotnet-coverage
+      run: dotnet tool install --global dotnet-coverage
     - name: Test with Coverage
-      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      run: dotnet-coverage collect "dotnet test --no-build --verbosity normal" -f cobertura -o coverage.cobertura.xml
     - name: Install ReportGenerator
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
     - name: Generate Coverage Report
-      run: reportgenerator -reports:./coverage/**/coverage.cobertura.xml -targetdir:./coverage/report -reporttypes:"Html;TextSummary"
+      run: reportgenerator "-reports:coverage.cobertura.xml" "-targetdir:./coverage/report" "-reporttypes:Html;TextSummary"
     - name: Display Coverage Summary
       run: cat ./coverage/report/Summary.txt

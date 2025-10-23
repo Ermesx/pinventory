@@ -19,6 +19,10 @@
 # Mono auto generated files
 mono_crash.*
 
+# Code coverage results
+coverage.cobertura.xml
+coverage/report/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
