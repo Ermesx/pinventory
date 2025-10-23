@@ -49,6 +49,7 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.8.1" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.8.1" />
     <PackageVersion Include="Respawn" Version="6.2.1" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <!-- Aspire packages -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.1" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.5.1" />
