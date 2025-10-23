@@ -31,7 +31,7 @@ public static class Endpoints
                     }
 
                     var tags = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
-                    return Results.Ok(new TagCatalogDto(tags?.Tags.Select(t => t.Value) ?? []!));
+                    return Results.Ok(new TagCatalogDto(tags?.Tags.Select(t => t.Value) ?? []));
                 }).WithName("GetTags")
             .Produces<TagCatalogDto>();
 
