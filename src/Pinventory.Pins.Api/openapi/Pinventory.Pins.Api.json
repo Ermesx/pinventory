@@ -5,7 +5,7 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/tags/{ownerUserId}": {
+    "/tags/{ownerId}": {
       "get": {
         "tags": [
           "Pinventory.Pins.Api"
@@ -13,12 +13,11 @@
         "operationId": "GetTags",
         "parameters": [
           {
-            "name": "ownerUserId",
+            "name": "ownerId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -62,12 +61,11 @@
         "operationId": "AddTag",
         "parameters": [
           {
-            "name": "ownerUserId",
+            "name": "ownerId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -124,12 +122,11 @@
         "operationId": "RemoveTag",
         "parameters": [
           {
-            "name": "ownerUserId",
+            "name": "ownerId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -180,7 +177,7 @@
         }
       }
     },
-    "/tags/{ownerUserId}/define": {
+    "/tags/{ownerId}/define": {
       "post": {
         "tags": [
           "Pinventory.Pins.Api"
@@ -188,12 +185,11 @@
         "operationId": "DefineTags",
         "parameters": [
           {
-            "name": "ownerUserId",
+            "name": "ownerId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -334,14 +330,13 @@
       },
       "TagCatalogIdDto": {
         "required": [
-          "ownerUserId",
+          "ownerId",
           "internalTagCatalogId"
         ],
         "type": "object",
         "properties": {
-          "ownerUserId": {
+          "ownerId": {
             "type": "string",
-            "format": "uuid",
             "nullable": true
           },
           "internalTagCatalogId": {

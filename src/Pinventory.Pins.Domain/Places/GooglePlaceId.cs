@@ -2,7 +2,7 @@
 
 public sealed record GooglePlaceId
 {
-    public static readonly GooglePlaceId Unknown = new GooglePlaceId("-");
+    public static readonly GooglePlaceId Unknown = new("-");
     public string Id { get; }
 
     public GooglePlaceId(string Id)

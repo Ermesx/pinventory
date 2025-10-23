@@ -1,3 +1,3 @@
 ﻿namespace Pinventory.Pins.Api.Tags;
 
-public record TagCatalogIdDto(Guid? OwnerUserId, Guid InternalTagCatalogId);
+public record TagCatalogIdDto(string? OwnerId, Guid InternalTagCatalogId);

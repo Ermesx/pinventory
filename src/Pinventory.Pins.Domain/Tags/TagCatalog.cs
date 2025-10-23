@@ -5,14 +5,14 @@ using Pinventory.Pins.Domain.Abstractions;
 namespace Pinventory.Pins.Domain.Tags;
 
 public sealed class TagCatalog(
-    Guid? ownerUserId = null,
+    string? ownerId = null,
     Guid? id = null) : AggregateRoot(id)
 {
     private TagCatalog() : this(null) { }
 
     private readonly HashSet<Tag> _tags = [];
 
-    public Guid? OwnerUserId { get; private set; } = ownerUserId;
+    public string? OwnerId { get; private set; } = ownerId;
     public IReadOnlyCollection<Tag> Tags => _tags;
 
     public Result<IEnumerable<Tag>> DefineTags(IEnumerable<string> tags)

@@ -2,7 +2,7 @@
 
 public sealed record Address
 {
-    public static readonly Address Unknown = new Address("-");
+    public static readonly Address Unknown = new("-");
 
     public Address(string line)
     {

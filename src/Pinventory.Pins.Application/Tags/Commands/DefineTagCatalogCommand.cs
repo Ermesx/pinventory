@@ -1,3 +1,3 @@
 ﻿namespace Pinventory.Pins.Application.Tags.Commands;
 
-public record DefineTagCatalogCommand(Guid? OwnerUserId, IEnumerable<string> Tags) : OwnerCommand(OwnerUserId);
+public record DefineTagCatalogCommand(string? OwnerId, IEnumerable<string> Tags) : OwnerCommand(OwnerId);

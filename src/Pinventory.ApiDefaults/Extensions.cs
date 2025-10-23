@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,7 +42,6 @@ public static class Extensions
                     ValidAudience = builder.Configuration["Authentication:Google:ClientId"],
                     ValidateLifetime = true
                 };
-                o.MapInboundClaims = false;
                 o.IncludeErrorDetails = true;
             });
 
@@ -69,4 +70,6 @@ public static class Extensions
 
         return app;
     }
+    
+    public static string GetSub(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

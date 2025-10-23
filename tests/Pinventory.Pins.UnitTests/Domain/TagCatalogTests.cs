@@ -83,15 +83,15 @@ public class TagCatalogTests
     }
 
     [Test]
-    public void OwnerUserId_is_preserved_when_provided()
+    public void OwnerId_is_preserved_when_provided()
     {
         // Arrange
-        var ownerId = Guid.NewGuid();
+        var ownerId = "123";
 
         // Act
         var catalog = new TagCatalog(ownerId);
 
         // Assert
-        catalog.OwnerUserId.ShouldBe(ownerId);
+        catalog.OwnerId.ShouldBe(ownerId);
     }
 }

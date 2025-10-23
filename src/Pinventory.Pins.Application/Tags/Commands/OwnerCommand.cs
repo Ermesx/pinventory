@@ -1,6 +1,6 @@
 ﻿namespace Pinventory.Pins.Application.Tags.Commands;
 
-public abstract record OwnerCommand(Guid? OwnerUserId)
+public abstract record OwnerCommand(string? OwnerId)
 {
-    public bool IsGlobal => OwnerUserId is null;
+    public bool IsGlobal => OwnerId is null;
 }

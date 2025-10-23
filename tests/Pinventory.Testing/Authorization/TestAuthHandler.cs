@@ -15,14 +15,15 @@ public class AuthenticationTestHandler(
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
 {
     public const string AuthenticationScheme = "TestScheme";
+    public const string TestUserId = "test-user-id";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, "Test User"),
-            new Claim(ClaimTypes.NameIdentifier, "test-user-id"),
-            new Claim("sub", "test-user-id")
+            new Claim(ClaimTypes.NameIdentifier, TestUserId),
+            new Claim("sub", TestUserId)
         };
 
         var identity = new ClaimsIdentity(claims, AuthenticationScheme);

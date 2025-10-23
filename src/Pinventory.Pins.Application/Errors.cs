@@ -15,7 +15,7 @@ public static class Errors
 
         public static Error CatalogNotFound(OwnerCommand command) => new NotFoundError($"Catalog not found for user {GetOwner(command)}");
 
-        private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerUserId.ToString();
+        private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerId;
     }
 
     public class NotFoundError(string message) : Error(message);

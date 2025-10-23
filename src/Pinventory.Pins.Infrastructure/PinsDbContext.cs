@@ -23,6 +23,8 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<Pin>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.OwnerId).IsRequired();
+            
             entity.Property(x => x.PlaceId)
                 .HasConversion(id => id.Id, id => new GooglePlaceId(id))
                 .IsRequired();
@@ -61,7 +63,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<TagCatalog>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.OwnerUserId);
+            entity.Property(x => x.OwnerId);
 
             entity.Property(x => x.Version).IsConcurrencyToken()
                 .HasDefaultValue(0)

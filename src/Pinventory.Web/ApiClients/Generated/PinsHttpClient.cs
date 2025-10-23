@@ -17,20 +17,20 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
     public partial interface IPinsHttpClient
     {
         [Headers("Accept: application/problem+json, application/json")]
-        [Get("/tags/{ownerUserId}")]
-        Task<TagCatalogDto> GetTags(System.Guid ownerUserId);
+        [Get("/tags/{ownerId}")]
+        Task<TagCatalogDto> GetTags(string ownerId);
 
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
-        [Put("/tags/{ownerUserId}")]
-        Task AddTag(System.Guid ownerUserId, [Body] string body);
+        [Put("/tags/{ownerId}")]
+        Task AddTag(string ownerId, [Body] string body);
 
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
-        [Delete("/tags/{ownerUserId}")]
-        Task RemoveTag(System.Guid ownerUserId, [Body] string body);
+        [Delete("/tags/{ownerId}")]
+        Task RemoveTag(string ownerId, [Body] string body);
 
         [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
-        [Post("/tags/{ownerUserId}/define")]
-        Task<TagCatalogIdDto> DefineTags(System.Guid ownerUserId, [Body] IEnumerable<string> body);
+        [Post("/tags/{ownerId}/define")]
+        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] IEnumerable<string> body);
 
 
     }
@@ -124,8 +124,8 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
     public partial class TagCatalogIdDto
     {
 
-        [JsonPropertyName("ownerUserId")]
-        public System.Guid? OwnerUserId { get; set; }
+        [JsonPropertyName("ownerId")]
+        public string OwnerId { get; set; }
 
         [JsonPropertyName("internalTagCatalogId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

@@ -21,7 +21,7 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(Errors.TagCatalogHandler.CatalogAlreadyExists(command));
         }
 
-        tagsCatalog = new TagCatalog(command.OwnerUserId);
+        tagsCatalog = new TagCatalog(command.OwnerId);
         var result = tagsCatalog.DefineTags(command.Tags);
         if (result.IsFailed)
         {
@@ -77,6 +77,6 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
 
     private async Task<TagCatalog?> GetTagCatalog(OwnerCommand command)
     {
-        return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerUserId == command.OwnerUserId);
+        return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == command.OwnerId);
     }
 }

@@ -5,16 +5,18 @@ using Pinventory.Pins.Domain.Abstractions;
 namespace Pinventory.Pins.Domain.Places;
 
 public sealed class Pin(
+    string? ownerId,
     GooglePlaceId googlePlaceId,
     Address address,
     Location location,
     PinStatus status = PinStatus.Unknown,
     Guid? id = null) : AggregateRoot(id)
 {
-    private Pin() : this(GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
+    private Pin() : this(null, GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
 
     private readonly HashSet<Tag> _tags = [];
 
+    public string? OwnerId { get; private set; } = ownerId;
     public GooglePlaceId PlaceId { get; private set; } = googlePlaceId;
     public Address Address { get; private set; } = address;
     public Location Location { get; private set; } = location;
