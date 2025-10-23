@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Pinventory.Testing.Abstractions;
 
@@ -34,7 +33,9 @@ public abstract class ApplicationWithDatabase<TDbContext> where TDbContext : DbC
                 foreach (var tableName in tableNames)
                 {
                     // Table names come from EF Core model metadata (not user input), so this is safe
+#pragma warning disable EF1002 // Risk of SQL injection
                     await DbContext.Database.ExecuteSqlRawAsync($"TRUNCATE TABLE \"{schema}\".\"{tableName}\" CASCADE");
+#pragma warning restore EF1002
                 }
             }
             catch

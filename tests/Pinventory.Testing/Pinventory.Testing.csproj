@@ -13,7 +13,7 @@
     <PackageReference Include="Testcontainers.RabbitMq" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication" />
     <PackageReference Include="Respawn" />
-    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Core" />
   </ItemGroup>
 
 </Project>
