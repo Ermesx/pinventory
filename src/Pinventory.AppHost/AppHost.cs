@@ -61,7 +61,7 @@ var scalar = builder.AddScalarApiReference(options =>
             .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.AsyncHttp)
             .PreferHttpsEndpoint()
             .AllowSelfSignedCertificates()
-            .WithProxyUrl("/scalar/scalar-proxy");
+            .WithProxy("/scalar/scalar-proxy");
     })
     .WithApiReference(notificationsApi)
     .WithApiReference(pinApi)
@@ -85,7 +85,8 @@ var yarp = builder.AddYarp("api")
     .WithReference(scalar)
     .WaitFor(pinApi)
     .WaitFor(notificationsApi)
-    .WaitFor(scalar);
+    .WaitFor(scalar)
+    .WithUrl("/scalar/", "API Documentation");
 
 builder.AddProject<Projects.Pinventory_Web>("pinventory-web")
     .WithReference(identityDb)

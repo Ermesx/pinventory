@@ -30,7 +30,7 @@ app.MapGet("/weatherforecast", () =>
     .WithName("GetWeatherForecast")
     .RequireAuthorization();
 
-app.Run();
+await app.RunAsync();
 
 namespace Pinventory.Notifications.Api
 {

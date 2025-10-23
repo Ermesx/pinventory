@@ -16,9 +16,21 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
     [System.CodeDom.Compiler.GeneratedCode("Refitter", "1.6.5.0")]
     public partial interface IPinsHttpClient
     {
-        [Headers("Accept: text/plain")]
-        [Get("/tags")]
-        Task<string> Tags();
+        [Headers("Accept: application/problem+json, application/json")]
+        [Get("/tags/{ownerId}")]
+        Task<TagCatalogDto> GetTags(string ownerId);
+
+        [Headers("Accept: application/problem+json", "Content-Type: application/json")]
+        [Put("/tags/{ownerId}")]
+        Task AddTag(string ownerId, [Body] string body);
+
+        [Headers("Accept: application/problem+json", "Content-Type: application/json")]
+        [Delete("/tags/{ownerId}")]
+        Task RemoveTag(string ownerId, [Body] string body);
+
+        [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
+        [Post("/tags/{ownerId}/define")]
+        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] IEnumerable<string> body);
 
 
     }
@@ -53,7 +65,73 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
 
     
 
-    
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class HttpValidationProblemDetails
+    {
+
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; }
+
+        [JsonPropertyName("status")]
+        public int? Status { get; set; }
+
+        [JsonPropertyName("detail")]
+        public string Detail { get; set; }
+
+        [JsonPropertyName("instance")]
+        public string Instance { get; set; }
+
+        [JsonPropertyName("errors")]
+        public IDictionary<string, IEnumerable<string>> Errors { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ProblemDetails
+    {
+
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; }
+
+        [JsonPropertyName("status")]
+        public int? Status { get; set; }
+
+        [JsonPropertyName("detail")]
+        public string Detail { get; set; }
+
+        [JsonPropertyName("instance")]
+        public string Instance { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class TagCatalogDto
+    {
+
+        [JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public IEnumerable<string> Tags { get; set; } = new List<string>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class TagCatalogIdDto
+    {
+
+        [JsonPropertyName("ownerId")]
+        public string OwnerId { get; set; }
+
+        [JsonPropertyName("internalTagCatalogId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid InternalTagCatalogId { get; set; }
+
+    }
 
 
 }

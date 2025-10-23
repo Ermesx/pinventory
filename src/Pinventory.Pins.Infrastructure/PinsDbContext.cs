@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Pins.Domain.Places;
-using Pinventory.Pins.Domain.Tagging;
+using Pinventory.Pins.Domain.Tags;
+
+using Wolverine.EntityFrameworkCore;
 
 namespace Pinventory.Pins.Infrastructure;
 
@@ -15,10 +17,14 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.HasDefaultSchema("pins");
+
         // Pin
         builder.Entity<Pin>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.OwnerId).IsRequired();
+            
             entity.Property(x => x.PlaceId)
                 .HasConversion(id => id.Id, id => new GooglePlaceId(id))
                 .IsRequired();
@@ -38,6 +44,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             });
 
             entity.Property(x => x.Version).IsConcurrencyToken()
+                .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, b =>
@@ -56,9 +63,10 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<TagCatalog>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.OwnerUserId);
+            entity.Property(x => x.OwnerId);
 
             entity.Property(x => x.Version).IsConcurrencyToken()
+                .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, e =>
@@ -101,6 +109,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         // });
 
 
-        builder.HasDefaultSchema("pins");
+        // Wolverine
+        builder.MapWolverineEnvelopeStorage();
     }
 }

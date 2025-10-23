@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Google;
 using Pinventory.Identity;
 using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
@@ -26,7 +25,8 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddDbContext<UserDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("pinventory-identity-db")));
+builder.Services.AddDbContext<UserDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("pinventory-identity-db")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -81,4 +81,4 @@ app.MapAdditionalIdentityEndpoints();
 // Incremental Google consent endpoints for Data Portability scope
 app.MapGoogleDataPortabilityConsentEndpoints();
 
-app.Run();
+await app.RunAsync();
