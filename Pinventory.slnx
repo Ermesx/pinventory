@@ -9,7 +9,7 @@
   </Folder>
   <Folder Name="/Solution Items/doc/">
     <File Path="doc\pins-ubiquitous-language.md" />
-    <File Path="doc\pin-invariants.md" />
+    <File Path="doc\pins-invariants.md" />
   </Folder>
   <Folder Name="/Solution Items/github/">
     <File Path=".github\workflows\dotnet.yml" />
@@ -32,8 +32,8 @@
   </Folder>
   <Folder Name="/src/pins/libs/">
     <Project Path="src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
     <Project Path="src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" Type="Classic C#" />
-    <Project Path="src\Pinventory.Pins\Pinventory.Pins.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="C#" />
@@ -41,11 +41,15 @@
     <Project Path="src\Pinventory.MigrationService\Pinventory.MigrationService.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
-    <Project Path="tests/Pinventory.Pins.Api.IntegrationTests/Pinventory.Pins.Api.IntegrationTests.csproj" />
-    <Project Path="tests/Pinventory.Pins.UnitTests/Pinventory.Pins.UnitTests.csproj" />
     <Project Path="tests/Pinventory.Testing/Pinventory.Testing.csproj" />
     <File Path="tests\Directory.Build.props" />
+  </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/Pinventory.Pins.Api.IntegrationTests/Pinventory.Pins.Api.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
+    <Project Path="tests/Pinventory.Pins.UnitTests/Pinventory.Pins.UnitTests.csproj" />
   </Folder>
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />

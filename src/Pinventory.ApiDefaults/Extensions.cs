@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,8 +20,14 @@ public static class Extensions
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
 
+        // Add telemetry for Wolverine
+        builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddSource("Wolverine"));
+
         builder.AddJwtBearerGoogleAuthentication();
         builder.Services.AddAuthorization();
+
+        builder.Services.AddHttpContextAccessor();
+
         return builder;
     }
 
@@ -37,7 +45,6 @@ public static class Extensions
                     ValidAudience = builder.Configuration["Authentication:Google:ClientId"],
                     ValidateLifetime = true
                 };
-                o.MapInboundClaims = false;
                 o.IncludeErrorDetails = true;
             });
 
@@ -49,7 +56,7 @@ public static class Extensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        // https://github.com/dotnet/aspire/issues/10333
+        // TODO: Re-enable once https://github.com/dotnet/aspire/issues/10333 - closed in next version
         // app.UseHttpsRedirection();
 
         return app;
@@ -66,4 +73,6 @@ public static class Extensions
 
         return app;
     }
+    
+    public static string GetIdentifier(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

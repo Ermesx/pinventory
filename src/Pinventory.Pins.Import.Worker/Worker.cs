@@ -17,7 +17,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
             // await TestRun(stoppingToken);
         }
     }
-    
+
     private async Task TestRun(CancellationToken stoppingToken)
     {
         if (logger.IsEnabled(LogLevel.Error))

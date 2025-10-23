@@ -4,7 +4,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Pinventory.Pins\Pinventory.Pins.csproj" />
+      <ProjectReference Include="..\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" />
+      <ProjectReference Include="..\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="WolverineFx" />
     </ItemGroup>
 
 </Project>

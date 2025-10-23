@@ -8,8 +8,6 @@ using Pinventory.Google.Configuration;
 using Pinventory.Google.Tokens;
 using Pinventory.Identity.Tokens.Grpc;
 
-using TokenResponse = Pinventory.Identity.Tokens.Grpc.TokenResponse;
-
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
 public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, Tokens.TokensClient client, TimeProvider timeProvider)
@@ -47,7 +45,7 @@ public sealed class ImportServiceFactory(IOptions<GoogleAuthOptions> options, To
     public void Destroy(string userId)
     {
         _services.TryGetValue(userId, out var service);
-        if (service is not null && service.LastUsed < timeProvider.GetUtcNow().AddMinutes(-MaxAgeMinutes))
+        if (service is not null && (timeProvider.GetUtcNow() - service.LastUsed) >= TimeSpan.FromMinutes(MaxAgeMinutes))
         {
             _services.TryRemove(userId, out _);
             service.Dispose();
