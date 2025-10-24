@@ -27,10 +27,8 @@ jobs:
     - name: Install dotnet-coverage
       run: dotnet tool install --global dotnet-coverage
     - name: Test with Coverage
-      run: dotnet-coverage collect "dotnet test --no-build --verbosity normal" -f cobertura -o coverage.cobertura.xml
-    - name: Install ReportGenerator
-      run: dotnet tool install --global dotnet-reportgenerator-globaltool
-    - name: Generate Coverage Report
-      run: reportgenerator "-reports:coverage.cobertura.xml" "-targetdir:./coverage/report" "-reporttypes:Html;TextSummary"
-    - name: Display Coverage Summary
-      run: cat ./coverage/report/Summary.txt
+      run: dotnet-coverage collect "dotnet test --no-build --verbosity normal" -f cobertura -o coverage.xml
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
