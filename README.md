@@ -1,5 +1,9 @@
 # Pinventory
 
+[![codecov](https://codecov.io/github/Ermesx/pinventory/graph/badge.svg?token=AIIZ24G5IU)](https://codecov.io/github/Ermesx/pinventory)
+[![.NET](https://github.com/Ermesx/pinventory/actions/workflows/dotnet.yml/badge.svg)](https://github.com/Ermesx/pinventory/actions/workflows/dotnet.yml)
+![CodeCov](https://codecov.io/github/Ermesx/pinventory/graphs/sunburst.svg?token=AIIZ24G5IU)
+
 A multi-service application for managing and exploring "pins" and related metadata. Pinventory uses .NET 9 and .NET Aspire to orchestrate a local development topology with a web front end, domain APIs, background workers, and shared infrastructure like PostgreSQL and RabbitMQ.
 
 ---
