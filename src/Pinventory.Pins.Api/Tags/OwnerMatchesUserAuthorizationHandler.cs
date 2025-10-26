@@ -23,4 +23,3 @@ public class OwnerMatchesUserAuthorizationHandler() : AuthorizationHandler<Owner
         return Task.CompletedTask;
     }
 }
-

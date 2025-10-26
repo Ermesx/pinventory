@@ -26,16 +26,19 @@ public static class Endpoints
                 async (string? ownerId, [FromServices] PinsDbContext dbContext) =>
                 {
                     var tags = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
-                    return Results.Ok(new TagCatalogDto(tags?.Tags.Select(t => t.Value) ?? []));
+                    return tags is null
+                        ? Results.NotFound()
+                        : Results.Ok(new TagCatalogDto(tags.Tags.Select(t => t.Value)));
                 }).WithName("GetTags")
-            .Produces<TagCatalogDto>();
+            .Produces<TagCatalogDto>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
 
         // Define TagCatalog
         tagsEndpoint.MapPost("/{ownerId}/define",
-                async (string? ownerId, [FromBody] IEnumerable<string> tags, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] TagsDto request, [FromServices] IMessageBus bus) =>
                 {
-                    var command = new DefineTagCatalogCommand(ownerId, tags);
+                    var command = new DefineTagCatalogCommand(ownerId, request.Tags);
                     var result = await bus.InvokeAsync<Result<Guid>>(command);
                     return result.IsSuccess
                         ? Results.Created($"/tags/{command.OwnerId}", new TagCatalogIdDto(ownerId, result.Value))
@@ -46,9 +49,9 @@ public static class Endpoints
 
         // Add Tag to catalog
         tagsEndpoint.MapPut("/{ownerId}",
-                async (string? ownerId, [FromBody] string tag, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus) =>
                 {
-                    var command = new AddTagCommand(ownerId, tag);
+                    var command = new AddTagCommand(ownerId, request.Tag);
                     var result = await bus.InvokeAsync<Result<Success>>(command);
                     if (result.IsSuccess)
                     {
@@ -65,9 +68,9 @@ public static class Endpoints
 
         // Remove Tag from catalog
         tagsEndpoint.MapDelete("/{ownerId}",
-                async (string? ownerId, [FromBody] string tag, [FromServices] IMessageBus bus) =>
+                async (string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus) =>
                 {
-                    var command = new RemoveTagCommand(ownerId, tag);
+                    var command = new RemoveTagCommand(ownerId, request.Tag);
                     var result = await bus.InvokeAsync<Result<Success>>(command);
                     if (result.IsSuccess)
                     {

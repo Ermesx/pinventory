@@ -24,7 +24,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.OwnerId).IsRequired();
-            
+
             entity.Property(x => x.PlaceId)
                 .HasConversion(id => id.Id, id => new GooglePlaceId(id))
                 .IsRequired();

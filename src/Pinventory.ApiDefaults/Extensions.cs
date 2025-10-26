@@ -73,6 +73,6 @@ public static class Extensions
 
         return app;
     }
-    
+
     public static string GetIdentifier(this ClaimsPrincipal principal) => principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

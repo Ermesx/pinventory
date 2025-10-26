@@ -25,7 +25,7 @@ public class TagsEndpointsTests
     }
 
     [Test]
-    public async Task GetTags_returns_empty_list_when_catalog_does_not_exist()
+    public async Task GetTags_returns_not_found_when_catalog_does_not_exist()
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
@@ -34,10 +34,7 @@ public class TagsEndpointsTests
         var response = await App.Client.GetAsync($"/tags/{ownerId}");
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<TagCatalogDto>();
-        result.ShouldNotBeNull();
-        result.Tags.ShouldBeEmpty();
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     [Test]
@@ -62,11 +59,32 @@ public class TagsEndpointsTests
     }
 
     [Test]
+    public async Task GetTags_returns_empty_collection_when_catalog_exists_but_has_no_tags()
+    {
+        // Arrange
+        var ownerId = AuthenticationTestHandler.TestUserId;
+        var catalog = new TagCatalog(ownerId);
+        // Don't define any tags - catalog exists but is empty
+
+        await App.DbContext.TagCatalogs.AddAsync(catalog);
+        await App.DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await App.Client.GetAsync($"/tags/{ownerId}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<TagCatalogDto>();
+        result.ShouldNotBeNull();
+        result.Tags.ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task DefineTags_creates_new_catalog_and_returns_created()
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
-        string[] tags = ["restaurant", "cafe", "bar"];
+        var tags = new TagsDto(["restaurant", "cafe", "bar"]);
 
         // Act
         var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
@@ -81,7 +99,7 @@ public class TagsEndpointsTests
         // Verify in database
         var catalog = await App.DbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         catalog.ShouldNotBeNull();
-        catalog.Tags.Select(t => t.Value).ShouldBe(tags, ignoreOrder: true);
+        catalog.Tags.Select(t => t.Value).ShouldBe(tags.Tags, ignoreOrder: true);
     }
 
     [Test]
@@ -95,7 +113,7 @@ public class TagsEndpointsTests
         await App.DbContext.TagCatalogs.AddAsync(existingCatalog);
         await App.DbContext.SaveChangesAsync();
 
-        string[] tags = ["restaurant", "cafe"];
+        var tags = new TagsDto(["restaurant", "cafe"]);
 
         // Act
         var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
@@ -109,7 +127,7 @@ public class TagsEndpointsTests
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
-        string[] tags = [" restaurant ", "restaurant", "CAFE", "cafe", "  bar  "];
+        var tags = new TagsDto([" restaurant ", "restaurant", "CAFE", "cafe", "  bar  "]);
 
         // Act
         var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
@@ -135,7 +153,7 @@ public class TagsEndpointsTests
         await App.DbContext.SaveChangesAsync();
         App.DbContext.ChangeTracker.Clear();
 
-        var newTag = "bar";
+        var newTag = new TagDto("bar");
 
         // Act
         var response = await App.Client.PutAsJsonAsync($"/tags/{ownerId}", newTag);
@@ -154,7 +172,7 @@ public class TagsEndpointsTests
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
-        var newTag = "restaurant";
+        var newTag = new TagDto("restaurant");
 
         // Act
         var response = await App.Client.PutAsJsonAsync($"/tags/{ownerId}", newTag);
@@ -175,7 +193,7 @@ public class TagsEndpointsTests
         await App.DbContext.SaveChangesAsync();
         App.DbContext.ChangeTracker.Clear();
 
-        var duplicateTag = "restaurant";
+        var duplicateTag = new TagDto("restaurant");
 
         // Act
         var response = await App.Client.PutAsJsonAsync($"/tags/{ownerId}", duplicateTag);
@@ -196,7 +214,7 @@ public class TagsEndpointsTests
         await App.DbContext.SaveChangesAsync();
         App.DbContext.ChangeTracker.Clear();
 
-        var newTag = "  CAFE  ";
+        var newTag = new TagDto("  CAFE  ");
 
         // Act
         var response = await App.Client.PutAsJsonAsync($"/tags/{ownerId}", newTag);
@@ -222,7 +240,7 @@ public class TagsEndpointsTests
         await App.DbContext.SaveChangesAsync();
         App.DbContext.ChangeTracker.Clear();
 
-        var tagToRemove = "cafe";
+        var tagToRemove = new TagDto("cafe");
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
@@ -245,7 +263,7 @@ public class TagsEndpointsTests
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
-        var tagToRemove = "restaurant";
+        var tagToRemove = new TagDto("restaurant");
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
@@ -270,7 +288,7 @@ public class TagsEndpointsTests
         await App.DbContext.SaveChangesAsync();
         App.DbContext.ChangeTracker.Clear();
 
-        var nonExistentTag = "bar";
+        var nonExistentTag = new TagDto("bar");
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
@@ -290,7 +308,7 @@ public class TagsEndpointsTests
     {
         // Arrange
         var ownerId = AuthenticationTestHandler.TestUserId;
-        string[] tags = ["restaurant", "", "   ", "cafe", "  ", "bar"];
+        var tags = new TagsDto(["restaurant", "", "   ", "cafe", "  ", "bar"]);
 
         // Act
         var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);

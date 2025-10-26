@@ -22,15 +22,15 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
 
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
         [Put("/tags/{ownerId}")]
-        Task AddTag(string ownerId, [Body] string body);
+        Task AddTag(string ownerId, [Body] TagDto body);
 
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
         [Delete("/tags/{ownerId}")]
-        Task RemoveTag(string ownerId, [Body] string body);
+        Task RemoveTag(string ownerId, [Body] TagDto body);
 
         [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
         [Post("/tags/{ownerId}/define")]
-        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] IEnumerable<string> body);
+        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] TagsDto body);
 
 
     }
@@ -130,6 +130,26 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
         [JsonPropertyName("internalTagCatalogId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid InternalTagCatalogId { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class TagDto
+    {
+
+        [JsonPropertyName("tag")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Tag { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class TagsDto
+    {
+
+        [JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public IEnumerable<string> Tags { get; set; } = new List<string>();
 
     }
 
