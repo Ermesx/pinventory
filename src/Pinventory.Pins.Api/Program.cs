@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
+using Pinventory.Pins.Api.Authorization;
 using Pinventory.Pins.Api.Tags;
 using Pinventory.Pins.Infrastructure;
 
@@ -61,4 +62,7 @@ app.MapTagsEndpoints();
 
 app.Run();
 
-public partial class Program { }
+namespace Pinventory.Pins.Api
+{
+    public partial class Program { }
+}

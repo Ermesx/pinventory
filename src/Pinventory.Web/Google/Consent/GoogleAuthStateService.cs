@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Pinventory.Web.Google;
+namespace Pinventory.Web.Google.Consent;
 
 public sealed class GoogleAuthStateService(IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor)
     : IGoogleAuthStateService

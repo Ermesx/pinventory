@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using FluentResults;
 
-namespace Pinventory.Web.Google;
+using Microsoft.AspNetCore.Authentication;
 
-using FluentResults;
+namespace Pinventory.Web.Google.Consent;
 
 public interface IGoogleAuthStateService
 {

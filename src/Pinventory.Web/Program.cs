@@ -10,6 +10,8 @@ using Pinventory.Web;
 using Pinventory.Web.ApiClients;
 using Pinventory.Web.Components;
 using Pinventory.Web.Google;
+using Pinventory.Web.Google.Authentication;
+using Pinventory.Web.Google.Consent;
 using Pinventory.Web.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,6 +51,8 @@ builder.Services.AddTransient<IdTokenHttpMessageHandler>();
 builder.Services.AddTransient<TokenService>();
 
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IGoogleUserService, GoogleUserService>();
 
 builder.Services.AddPinventoryApiHttpClients();
 

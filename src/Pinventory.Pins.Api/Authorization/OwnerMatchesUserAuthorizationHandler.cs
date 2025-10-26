@@ -2,7 +2,7 @@
 
 using Pinventory.ApiDefaults;
 
-namespace Pinventory.Pins.Api.Tags;
+namespace Pinventory.Pins.Api.Authorization;
 
 public record OwnerMatchesUserRequirement : IAuthorizationRequirement;
 

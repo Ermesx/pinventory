@@ -12,7 +12,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Api.Tags;
 
-public static class Endpoints
+public static class TagsEndpointsExtensions
 {
     public static WebApplication MapTagsEndpoints(this WebApplication app)
     {

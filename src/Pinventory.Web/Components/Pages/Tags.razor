@@ -1,38 +1,23 @@
 ﻿@page "/tags"
-@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Identity
-@using Pinventory.Identity
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
-@using Pinventory.Web.Identity
+@using Pinventory.Web.Components.Tags
+@using Pinventory.Web.Components.Shared
+@using Pinventory.Web.Google
+@using static Pinventory.Web.Components.Shared.AlertMessage
 @attribute [Authorize]
 @rendermode InteractiveServer
 
 @inject IPinsHttpClient PinsClient
-@inject UserManager<User> UserManager
-@inject IdentityUserAccessor UserAccessor
-@inject IHttpContextAccessor HttpContextAccessor
+@inject IGoogleUserService GoogleUserService
 
 <PageTitle>Manage Tags</PageTitle>
 
 <h1>Manage Tags</h1>
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>Error:</strong> @errorMessage
-        <button type="button" class="btn-close" @onclick="DismissError" aria-label="Close"></button>
-    </div>
-}
-
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @successMessage
-        <button type="button" class="btn-close" @onclick="DismissSuccess" aria-label="Close"></button>
-    </div>
-}
+<AlertMessage Message="@errorMessage" Type="AlertType.Error" OnDismiss="DismissError" />
+<AlertMessage Message="@successMessage" Type="AlertType.Success" OnDismiss="DismissSuccess" />
 
 @if (isLoading)
 {
@@ -50,239 +35,34 @@ else
                 Manage your personal tag catalog. Tags can be used to categorize your starred places.
             </p>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Add New Tag</h5>
-                </div>
-                <div class="card-body">
-                    <EditForm Model="Input" FormName="addTag" OnValidSubmit="OnAddTagAsync" method="post">
-                        <DataAnnotationsValidator/>
-                        <div class="input-group">
-                            <InputText @bind-Value="Input.TagName"
-                                       class="form-control"
-                                       placeholder="Enter tag name"
-                                       disabled="@isProcessing"/>
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    disabled="@isProcessing">
-                                @if (isProcessing)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                }
-                                Add Tag
-                            </button>
-                        </div>
-                        <ValidationMessage For="() => Input.TagName" class="text-danger"/>
-                    </EditForm>
-                </div>
-            </div>
+            <TagForm IsProcessing="@isProcessing" ExistingTags="@tags" OnSubmit="OnAddTagAsync" />
 
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Your Tags</h5>
-                    <span class="badge bg-secondary">@tags.Count tag@(tags.Count != 1 ? "s" : "")</span>
-                </div>
-                <div class="card-body">
-                    @if (tags.Count == 0)
-                    {
-                        <div class="text-center text-muted py-4">
-                            <p class="mb-0">No tags yet. Add your first tag above!</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var tag in tags.OrderBy(t => t))
-                            {
-                                <div class="badge bg-primary d-flex align-items-center gap-2 fs-6 py-2 px-3">
-                                    <span>@tag</span>
-                                    <button type="button"
-                                            class="btn-close btn-close-white"
-                                            style="font-size: 0.7rem;"
-                                            @onclick="() => OnRemoveTagAsync(tag)"
-                                            disabled="@isProcessing"
-                                            aria-label="Remove tag">
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
+            <TagList Tags="@tags" IsProcessing="@isProcessing" OnRemoveTag="OnRemoveTagAsync" />
 
-            <div class="alert alert-info d-flex align-items-start" role="alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill flex-shrink-0 me-3" viewBox="0 0 16 16" style="margin-top: 2px;">
-                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                </svg>
-                <div>
-                    <h6 class="alert-heading mb-2"><strong>Background Processing</strong></h6>
-                    <p class="mb-2">Tag changes trigger automatic background updates to your pins:</p>
-                    <ul class="mb-2">
-                        <li class="mb-2">
-                            <strong>Adding a tag:</strong> When you add a new tag to your catalog, all of your existing pins will be automatically re-tagged with the new tag in the background.
-                        </li>
-                        <li class="mb-0">
-                            <strong>Removing a tag:</strong> When you remove a tag from your catalog, it will be automatically removed from all pins that currently use it.
-                        </li>
-                    </ul>
-                    <p class="mb-0">You'll receive a notification when the background process completes.</p>
-                </div>
-            </div>
+            <BackgroundProcessingInfo />
         </div>
     </div>
 }
 
-@* Modal for choosing catalog creation method *@
-@if (showCatalogChoiceDialog)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Your Tag Catalog</h5>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">You don't have a tag catalog yet. How would you like to create it?</p>
-
-                    @if (isLoadingGlobalTags)
-                    {
-                        <div class="d-flex justify-content-center my-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading global tags...</span>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="d-grid gap-3">
-                            <button type="button"
-                                    class="btn btn-outline-primary text-start p-3 catalog-choice-btn"
-                                    @onclick="OnCreateEmptyCatalogAsync"
-                                    disabled="@isProcessing">
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="catalog-icon catalog-icon-empty"></div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">Start with an empty catalog</h6>
-                                        <small class="text-muted catalog-choice-description">Create a new catalog and add your own tags from scratch.</small>
-                                    </div>
-                                </div>
-                            </button>
-
-                            <button type="button"
-                                    class="btn btn-outline-primary text-start p-3 catalog-choice-btn"
-                                    @onclick="OnCopyFromGlobalCatalogAsync"
-                                    disabled="@(isProcessing || globalTags.Count == 0)">
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="catalog-icon catalog-icon-copy"></div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">Copy from global catalog</h6>
-                                        <small class="text-muted catalog-choice-description">
-                                            @if (globalTags.Count > 0)
-                                            {
-                                                <text>Start with @globalTags.Count predefined tag@(globalTags.Count != 1 ? "s" : "") from the global catalog.</text>
-                                            }
-                                            else
-                                            {
-                                                <text>No global tags available at the moment.</text>
-                                            }
-                                        </small>
-                                        @if (globalTags.Count > 0)
-                                        {
-                                            <div class="mt-3 pt-2 border-top">
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    @foreach (var tag in globalTags.OrderBy(t => t))
-                                                    {
-                                                        <span class="badge bg-secondary fs-6 py-2 px-3">@tag</span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            </button>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .catalog-choice-btn:hover .catalog-choice-description,
-        .catalog-choice-btn:focus .catalog-choice-description {
-            color: var(--bs-btn-hover-color) !important;
-        }
-
-        .catalog-icon {
-            width: 3rem;
-            height: 3rem;
-            min-width: 3rem;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            align-self: center;
-        }
-
-        .catalog-icon-empty {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' fill='%230d6efd' class='bi bi-file-earmark-plus' viewBox='0 0 16 16'%3E%3Cpath d='M8 6.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V11a.5.5 0 0 1-1 0V9.5H6a.5.5 0 0 1 0-1h1.5V7a.5.5 0 0 1 .5-.5z'/%3E%3Cpath d='M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z'/%3E%3C/svg%3E");
-        }
-
-        .catalog-icon-copy {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' fill='%230d6efd' class='bi bi-globe2' viewBox='0 0 16 16'%3E%3Cpath d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855-.143.268-.276.56-.395.872.705.157 1.472.257 2.282.287V1.077zM4.249 3.539c.142-.384.304-.744.481-1.078a6.7 6.7 0 0 1 .597-.933A7.01 7.01 0 0 0 3.051 3.05c.362.184.763.349 1.198.49zM3.509 7.5c.036-1.07.188-2.087.436-3.008a9.124 9.124 0 0 1-1.565-.667A6.964 6.964 0 0 0 1.018 7.5h2.49zm1.4-2.741a12.344 12.344 0 0 0-.4 2.741H7.5V5.091c-.91-.03-1.783-.145-2.591-.332zM8.5 5.09V7.5h2.99a12.342 12.342 0 0 0-.399-2.741c-.808.187-1.681.301-2.591.332zM4.51 8.5c.035.987.176 1.914.399 2.741A13.612 13.612 0 0 1 7.5 10.91V8.5H4.51zm3.99 0v2.409c.91.03 1.783.145 2.591.332.223-.827.364-1.754.4-2.741H8.5zm-3.282 3.696c.12.312.252.604.395.872.552 1.035 1.218 1.65 1.887 1.855V11.91c-.81.03-1.577.13-2.282.287zm.11 2.276a6.696 6.696 0 0 1-.598-.933 8.853 8.853 0 0 1-.481-1.079 8.38 8.38 0 0 0-1.198.49 7.01 7.01 0 0 0 2.276 1.522zm-1.383-2.964A13.36 13.36 0 0 1 3.508 8.5h-2.49a6.963 6.963 0 0 0 1.362 3.675c.47-.258.995-.482 1.565-.667zm6.728 2.964a7.009 7.009 0 0 0 2.275-1.521 8.376 8.376 0 0 0-1.197-.49 8.853 8.853 0 0 1-.481 1.078 6.688 6.688 0 0 1-.597.933zM8.5 11.909v3.014c.67-.204 1.335-.82 1.887-1.855.143-.268.276-.56.395-.872A12.63 12.63 0 0 0 8.5 11.91zm3.555-.401c.57.185 1.095.409 1.565.667A6.963 6.963 0 0 0 14.982 8.5h-2.49a13.36 13.36 0 0 1-.437 3.008zM14.982 7.5a6.963 6.963 0 0 0-1.362-3.675c-.47.258-.995.482-1.565.667.248.92.4 1.938.437 3.008h2.49zM11.27 2.461c.177.334.339.694.482 1.078a8.368 8.368 0 0 0 1.196-.49 7.01 7.01 0 0 0-2.275-1.52c.218.283.418.597.597.932zm-.488 1.343a7.765 7.765 0 0 0-.395-.872C9.835 1.897 9.17 1.282 8.5 1.077V4.09c.81-.03 1.577-.13 2.282-.287z'/%3E%3C/svg%3E");
-        }
-
-        .catalog-choice-btn:not(:disabled):hover .catalog-icon-empty {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' fill='white' class='bi bi-file-earmark-plus' viewBox='0 0 16 16'%3E%3Cpath d='M8 6.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V11a.5.5 0 0 1-1 0V9.5H6a.5.5 0 0 1 0-1h1.5V7a.5.5 0 0 1 .5-.5z'/%3E%3Cpath d='M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z'/%3E%3C/svg%3E");
-        }
-
-        .catalog-choice-btn:not(:disabled):hover .catalog-icon-copy {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' fill='white' class='bi bi-globe2' viewBox='0 0 16 16'%3E%3Cpath d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855-.143.268-.276.56-.395.872.705.157 1.472.257 2.282.287V1.077zM4.249 3.539c.142-.384.304-.744.481-1.078a6.7 6.7 0 0 1 .597-.933A7.01 7.01 0 0 0 3.051 3.05c.362.184.763.349 1.198.49zM3.509 7.5c.036-1.07.188-2.087.436-3.008a9.124 9.124 0 0 1-1.565-.667A6.964 6.964 0 0 0 1.018 7.5h2.49zm1.4-2.741a12.344 12.344 0 0 0-.4 2.741H7.5V5.091c-.91-.03-1.783-.145-2.591-.332zM8.5 5.09V7.5h2.99a12.342 12.342 0 0 0-.399-2.741c-.808.187-1.681.301-2.591.332zM4.51 8.5c.035.987.176 1.914.399 2.741A13.612 13.612 0 0 1 7.5 10.91V8.5H4.51zm3.99 0v2.409c.91.03 1.783.145 2.591.332.223-.827.364-1.754.4-2.741H8.5zm-3.282 3.696c.12.312.252.604.395.872.552 1.035 1.218 1.65 1.887 1.855V11.91c-.81.03-1.577.13-2.282.287zm.11 2.276a6.696 6.696 0 0 1-.598-.933 8.853 8.853 0 0 1-.481-1.079 8.38 8.38 0 0 0-1.198.49 7.01 7.01 0 0 0 2.276 1.522zm-1.383-2.964A13.36 13.36 0 0 1 3.508 8.5h-2.49a6.963 6.963 0 0 0 1.362 3.675c.47-.258.995-.482 1.565-.667zm6.728 2.964a7.009 7.009 0 0 0 2.275-1.521 8.376 8.376 0 0 0-1.197-.49 8.853 8.853 0 0 1-.481 1.078 6.688 6.688 0 0 1-.597.933zM8.5 11.909v3.014c.67-.204 1.335-.82 1.887-1.855.143-.268.276-.56.395-.872A12.63 12.63 0 0 0 8.5 11.91zm3.555-.401c.57.185 1.095.409 1.565.667A6.963 6.963 0 0 0 14.982 8.5h-2.49a13.36 13.36 0 0 1-.437 3.008zM14.982 7.5a6.963 6.963 0 0 0-1.362-3.675c-.47.258-.995.482-1.565.667.248.92.4 1.938.437 3.008h2.49zM11.27 2.461c.177.334.339.694.482 1.078a8.368 8.368 0 0 0 1.196-.49 7.01 7.01 0 0 0-2.275-1.52c.218.283.418.597.597.932zm-.488 1.343a7.765 7.765 0 0 0-.395-.872C9.835 1.897 9.17 1.282 8.5 1.077V4.09c.81-.03 1.577-.13 2.282-.287z'/%3E%3C/svg%3E");
-        }
-
-        .catalog-choice-btn:disabled .catalog-icon-empty,
-        .catalog-choice-btn:disabled .catalog-icon-copy {
-            opacity: 0.5;
-        }
-    </style>
-}
+<CatalogChoiceDialog IsVisible="@showCatalogChoiceDialog"
+                     OnCreateEmpty="OnCreateEmptyCatalogAsync"
+                     OnCopyFromGlobal="OnCopyFromGlobalCatalogAsync"
+                     OnClose="() => showCatalogChoiceDialog = false" />
 
 @code {
     private List<string> tags = [];
-    private List<string> globalTags = [];
     private bool isLoading = true;
     private bool isProcessing;
     private bool showCatalogChoiceDialog;
-    private bool isLoadingGlobalTags;
     private string? errorMessage;
     private string? successMessage;
     private string? googleUserId;
-
-
-    [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Get the current user
-            var context = HttpContextAccessor.HttpContext;
-            var user = await UserAccessor.GetRequiredUserAsync(context!);
-
-            // Retrieve the Google login information
-            var logins = await UserManager.GetLoginsAsync(user);
-            var googleLogin = logins.FirstOrDefault(l => l.LoginProvider == "Google");
-
-            if (googleLogin is null)
-            {
-                errorMessage = "No Google account linked. Please link your Google account to manage tags.";
-                isLoading = false;
-                return;
-            }
-
-            // Use the Google ProviderKey as the ownerId
-            googleUserId = googleLogin.ProviderKey;
-
+            googleUserId = await GoogleUserService.GetGoogleUserIdAsync();
             await LoadTagsAsync();
         }
         catch (Exception ex)
@@ -305,7 +85,7 @@ else
         catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             // Catalog doesn't exist, show choice dialog
-            await ShowCatalogChoiceDialogAsync();
+            showCatalogChoiceDialog = true;
         }
         catch (Exception ex)
         {
@@ -313,154 +93,90 @@ else
         }
     }
 
-    private async Task ShowCatalogChoiceDialogAsync()
-    {
-        showCatalogChoiceDialog = true;
-        isLoadingGlobalTags = true;
-
-        try
-        {
-            // Load global tags (tags with null ownerId)
-            var globalCatalog = await PinsClient.GetTags(null);
-            globalTags = globalCatalog.Tags.ToList();
-        }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            // No global catalog exists, that's fine
-            globalTags = [];
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to load global tags: {ex.Message}";
-            globalTags = [];
-        }
-        finally
-        {
-            isLoadingGlobalTags = false;
-        }
-    }
-
     private async Task OnCreateEmptyCatalogAsync()
     {
-        isProcessing = true;
-        errorMessage = null;
-        successMessage = null;
-
-        try
-        {
-            await PinsClient.DefineTags(googleUserId!, new TagsDto());
-            tags = [];
-            showCatalogChoiceDialog = false;
-            successMessage = "Your empty tag catalog has been created successfully.";
-        }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            // Catalog already exists, this is fine
-            showCatalogChoiceDialog = false;
-            successMessage = "Your tag catalog is already set up and ready to use.";
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to create tag catalog: {ex.Message}";
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
-
-    private async Task OnCopyFromGlobalCatalogAsync()
-    {
-        isProcessing = true;
-        errorMessage = null;
-        successMessage = null;
-
-        try
-        {
-            await PinsClient.DefineTags(googleUserId!, new TagsDto { Tags = globalTags });
-            tags = globalTags.ToList();
-            showCatalogChoiceDialog = false;
-            successMessage = $"Your tag catalog has been created with {globalTags.Count} tag{(globalTags.Count != 1 ? "s" : "")} from the global catalog.";
-        }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            // Catalog already exists, this is fine
-            showCatalogChoiceDialog = false;
-            successMessage = "Your tag catalog is already set up and ready to use.";
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to create tag catalog: {ex.Message}";
-        }
-        finally
-        {
-            isProcessing = false;
-        }
-    }
-
-    private async Task OnAddTagAsync()
-    {
-        if (string.IsNullOrWhiteSpace(Input.TagName))
-        {
-            return;
-        }
-
-        isProcessing = true;
-        errorMessage = null;
-        successMessage = null;
-
-        try
-        {
-            var tagToAdd = Input.TagName.Trim();
-
-            if (tags.Any(t => t.Equals(tagToAdd, StringComparison.OrdinalIgnoreCase)))
+        await ExecuteApiOperationAsync(
+            async () =>
             {
-                errorMessage = $"Tag '{tagToAdd}' already exists in your catalog.";
-                return;
-            }
+                await PinsClient.DefineTags(googleUserId!, new TagsDto());
+                tags = [];
+                return "Your empty tag catalog has been created successfully.";
+            },
+            conflictMessage: "Your tag catalog is already set up and ready to use."
+        );
+    }
 
-            await PinsClient.AddTag(googleUserId!, new TagDto { Tag = tagToAdd });
-            tags.Add(tagToAdd);
-            successMessage = $"Tag '{tagToAdd}' added successfully.";
-            Input.TagName = string.Empty;
-        }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            errorMessage = "Tag catalog not found. Please refresh the page.";
-        }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
-            errorMessage = "Invalid tag name or tag already exists.";
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to add tag: {ex.Message}";
-        }
-        finally
-        {
-            isProcessing = false;
-        }
+    private async Task OnCopyFromGlobalCatalogAsync(List<string> globalTags)
+    {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.DefineTags(googleUserId!, new TagsDto { Tags = globalTags });
+                tags = globalTags.ToList();
+                return $"Your tag catalog has been created with {globalTags.Count} tag{(globalTags.Count != 1 ? "s" : "")} from the global catalog.";
+            },
+            conflictMessage: "Your tag catalog is already set up and ready to use."
+        );
+    }
+
+    private async Task OnAddTagAsync(string tagName)
+    {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.AddTag(googleUserId!, new TagDto { Tag = tagName });
+                tags.Add(tagName);
+                return $"Tag '{tagName}' added successfully.";
+            },
+            notFoundMessage: "Tag catalog not found. Please refresh the page.",
+            badRequestMessage: "Invalid tag name or tag already exists."
+        );
     }
 
     private async Task OnRemoveTagAsync(string tag)
     {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.RemoveTag(googleUserId!, new TagDto { Tag = tag });
+                tags.Remove(tag);
+                return $"Tag '{tag}' removed successfully.";
+            },
+            notFoundMessage: "Tag catalog not found. Please refresh the page."
+        );
+    }
+
+    private async Task ExecuteApiOperationAsync(
+        Func<Task<string>> operation,
+        string? notFoundMessage = null,
+        string? badRequestMessage = null,
+        string? conflictMessage = null,
+        Action? onConflict = null)
+    {
         isProcessing = true;
         errorMessage = null;
         successMessage = null;
 
         try
         {
-            await PinsClient.RemoveTag(googleUserId!, new TagDto { Tag = tag });
-            tags.Remove(tag);
-            successMessage = $"Tag '{tag}' removed successfully.";
+            successMessage = await operation();
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound && notFoundMessage != null)
         {
-            errorMessage = "Tag catalog not found. Please refresh the page.";
+            errorMessage = notFoundMessage;
+        }
+        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest && badRequestMessage != null)
+        {
+            errorMessage = badRequestMessage;
+        }
+        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict && conflictMessage != null)
+        {
+            onConflict?.Invoke();
+            successMessage = conflictMessage;
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to remove tag: {ex.Message}";
+            errorMessage = $"Operation failed: {ex.Message}";
         }
         finally
         {
@@ -477,13 +193,5 @@ else
     {
         successMessage = null;
     }
-
-    private sealed record InputModel
-    {
-        [Required(ErrorMessage = "Tag name is required.")]
-        [StringLength(50, MinimumLength = 1, ErrorMessage = "Tag name must be between 1 and 50 characters.")]
-        public string? TagName { get; set; }
-    }
-
 }
 

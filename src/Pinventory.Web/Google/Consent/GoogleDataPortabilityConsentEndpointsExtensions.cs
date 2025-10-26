@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Pinventory.Google.Tokens;
 using Pinventory.Identity.Tokens;
 
-namespace Pinventory.Web.Google;
+namespace Pinventory.Web.Google.Consent;
 
 public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
 {

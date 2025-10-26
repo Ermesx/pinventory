@@ -1,6 +1,8 @@
 ﻿@page "/import"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Options
+@using Pinventory.Web.Components.Shared
+@using static Pinventory.Web.Components.Shared.AlertMessage
 @attribute [Authorize]
 
 @inject IOptions<PinventoryOptions> Options
@@ -11,16 +13,16 @@
 
 @if (consentDenied)
 {
-    <div class="alert alert-warning" role="alert">
+    <AlertMessage Type="AlertType.Warning" OnDismiss="DismissConsentDenied">
         You denied access to the required Google permission. We cannot import your starred places without it.
-    </div>
+    </AlertMessage>
 }
+
 @if (!string.IsNullOrEmpty(consentError))
 {
-    <div class="alert alert-danger" role="alert">
-        Something went wrong during Google consent (error: @consentError). 
-        Please try again.
-    </div>
+    <AlertMessage Type="AlertType.Error" OnDismiss="DismissConsentError">
+        Something went wrong during Google consent (error: @consentError). Please try again.
+    </AlertMessage>
 }
 
 <p>
@@ -48,5 +50,15 @@
 
     [SupplyParameterFromQuery]
     private string? consentError { get; set; }
+
+    private void DismissConsentDenied()
+    {
+        consentDenied = false;
+    }
+
+    private void DismissConsentError()
+    {
+        consentError = null;
+    }
 }
 
