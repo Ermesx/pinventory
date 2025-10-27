@@ -11,6 +11,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Application.Tags;
 
+// dbContext.SaveChangesAsync() is not use because Wolverine handles transactional outbox 
 public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) : ApplicationHandler(bus)
 {
     public async Task<Result<Guid>> Handle(DefineTagCatalogCommand command)
@@ -29,7 +30,6 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
         }
 
         await dbContext.TagCatalogs.AddAsync(tagsCatalog);
-        await dbContext.SaveChangesAsync();
         await RaiseEvents(tagsCatalog);
 
         return Result.Ok(tagsCatalog.Id);
@@ -49,7 +49,6 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(result.Errors);
         }
 
-        await dbContext.SaveChangesAsync();
         await RaiseEvents(tagCatalog);
 
         return Result.Ok();
@@ -69,7 +68,6 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(result.Errors);
         }
 
-        await dbContext.SaveChangesAsync();
         await RaiseEvents(tagCatalog);
 
         return Result.Ok();

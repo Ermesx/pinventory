@@ -4,7 +4,7 @@ namespace Pinventory.Testing.Abstractions;
 
 public abstract class ApplicationWithDatabase<TDbContext> where TDbContext : DbContext
 {
-    public TDbContext DbContext { get; protected set; } = null!;
+    public TDbContext DbContext { get; private set; } = null!;
 
     protected async Task InitializeDatabaseAsync(TDbContext dbContext)
     {

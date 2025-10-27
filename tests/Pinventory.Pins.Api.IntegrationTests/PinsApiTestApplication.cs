@@ -27,6 +27,14 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
     public IServiceProvider Services => _factory.Services;
     public HttpClient Client { get; private set; } = null!;
 
+    public async ValueTask DisposeAsync()
+    {
+        Client.Dispose();
+        await DbContext.DisposeAsync();
+        _scope.Dispose();
+        await _factory.DisposeAsync();
+    }
+
     public async Task InitializeAsync()
     {
         _factory = new WebApplicationFactory<Program>()
@@ -44,6 +52,7 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
 
                     // Disable Wolverine persistence to enable db context migration
                     services.DisableAllWolverineMessagePersistence();
+                    services.DisableAllExternalWolverineTransports();
                 });
             });
 
@@ -53,13 +62,5 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
         var dbContext = _scope.ServiceProvider.GetRequiredService<PinsDbContext>();
 
         await InitializeDatabaseAsync(dbContext);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        Client.Dispose();
-        await DbContext.DisposeAsync();
-        _scope.Dispose();
-        await _factory.DisposeAsync();
     }
 }
