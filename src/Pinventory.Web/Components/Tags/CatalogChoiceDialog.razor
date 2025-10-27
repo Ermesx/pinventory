@@ -1,5 +1,8 @@
-﻿@using Pinventory.Web.ApiClients.Pins.GeneratedCode
-
+﻿@using System.Net
+@using Humanizer
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode
+@using Pinventory.Web.Components.Shared
+@using Refit
 @inject IPinsHttpClient PinsClient
 
 @if (IsVisible)
@@ -11,9 +14,13 @@
                     <h5 class="modal-title">Create Your Tag Catalog</h5>
                 </div>
                 <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <AlertMessage Message="@errorMessage" Type="AlertMessage.AlertType.Error" OnDismiss="() => errorMessage = null"/>
+                    }
                     <p class="mb-3">You don't have a tag catalog yet. How would you like to create it?</p>
 
-                    @if (isLoadingGlobalTags)
+                    @if (isLoading)
                     {
                         <div class="d-flex justify-content-center my-3">
                             <div class="spinner-border text-primary" role="status">
@@ -47,7 +54,9 @@
                                         <small class="text-muted catalog-choice-description">
                                             @if (globalTags.Count > 0)
                                             {
-                                                <text>Start with @globalTags.Count predefined tag@(globalTags.Count != 1 ? "s" : "") from the global catalog.</text>
+                                                <text>
+                                                    Start with @("predefined tag".ToQuantity(globalTags.Count)) from the
+                                                    global catalog.</text>
                                             }
                                             else
                                             {
@@ -90,11 +99,12 @@
     public EventCallback OnClose { get; set; }
 
     private List<string> globalTags = [];
-    private bool isLoadingGlobalTags;
+    private bool isLoading;
+    private string? errorMessage;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible && globalTags.Count == 0 && !isLoadingGlobalTags)
+        if (IsVisible && globalTags.Count == 0 && !isLoading)
         {
             await LoadGlobalTagsAsync();
         }
@@ -102,24 +112,27 @@
 
     private async Task LoadGlobalTagsAsync()
     {
-        isLoadingGlobalTags = true;
+        isLoading = true;
 
         try
         {
+            // empty ownerId returns global catalog
             var globalCatalog = await PinsClient.GetTags(string.Empty);
             globalTags = globalCatalog.Tags.ToList();
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            errorMessage = "Global tag catalog not found.";
             globalTags = [];
         }
         catch (Exception ex)
         {
+            errorMessage = $"Failed to load global tags: {ex.Message}";
             globalTags = [];
         }
         finally
         {
-            isLoadingGlobalTags = false;
+            isLoading = false;
         }
     }
 

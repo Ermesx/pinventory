@@ -1,12 +1,14 @@
 ﻿@page "/tags"
-@using Microsoft.AspNetCore.Authorization
+@using System.Net
+@using Humanizer
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
-@using Pinventory.Web.Components.Tags
 @using Pinventory.Web.Components.Shared
+@using Pinventory.Web.Components.Tags
 @using Pinventory.Web.Google
-@using static Pinventory.Web.Components.Shared.AlertMessage
-@attribute [Authorize]
+@using Refit
+@using static Shared.AlertMessage
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
 
 @inject IPinsHttpClient PinsClient
@@ -82,7 +84,7 @@ else
             var catalog = await PinsClient.GetTags(googleUserId!);
             tags = catalog.Tags.ToList();
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             // Catalog doesn't exist, show choice dialog
             showCatalogChoiceDialog = true;
@@ -113,7 +115,7 @@ else
             {
                 await PinsClient.DefineTags(googleUserId!, new TagsDto { Tags = globalTags });
                 tags = globalTags.ToList();
-                return $"Your tag catalog has been created with {globalTags.Count} tag{(globalTags.Count != 1 ? "s" : "")} from the global catalog.";
+                return $"Your tag catalog has been created with {globalTags.Count} {"tag".ToQuantity(globalTags.Count)} from the global catalog.";
             },
             conflictMessage: "Your tag catalog is already set up and ready to use."
         );
@@ -161,15 +163,15 @@ else
         {
             successMessage = await operation();
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound && notFoundMessage != null)
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound && notFoundMessage != null)
         {
             errorMessage = notFoundMessage;
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest && badRequestMessage != null)
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && badRequestMessage != null)
         {
             errorMessage = badRequestMessage;
         }
-        catch (Refit.ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict && conflictMessage != null)
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict && conflictMessage != null)
         {
             onConflict?.Invoke();
             successMessage = conflictMessage;
