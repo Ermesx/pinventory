@@ -189,7 +189,7 @@ User secrets (recommended during local development):
 dotnet user-secrets --project src/Pinventory.Web set "Authentication:Google:ClientId" "<your-client-id>"
 dotnet user-secrets --project src/Pinventory.Web set "Authentication:Google:ClientSecret" "<your-client-secret>"
 dotnet user-secrets --project src/Pinventory.Web set "Pinventory:ProjectId" "<your-project-id>"
-dotnet user-secrets --project src/Pinventory.Web set "Pinventory:AdminId" "<your-project-id>"
+dotnet user-secrets --project src/Pinventory.Web set "Pinventory:AdminId" "<your-google-user-id>"
 ```
 
 ---
