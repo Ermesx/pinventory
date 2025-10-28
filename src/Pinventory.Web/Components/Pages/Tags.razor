@@ -115,7 +115,7 @@ else
             {
                 await PinsClient.DefineTags(googleUserId!, new TagsDto { Tags = globalTags });
                 tags = globalTags.ToList();
-                return $"Your tag catalog has been created with {globalTags.Count} {"tag".ToQuantity(globalTags.Count)} from the global catalog.";
+                return $"Your tag catalog has been created with {"tag".ToQuantity(globalTags.Count)} from the global catalog.";
             },
             conflictMessage: "Your tag catalog is already set up and ready to use."
         );
