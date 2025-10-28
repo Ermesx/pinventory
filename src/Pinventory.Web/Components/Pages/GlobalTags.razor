@@ -65,7 +65,7 @@ else
 
             await LoadTagsAsync();
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
             errorMessage = $"Failed to initialize: {ex.Message}";
         }
@@ -125,7 +125,7 @@ else
         await ExecuteApiOperationAsync(
             async () =>
             {
-                await PinsClient.RemoveTag(String.Empty, new TagDto { Tag = tag });
+                await PinsClient.RemoveTag(string.Empty, new TagDto { Tag = tag });
                 tags.Remove(tag);
                 return $"Tag '{tag}' removed successfully.";
             },
