@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Pinventory.Google.Tokens;
 using Pinventory.Identity.Tokens;
 
-namespace Pinventory.Web.Google;
+namespace Pinventory.Web.Google.Consent;
 
 public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
 {
@@ -37,7 +37,8 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
             HttpContext context,
             [FromServices] IGoogleAuthStateService stateService,
             [FromServices] GoogleDataPortabilityClient client,
-            [FromServices] TokenService tokenService) =>
+            [FromServices] TokenService tokenService,
+            CancellationToken cancellationToken) =>
         {
             var state = context.Request.Query["state"].ToString();
             var stateValidation = stateService.ValidateAndClearState(state);
@@ -73,7 +74,7 @@ public static class GoogleDataPortabilityConsentEndpointsRouteBuilderExtensions
             try
             {
                 var redirectUri = CreateRedirectUri(context);
-                tokenResponse = await client.ExchangeCodeForTokenAsync(code, redirectUri);
+                tokenResponse = await client.ExchangeCodeForTokenAsync(code, redirectUri, cancellationToken);
             }
             catch (TokenResponseException)
             {

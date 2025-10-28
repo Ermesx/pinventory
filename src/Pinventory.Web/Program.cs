@@ -2,14 +2,17 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using Pinventory.Google;
 using Pinventory.Identity;
 using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
-using Pinventory.Web;
 using Pinventory.Web.ApiClients;
+using Pinventory.Web.Authorization;
 using Pinventory.Web.Components;
 using Pinventory.Web.Google;
+using Pinventory.Web.Google.Authentication;
+using Pinventory.Web.Google.Consent;
 using Pinventory.Web.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,10 +38,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.Requi
     .AddDefaultTokenProviders();
 
 builder.AddGoogleAuthentication();
-builder.Services.AddOptions<PinventoryOptions>()
-    .BindConfiguration(PinventoryOptions.Section, options => options.ErrorOnUnknownConfiguration = true)
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+builder.Services.AddGooglePlatformOptions();
+builder.Services.AddPinventoryOptions();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
@@ -46,9 +47,13 @@ builder.Services.AddSingleton<GoogleDataPortabilityClient>();
 builder.Services.AddSingleton<IGoogleAuthStateService, GoogleAuthStateService>();
 
 builder.Services.AddTransient<IdTokenHttpMessageHandler>();
-builder.Services.AddTransient<TokenService>();
+builder.Services.AddScoped<TokenService>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
+
+builder.Services.AddScoped<IGoogleUserService, GoogleUserService>();
+builder.Services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
 
 builder.Services.AddPinventoryApiHttpClients();
 

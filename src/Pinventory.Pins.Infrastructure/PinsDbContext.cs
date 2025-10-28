@@ -3,13 +3,12 @@
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Tags;
 
-using Wolverine.EntityFrameworkCore;
-
 namespace Pinventory.Pins.Infrastructure;
 
 public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbContext(options)
 {
     public DbSet<Pin> Pins => Set<Pin>();
+
     /*public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
     public DbSet<TaggingJob> TaggingJobs => Set<TaggingJob>();
     public DbSet<VerificationJob> VerificationJobs => Set<VerificationJob>();*/
@@ -24,7 +23,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.OwnerId).IsRequired();
-            
+
             entity.Property(x => x.PlaceId)
                 .HasConversion(id => id.Id, id => new GooglePlaceId(id))
                 .IsRequired();
@@ -107,9 +106,5 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         //     entity.Property(x => x.State).IsRequired();
         //     entity.Property(x => x.Scope).IsRequired();
         // });
-
-
-        // Wolverine
-        builder.MapWolverineEnvelopeStorage();
     }
 }

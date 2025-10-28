@@ -1,0 +1,52 @@
+﻿@if (HasContent)
+{
+    <div class="alert @AlertClass alert-dismissible fade show" role="alert">
+        @if (Type == AlertType.Error)
+        {
+            <strong>Error:</strong>
+        }
+        @if (ChildContent != null)
+        {
+            @ChildContent
+        }
+        else
+        {
+            @Message
+        }
+        <button type="button" class="btn-close" @onclick="OnDismiss" aria-label="Close"></button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public AlertType Type { get; set; } = AlertType.Success;
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    private bool HasContent => ChildContent != null || !string.IsNullOrEmpty(Message);
+
+    private string AlertClass => Type switch
+    {
+        AlertType.Error => "alert-danger",
+        AlertType.Success => "alert-success",
+        AlertType.Warning => "alert-warning",
+        AlertType.Info => "alert-info",
+        _ => "alert-info"
+    };
+
+    public enum AlertType
+    {
+        Error,
+        Success,
+        Warning,
+        Info
+    }
+}
+

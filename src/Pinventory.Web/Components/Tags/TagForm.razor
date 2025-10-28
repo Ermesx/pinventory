@@ -1,0 +1,76 @@
+﻿@using System.ComponentModel.DataAnnotations
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Add New Tag</h5>
+    </div>
+    <div class="card-body">
+        <EditForm Model="Input" FormName="addTag" OnValidSubmit="HandleSubmit" method="post">
+            <DataAnnotationsValidator/>
+            <div class="input-group">
+                <InputText @bind-Value="Input.TagName"
+                           class="form-control"
+                           placeholder="Enter tag name"
+                           disabled="@IsProcessing"/>
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@IsProcessing">
+                    @if (IsProcessing)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    Add Tag
+                </button>
+            </div>
+            <ValidationMessage For="() => Input.TagName" class="text-danger"/>
+            @if (!string.IsNullOrEmpty(duplicateError))
+            {
+                <div class="text-danger small mt-1">@duplicateError</div>
+            }
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsProcessing { get; set; }
+
+    [Parameter]
+    public List<string> Tags { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnSubmit { get; set; }
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private string? duplicateError;
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(Input.TagName))
+        {
+            return;
+        }
+
+        var tagName = Input.TagName.Trim();
+
+        // Check for duplicates
+        if (Tags.Any(tag => tag.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
+        {
+            duplicateError = $"Tag '{tagName}' already exists in your catalog.";
+            return;
+        }
+
+        duplicateError = null;
+        await OnSubmit.InvokeAsync(tagName);
+        Input.TagName = string.Empty;
+    }
+
+    private sealed record InputModel
+    {
+        [Required(ErrorMessage = "Tag name is required.")]
+        [StringLength(50, MinimumLength = 1, ErrorMessage = "Tag name must be between 1 and 50 characters.")]
+        public string? TagName { get; set; }
+    }
+}
+

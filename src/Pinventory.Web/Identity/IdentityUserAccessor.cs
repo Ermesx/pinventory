@@ -4,8 +4,6 @@ using Pinventory.Identity;
 
 namespace Pinventory.Web.Identity;
 
-
-
 public sealed class IdentityUserAccessor(UserManager<User> userManager, IdentityRedirectManager redirectManager)
 {
     public async Task<User> GetRequiredUserAsync(HttpContext context)

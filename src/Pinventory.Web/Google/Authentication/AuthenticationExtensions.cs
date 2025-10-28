@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity;
 
 using Pinventory.Google;
 
-namespace Pinventory.Web.Google;
+namespace Pinventory.Web.Google.Authentication;
 
-public static class Extensions
+public static class AuthenticationExtensions
 {
     public static TBuilder AddGoogleAuthentication<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {

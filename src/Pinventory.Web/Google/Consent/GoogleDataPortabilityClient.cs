@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Pinventory.Google;
 using Pinventory.Google.Configuration;
 
-namespace Pinventory.Web.Google;
+namespace Pinventory.Web.Google.Consent;
 
 public sealed class GoogleDataPortabilityClient(IOptions<GoogleAuthOptions> options, ILogger<GoogleDataPortabilityClient> logger) : IDisposable
 {

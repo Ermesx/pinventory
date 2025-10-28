@@ -33,6 +33,7 @@ public class TagCatalogHandlerTests
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldNotBe(Guid.Empty);
 
+        await dbContext.SaveChangesAsync();
         var catalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         catalog.ShouldNotBeNull();
         catalog.Id.ShouldBe(result.Value);
@@ -58,6 +59,7 @@ public class TagCatalogHandlerTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
+        await dbContext.SaveChangesAsync();
         var catalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == null);
         catalog.ShouldNotBeNull();
         catalog.OwnerId.ShouldBeNull();
@@ -108,6 +110,7 @@ public class TagCatalogHandlerTests
         // So this should actually succeed with only "valid" tag
         result.IsSuccess.ShouldBeTrue();
 
+        await dbContext.SaveChangesAsync();
         var catalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         catalog.ShouldNotBeNull();
         catalog.Tags.Select(t => t.Value).ShouldBe(new[] { "valid" });

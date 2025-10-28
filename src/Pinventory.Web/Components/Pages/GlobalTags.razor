@@ -1,0 +1,185 @@
+﻿@page "/global-tags"
+@using System.Net
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
+@using Pinventory.Web.Authorization
+@using Pinventory.Web.Components.Shared
+@using Pinventory.Web.Components.Tags
+@using Refit
+@using static Shared.AlertMessage
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+
+@inject IPinsHttpClient PinsClient
+@inject IAdminAuthorizationService AdminAuthorizationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Global Tags</PageTitle>
+
+<h1>Manage Global Tags</h1>
+
+<AlertMessage Message="@errorMessage" Type="AlertType.Error" OnDismiss="DismissError"/>
+<AlertMessage Message="@successMessage" Type="AlertType.Success" OnDismiss="DismissSuccess"/>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-xl-8">
+            <p class="text-muted">
+                Manage global tag catalog. Tags can be used to prepopulate personal tag catalogs.
+            </p>
+
+            <TagForm Tags="@tags" IsProcessing="@isProcessing" OnSubmit="OnAddTagAsync"/>
+
+            <TagList Tags="@tags" IsProcessing="@isProcessing" OnRemoveTag="OnRemoveTagAsync" IsGlobal="true"/>
+
+        </div>
+    </div>
+}
+
+@code {
+    private List<string> tags = [];
+    private bool isLoading = true;
+    private bool isProcessing;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var isAdmin = await AdminAuthorizationService.IsCurrentUserAdminAsync();
+            if (!isAdmin)
+            {
+                NavigationManager.NavigateTo("/?error=access-denied", forceLoad: true);
+                return;
+            }
+
+            await LoadTagsAsync();
+        }
+        catch (ApiException ex)
+        {
+            errorMessage = $"Failed to initialize: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadTagsAsync()
+    {
+        try
+        {
+            var catalog = await PinsClient.GetTags(string.Empty);
+            tags = catalog.Tags.ToList();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // Catalog doesn't exist
+            await CreateEmptyCatalogAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load tags: {ex.Message}";
+        }
+    }
+
+    private async Task CreateEmptyCatalogAsync()
+    {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.DefineTags(string.Empty, new TagsDto());
+                tags = [];
+                return "Global empty tag catalog has been created successfully.";
+            },
+            conflictMessage: "Global tag catalog is already set up and ready to use."
+        );
+    }
+
+    private async Task OnAddTagAsync(string tagName)
+    {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.AddTag(string.Empty, new TagDto { Tag = tagName });
+                tags.Add(tagName);
+                return $"Tag '{tagName}' added successfully.";
+            },
+            notFoundMessage: "Tag catalog not found. Please refresh the page.",
+            badRequestMessage: "Invalid tag name or tag already exists."
+        );
+    }
+
+    private async Task OnRemoveTagAsync(string tag)
+    {
+        await ExecuteApiOperationAsync(
+            async () =>
+            {
+                await PinsClient.RemoveTag(string.Empty, new TagDto { Tag = tag });
+                tags.Remove(tag);
+                return $"Tag '{tag}' removed successfully.";
+            },
+            notFoundMessage: "Tag catalog not found. Please refresh the page."
+        );
+    }
+
+    private async Task ExecuteApiOperationAsync(
+        Func<Task<string>> operation,
+        string? notFoundMessage = null,
+        string? badRequestMessage = null,
+        string? conflictMessage = null,
+        Action? onConflict = null)
+    {
+        isProcessing = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            successMessage = await operation();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound && notFoundMessage != null)
+        {
+            errorMessage = notFoundMessage;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && badRequestMessage != null)
+        {
+            errorMessage = badRequestMessage;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict && conflictMessage != null)
+        {
+            onConflict?.Invoke();
+            successMessage = conflictMessage;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Operation failed: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        errorMessage = null;
+    }
+
+    private void DismissSuccess()
+    {
+        successMessage = null;
+    }
+
+}
+

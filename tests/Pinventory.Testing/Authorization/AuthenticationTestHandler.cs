@@ -11,19 +11,21 @@ public class AuthenticationTestHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    ISystemClock clock)
+    ISystemClock clock,
+    CurrentUserIdProvider currentUserIdProvider)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder, clock)
 {
     public const string AuthenticationScheme = "TestScheme";
     public const string TestUserId = "test-user-id";
+    public const string AdminUserId = "admin-user-id";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        var userId = currentUserIdProvider.CurrentUserId;
+
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, "Test User"),
-            new Claim(ClaimTypes.NameIdentifier, TestUserId),
-            new Claim("sub", TestUserId)
+            new Claim(ClaimTypes.Name, "Test User"), new Claim(ClaimTypes.NameIdentifier, userId), new Claim("sub", userId)
         };
 
         var identity = new ClaimsIdentity(claims, AuthenticationScheme);

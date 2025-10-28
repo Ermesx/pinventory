@@ -4,14 +4,14 @@ namespace Pinventory.Testing.Abstractions;
 
 public abstract class ApplicationWithDatabase<TDbContext> where TDbContext : DbContext
 {
-    public TDbContext DbContext { get; protected set; } = null!;
-    
+    public TDbContext DbContext { get; private set; } = null!;
+
     protected async Task InitializeDatabaseAsync(TDbContext dbContext)
     {
         DbContext = dbContext;
         await DbContext.Database.EnsureCreatedAsync();
     }
-    
+
     public async Task ResetDatabaseAsync()
     {
         // Clear the change tracker first to detach all entities

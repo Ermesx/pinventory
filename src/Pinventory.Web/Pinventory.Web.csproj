@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Apis.Auth" />
+    <PackageReference Include="Humanizer"/>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google"/>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />

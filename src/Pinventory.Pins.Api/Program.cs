@@ -1,6 +1,6 @@
-using JasperFx.Resources;
+using JasperFx;
+using JasperFx.CodeGeneration;
 
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
@@ -18,19 +18,21 @@ builder.AddApiDefaults();
 
 // Add services to the container.
 
-builder.Services.AddSingleton<IAuthorizationHandler, OwnerMatchesUserAuthorizationHandler>();
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("OwnerMatchesUser", policy => policy.Requirements.Add(new OwnerMatchesUserRequirement()));
-
 if (!OpenApi.IsGenerating)
 {
     var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");
 
-    builder.Services.AddDbContext<PinsDbContext>(options =>
-        options.UseNpgsql(connectionString), optionsLifetime: ServiceLifetime.Singleton);
+    builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => options.UseNpgsql(connectionString));
 
     builder.Host.UseWolverine(options =>
     {
+        options.Services.AddJasperFx(x =>
+        {
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.AssertAllPreGeneratedTypesExist = true;
+        });
+
         options.UseMemoryPackSerialization();
 
         options.UseEntityFrameworkCoreTransactions();
@@ -38,7 +40,6 @@ if (!OpenApi.IsGenerating)
 
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
-            .AutoProvision()
             .UseConventionalRouting();
 
         options.Policies.UseDurableOutboxOnAllSendingEndpoints();
@@ -46,8 +47,6 @@ if (!OpenApi.IsGenerating)
         options.Policies.UseDurableLocalQueues();
         options.Policies.ConventionalLocalRoutingIsAdditive();
         options.Policies.AutoApplyTransactions();
-
-        options.Services.AddResourceSetupOnStartup();
     });
 }
 
@@ -61,4 +60,4 @@ app.MapTagsEndpoints();
 
 app.Run();
 
-public partial class Program { }
+public partial class Program;

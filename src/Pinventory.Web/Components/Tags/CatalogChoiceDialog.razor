@@ -1,0 +1,151 @@
+﻿@using System.Net
+@using Humanizer
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode
+@using Pinventory.Web.Components.Shared
+@using Refit
+@inject IPinsHttpClient PinsClient
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Your Tag Catalog</h5>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <AlertMessage Message="@errorMessage" Type="AlertMessage.AlertType.Error" OnDismiss="() => errorMessage = null"/>
+                    }
+                    <p class="mb-3">You don't have a tag catalog yet. How would you like to create it?</p>
+
+                    @if (isLoading)
+                    {
+                        <div class="d-flex justify-content-center my-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading global tags...</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-3">
+                            <button type="button"
+                                    class="btn btn-outline-primary text-start p-3 catalog-choice-btn"
+                                    @onclick="HandleCreateEmpty">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="catalog-icon catalog-icon-empty"></div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Start with an empty catalog</h6>
+                                        <small class="text-muted catalog-choice-description">Create a new catalog and add your own tags from scratch.</small>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-outline-primary text-start p-3 catalog-choice-btn"
+                                    @onclick="HandleCopyFromGlobal"
+                                    disabled="@(globalTags.Count == 0)">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="catalog-icon catalog-icon-copy"></div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Copy from global catalog</h6>
+                                        <small class="text-muted catalog-choice-description">
+                                            @if (globalTags.Count > 0)
+                                            {
+                                                <text>
+                                                    Start with @("predefined tag".ToQuantity(globalTags.Count)) from the
+                                                    global catalog.</text>
+                                            }
+                                            else
+                                            {
+                                                <text>No global tags available at the moment.</text>
+                                            }
+                                        </small>
+                                        @if (globalTags.Count > 0)
+                                        {
+                                            <div class="mt-3 pt-2 border-top">
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach (var tag in globalTags.OrderBy(t => t))
+                                                    {
+                                                        <span class="badge bg-secondary fs-6 py-2 px-3">@tag</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback OnCreateEmpty { get; set; }
+
+    [Parameter]
+    public EventCallback<List<string>> OnCopyFromGlobal { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private List<string> globalTags = [];
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && globalTags.Count == 0 && !isLoading)
+        {
+            await LoadGlobalTagsAsync();
+        }
+    }
+
+    private async Task LoadGlobalTagsAsync()
+    {
+        isLoading = true;
+
+        try
+        {
+            // empty ownerId returns global catalog
+            var globalCatalog = await PinsClient.GetTags(string.Empty);
+            globalTags = globalCatalog.Tags.ToList();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            errorMessage = "Global tag catalog not found.";
+            globalTags = [];
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load global tags: {ex.Message}";
+            globalTags = [];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleCreateEmpty()
+    {
+        await OnCreateEmpty.InvokeAsync();
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleCopyFromGlobal()
+    {
+        await OnCopyFromGlobal.InvokeAsync(globalTags);
+        await OnClose.InvokeAsync();
+    }
+}
+
