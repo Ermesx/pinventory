@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Grpc.Tools" />
     <ProjectReference Include="..\Pinventory.MigrationService\Pinventory.MigrationService.csproj" />
     <ProjectReference Include="..\Pinventory.Pins.Import.Worker\Pinventory.Pins.Import.Worker.csproj" />
     <ProjectReference Include="..\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
