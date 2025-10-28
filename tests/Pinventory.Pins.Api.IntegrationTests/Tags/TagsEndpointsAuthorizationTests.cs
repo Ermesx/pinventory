@@ -178,6 +178,7 @@ public class TagsEndpointsAuthorizationTests
         var updatedCatalog = await App.DbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == null);
         updatedCatalog.ShouldNotBeNull();
         updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["restaurant", "bar"], ignoreOrder: true);
+        request.Dispose();
     }
 
     [Test]
@@ -199,6 +200,7 @@ public class TagsEndpointsAuthorizationTests
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        request.Dispose();
     }
 
     [Test]
@@ -221,6 +223,7 @@ public class TagsEndpointsAuthorizationTests
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        request.Dispose();
     }
 
     [Test]

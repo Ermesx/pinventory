@@ -252,6 +252,7 @@ public class TagsEndpointsTests
         var updatedCatalog = await App.DbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
         updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["restaurant", "bar"], ignoreOrder: true);
+        request.Dispose();
     }
 
     [Test]
@@ -267,6 +268,7 @@ public class TagsEndpointsTests
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        request.Dispose();
     }
 
     [Test]
@@ -289,6 +291,7 @@ public class TagsEndpointsTests
 
         // Assert - RemoveTag is idempotent, returns NoContent even if tag doesn't exist
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        request.Dispose();
     }
 
 
