@@ -1,25 +1,25 @@
-﻿@page "/tags"
+﻿@page "/global-tags"
 @using System.Net
-@using Humanizer
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
+@using Pinventory.Web.Authorization
 @using Pinventory.Web.Components.Shared
 @using Pinventory.Web.Components.Tags
-@using Pinventory.Web.Google
 @using Refit
 @using static Shared.AlertMessage
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
 
 @inject IPinsHttpClient PinsClient
-@inject IGoogleUserService GoogleUserService
+@inject IAdminAuthorizationService AdminAuthorizationService
+@inject NavigationManager NavigationManager
 
-<PageTitle>Manage Tags</PageTitle>
+<PageTitle>Manage Global Tags</PageTitle>
 
-<h1>Manage Tags</h1>
+<h1>Manage Global Tags</h1>
 
-<AlertMessage Message="@errorMessage" Type="AlertType.Error" OnDismiss="DismissError" />
-<AlertMessage Message="@successMessage" Type="AlertType.Success" OnDismiss="DismissSuccess" />
+<AlertMessage Message="@errorMessage" Type="AlertType.Error" OnDismiss="DismissError"/>
+<AlertMessage Message="@successMessage" Type="AlertType.Success" OnDismiss="DismissSuccess"/>
 
 @if (isLoading)
 {
@@ -34,37 +34,35 @@ else
     <div class="row">
         <div class="col-xl-8">
             <p class="text-muted">
-                Manage your personal tag catalog. Tags can be used to categorize your starred places.
+                Manage global tag catalog. Tags can be used to prepopulate personal tag catalogs.
             </p>
 
-            <TagForm IsProcessing="@isProcessing" Tags="@tags" OnSubmit="OnAddTagAsync"/>
+            <TagForm Tags="@tags" IsProcessing="@isProcessing" OnSubmit="OnAddTagAsync"/>
 
-            <TagList Tags="@tags" IsProcessing="@isProcessing" OnRemoveTag="OnRemoveTagAsync" />
+            <TagList Tags="@tags" IsProcessing="@isProcessing" OnRemoveTag="OnRemoveTagAsync" IsGlobal="true"/>
 
-            <BackgroundProcessingInfo />
         </div>
     </div>
 }
-
-<CatalogChoiceDialog IsVisible="@showCatalogChoiceDialog"
-                     OnCreateEmpty="OnCreateEmptyCatalogAsync"
-                     OnCopyFromGlobal="OnCopyFromGlobalCatalogAsync"
-                     OnClose="() => showCatalogChoiceDialog = false" />
 
 @code {
     private List<string> tags = [];
     private bool isLoading = true;
     private bool isProcessing;
-    private bool showCatalogChoiceDialog;
     private string? errorMessage;
     private string? successMessage;
-    private string? googleUserId;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            googleUserId = await GoogleUserService.GetGoogleUserIdAsync();
+            var isAdmin = await AdminAuthorizationService.IsCurrentUserAdminAsync();
+            if (!isAdmin)
+            {
+                NavigationManager.NavigateTo("/?error=access-denied", forceLoad: true);
+                return;
+            }
+
             await LoadTagsAsync();
         }
         catch (Exception ex)
@@ -81,13 +79,13 @@ else
     {
         try
         {
-            var catalog = await PinsClient.GetTags(googleUserId!);
+            var catalog = await PinsClient.GetTags(string.Empty);
             tags = catalog.Tags.ToList();
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            // Catalog doesn't exist, show choice dialog
-            showCatalogChoiceDialog = true;
+            // Catalog doesn't exist
+            await CreateEmptyCatalogAsync();
         }
         catch (Exception ex)
         {
@@ -95,29 +93,16 @@ else
         }
     }
 
-    private async Task OnCreateEmptyCatalogAsync()
+    private async Task CreateEmptyCatalogAsync()
     {
         await ExecuteApiOperationAsync(
             async () =>
             {
-                await PinsClient.DefineTags(googleUserId!, new TagsDto());
+                await PinsClient.DefineTags(string.Empty, new TagsDto());
                 tags = [];
-                return "Your empty tag catalog has been created successfully.";
+                return "Global empty tag catalog has been created successfully.";
             },
-            conflictMessage: "Your tag catalog is already set up and ready to use."
-        );
-    }
-
-    private async Task OnCopyFromGlobalCatalogAsync(List<string> globalTags)
-    {
-        await ExecuteApiOperationAsync(
-            async () =>
-            {
-                await PinsClient.DefineTags(googleUserId!, new TagsDto { Tags = globalTags });
-                tags = globalTags.ToList();
-                return $"Your tag catalog has been created with {globalTags.Count} {"tag".ToQuantity(globalTags.Count)} from the global catalog.";
-            },
-            conflictMessage: "Your tag catalog is already set up and ready to use."
+            conflictMessage: "Global tag catalog is already set up and ready to use."
         );
     }
 
@@ -126,7 +111,7 @@ else
         await ExecuteApiOperationAsync(
             async () =>
             {
-                await PinsClient.AddTag(googleUserId!, new TagDto { Tag = tagName });
+                await PinsClient.AddTag(string.Empty, new TagDto { Tag = tagName });
                 tags.Add(tagName);
                 return $"Tag '{tagName}' added successfully.";
             },
@@ -140,7 +125,7 @@ else
         await ExecuteApiOperationAsync(
             async () =>
             {
-                await PinsClient.RemoveTag(googleUserId!, new TagDto { Tag = tag });
+                await PinsClient.RemoveTag(String.Empty, new TagDto { Tag = tag });
                 tags.Remove(tag);
                 return $"Tag '{tag}' removed successfully.";
             },
@@ -195,5 +180,6 @@ else
     {
         successMessage = null;
     }
+
 }
 

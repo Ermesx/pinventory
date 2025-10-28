@@ -1,43 +1,33 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
 using Pinventory.Identity;
-using Pinventory.Web.Identity;
 
 namespace Pinventory.Web.Google;
 
-/// <summary>
-/// Service for retrieving Google user information from ASP.NET Core Identity.
-/// </summary>
-public class GoogleUserService : IGoogleUserService
+public class GoogleUserService(
+    UserManager<User> userManager,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<GoogleUserService> logger)
+    : IGoogleUserService
 {
-    private readonly UserManager<User> _userManager;
-    private readonly IdentityUserAccessor _userAccessor;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public GoogleUserService(
-        UserManager<User> userManager,
-        IdentityUserAccessor userAccessor,
-        IHttpContextAccessor httpContextAccessor)
+    public async Task<string?> GetGoogleUserIdAsync()
     {
-        _userManager = userManager;
-        _userAccessor = userAccessor;
-        _httpContextAccessor = httpContextAccessor;
-    }
+        var context = httpContextAccessor.HttpContext;
+        if (context is null || context.User.Identity?.IsAuthenticated != true)
+        {
+            logger.LogWarning("User is not authenticated");
+            return null;
+        }
 
-    /// <inheritdoc />
-    public async Task<string> GetGoogleUserIdAsync()
-    {
-        var context = _httpContextAccessor.HttpContext
-            ?? throw new InvalidOperationException("HttpContext is not available.");
+        var user = await userManager.GetUserAsync(context.User);
 
-        var user = await _userAccessor.GetRequiredUserAsync(context);
-        var logins = await _userManager.GetLoginsAsync(user);
+        var logins = await userManager.GetLoginsAsync(user!);
         var googleLogin = logins.FirstOrDefault(login => login.LoginProvider == "Google");
 
         if (googleLogin is null)
         {
-            throw new InvalidOperationException(
-                "No Google account linked. Please link your Google account to manage tags.");
+            logger.LogError("No Google account linked for user {Email}. Please link your Google account to manage tags", user?.Email);
+            return null;
         }
 
         return googleLogin.ProviderKey;

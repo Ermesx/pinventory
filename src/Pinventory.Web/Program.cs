@@ -8,6 +8,7 @@ using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
 using Pinventory.Web.ApiClients;
+using Pinventory.Web.Authorization;
 using Pinventory.Web.Components;
 using Pinventory.Web.Google;
 using Pinventory.Web.Google.Authentication;
@@ -38,6 +39,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.Requi
 
 builder.AddGoogleAuthentication();
 builder.Services.AddGooglePlatformOptions();
+builder.Services.AddPinventoryOptions();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
@@ -50,6 +52,7 @@ builder.Services.AddTransient<TokenService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IGoogleUserService, GoogleUserService>();
+builder.Services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
 
 builder.Services.AddPinventoryApiHttpClients();
 

@@ -1,5 +1,4 @@
 ﻿@using System.ComponentModel.DataAnnotations
-
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">Add New Tag</h5>
@@ -36,7 +35,7 @@
     public bool IsProcessing { get; set; }
 
     [Parameter]
-    public List<string> ExistingTags { get; set; } = [];
+    public List<string> Tags { get; set; } = [];
 
     [Parameter]
     public EventCallback<string> OnSubmit { get; set; }
@@ -56,7 +55,7 @@
         var tagName = Input.TagName.Trim();
 
         // Check for duplicates
-        if (ExistingTags.Any(tag => tag.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
+        if (Tags.Any(tag => tag.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
         {
             duplicateError = $"Tag '{tagName}' already exists in your catalog.";
             return;
