@@ -11,7 +11,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Application.Tags;
 
-// dbContext.SaveChangesAsync() is not use because Wolverine handles transactional outbox 
+// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) : ApplicationHandler(bus)
 {
     public async Task<Result<Guid>> Handle(DefineTagCatalogCommand command)
