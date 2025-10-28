@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Security.Claims;
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 
 using Pinventory.Identity;
 
@@ -7,9 +10,12 @@ namespace Pinventory.Web.Google;
 public class GoogleUserService(
     UserManager<User> userManager,
     IHttpContextAccessor httpContextAccessor,
-    ILogger<GoogleUserService> logger)
+    ILogger<GoogleUserService> logger,
+    IMemoryCache cache)
     : IGoogleUserService
 {
+    private const int CacheDurationMinutes = 30;
+
     public async Task<string?> GetGoogleUserIdAsync()
     {
         var context = httpContextAccessor.HttpContext;
@@ -19,7 +25,18 @@ public class GoogleUserService(
             return null;
         }
 
-        var user = await userManager.GetUserAsync(context.User);
+        var key = $"google-user-id-cache-{context.User.Identity.Name}";
+        var principal = context.User;
+        return await cache.GetOrCreateAsync(key, async entry =>
+        {
+            entry.SlidingExpiration = TimeSpan.FromMinutes(CacheDurationMinutes);
+            return await GetGoogleUserIdAsyncInternal(principal);
+        });
+    }
+
+    private async Task<string?> GetGoogleUserIdAsyncInternal(ClaimsPrincipal principal)
+    {
+        var user = await userManager.GetUserAsync(principal);
 
         var logins = await userManager.GetLoginsAsync(user!);
         var googleLogin = logins.FirstOrDefault(login => login.LoginProvider == "Google");

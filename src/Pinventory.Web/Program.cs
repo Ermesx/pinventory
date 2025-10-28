@@ -47,9 +47,10 @@ builder.Services.AddSingleton<GoogleDataPortabilityClient>();
 builder.Services.AddSingleton<IGoogleAuthStateService, GoogleAuthStateService>();
 
 builder.Services.AddTransient<IdTokenHttpMessageHandler>();
-builder.Services.AddTransient<TokenService>();
+builder.Services.AddScoped<TokenService>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<IGoogleUserService, GoogleUserService>();
 builder.Services.AddScoped<IAdminAuthorizationService, AdminAuthorizationService>();
