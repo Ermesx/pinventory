@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using Pinventory.Google;
 using Pinventory.Identity;
 using Pinventory.Identity.Infrastructure;
 using Pinventory.Identity.Tokens;
 using Pinventory.ServiceDefaults;
-using Pinventory.Web;
 using Pinventory.Web.ApiClients;
 using Pinventory.Web.Components;
 using Pinventory.Web.Google;
@@ -37,10 +37,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.Requi
     .AddDefaultTokenProviders();
 
 builder.AddGoogleAuthentication();
-builder.Services.AddOptions<PinventoryOptions>()
-    .BindConfiguration(PinventoryOptions.Section, options => options.ErrorOnUnknownConfiguration = true)
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+builder.Services.AddGooglePlatformOptions();
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 

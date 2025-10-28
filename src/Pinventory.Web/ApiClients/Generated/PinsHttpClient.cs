@@ -20,6 +20,10 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
         [Get("/tags/{ownerId}")]
         Task<TagCatalogDto> GetTags(string ownerId);
 
+        [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
+        [Post("/tags/{ownerId}")]
+        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] TagsDto body);
+
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
         [Put("/tags/{ownerId}")]
         Task AddTag(string ownerId, [Body] TagDto body);
@@ -27,10 +31,6 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
         [Headers("Accept: application/problem+json", "Content-Type: application/json")]
         [Delete("/tags/{ownerId}")]
         Task RemoveTag(string ownerId, [Body] TagDto body);
-
-        [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
-        [Post("/tags/{ownerId}/define")]
-        Task<TagCatalogIdDto> DefineTags(string ownerId, [Body] TagsDto body);
 
 
     }

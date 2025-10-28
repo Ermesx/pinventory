@@ -8,7 +8,7 @@
     "/tags/{ownerId}": {
       "get": {
         "tags": [
-          "Pinventory.Pins.Api"
+          "TagsEndpointsExtensions"
         ],
         "operationId": "GetTags",
         "parameters": [
@@ -64,9 +64,77 @@
           }
         }
       },
+      "post": {
+        "tags": [
+          "TagsEndpointsExtensions"
+        ],
+        "operationId": "DefineTags",
+        "parameters": [
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagCatalogIdDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "tags": [
-          "Pinventory.Pins.Api"
+          "TagsEndpointsExtensions"
         ],
         "operationId": "AddTag",
         "parameters": [
@@ -127,7 +195,7 @@
       },
       "delete": {
         "tags": [
-          "Pinventory.Pins.Api"
+          "TagsEndpointsExtensions"
         ],
         "operationId": "RemoveTag",
         "parameters": [
@@ -176,76 +244,6 @@
           },
           "404": {
             "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tags/{ownerId}/define": {
-      "post": {
-        "tags": [
-          "Pinventory.Pins.Api"
-        ],
-        "operationId": "DefineTags",
-        "parameters": [
-          {
-            "name": "ownerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TagsDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagCatalogIdDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -381,7 +379,7 @@
   },
   "tags": [
     {
-      "name": "Pinventory.Pins.Api"
+      "name": "TagsEndpointsExtensions"
     }
   ]
 }

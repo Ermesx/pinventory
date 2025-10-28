@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Npgsql;
 
@@ -125,4 +127,13 @@ public static class Extensions
 
         return app;
     }
+
+    public static OptionsBuilder<PinventoryOptions> AddPinventoryOptions(this IServiceCollection services) =>
+        services.AddOptions<PinventoryOptions>()
+            .BindConfiguration(PinventoryOptions.Section, options => options.ErrorOnUnknownConfiguration = true)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+    public static PinventoryOptions GetPinventoryOptions(this IConfigurationManager configuration) =>
+        configuration.GetSection(PinventoryOptions.Section).Get<PinventoryOptions>()!;
 }

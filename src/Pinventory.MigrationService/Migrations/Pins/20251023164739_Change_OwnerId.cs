@@ -1,8 +1,6 @@
-﻿using System;
+﻿#nullable disable
 
 using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
 
 namespace Pinventory.MigrationService.Migrations.Pins
 {

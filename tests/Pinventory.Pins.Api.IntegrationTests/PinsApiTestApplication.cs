@@ -17,6 +17,7 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
 {
     private WebApplicationFactory<Program> _factory = null!;
     private IServiceScope _scope = null!;
+    private CurrentUserIdProvider _userIdProvider = null!;
 
     [ClassDataSource<PostgresTestContainer>]
     public required PostgresTestContainer Postgres { get; init; }
@@ -26,6 +27,12 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
 
     public IServiceProvider Services => _factory.Services;
     public HttpClient Client { get; private set; } = null!;
+
+    public string CurrentUserId
+    {
+        get => _userIdProvider.CurrentUserId;
+        set => _userIdProvider.CurrentUserId = value;
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -42,12 +49,13 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
             {
                 builder.UseSetting("ConnectionStrings:pinventory-pins-db", Postgres.ConnectionString);
                 builder.UseSetting("ConnectionStrings:rabbit-mq", RabbitMq.ConnectionString);
+                builder.UseSetting("Pinventory:AdminId", AuthenticationTestHandler.AdminUserId);
 
                 builder.ConfigureTestServices(services =>
                 {
                     services.AddTestAuthentication();
 
-                    // Run Wolverine in solo mode for faster test startup
+                    // Run Wolverine in solo mode for a faster test startup
                     services.RunWolverineInSoloMode();
 
                     // Disable Wolverine persistence to enable db context migration
@@ -57,6 +65,8 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
             });
 
         Client = _factory.CreateClient();
+
+        _userIdProvider = _factory.Services.GetRequiredService<CurrentUserIdProvider>();
 
         _scope = _factory.Services.CreateScope();
         var dbContext = _scope.ServiceProvider.GetRequiredService<PinsDbContext>();

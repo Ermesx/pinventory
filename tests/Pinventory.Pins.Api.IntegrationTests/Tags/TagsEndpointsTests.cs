@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 
 using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Pins.Api.Tags;
 using Pinventory.Pins.Api.Tags.Dtos;
 using Pinventory.Pins.Domain.Tags;
 using Pinventory.Testing.Authorization;
@@ -87,7 +86,7 @@ public class TagsEndpointsTests
         var tags = new TagsDto(["restaurant", "cafe", "bar"]);
 
         // Act
-        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
+        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}", tags);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -116,7 +115,7 @@ public class TagsEndpointsTests
         var tags = new TagsDto(["restaurant", "cafe"]);
 
         // Act
-        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
+        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}", tags);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
@@ -130,7 +129,7 @@ public class TagsEndpointsTests
         var tags = new TagsDto([" restaurant ", "restaurant", "CAFE", "cafe", "  bar  "]);
 
         // Act
-        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
+        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}", tags);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -243,10 +242,7 @@ public class TagsEndpointsTests
         var tagToRemove = new TagDto("cafe");
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
-        {
-            Content = JsonContent.Create(tagToRemove)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}") { Content = JsonContent.Create(tagToRemove) };
         var response = await App.Client.SendAsync(request);
 
         // Assert
@@ -266,10 +262,7 @@ public class TagsEndpointsTests
         var tagToRemove = new TagDto("restaurant");
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
-        {
-            Content = JsonContent.Create(tagToRemove)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}") { Content = JsonContent.Create(tagToRemove) };
         var response = await App.Client.SendAsync(request);
 
         // Assert
@@ -291,16 +284,12 @@ public class TagsEndpointsTests
         var nonExistentTag = new TagDto("bar");
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}")
-        {
-            Content = JsonContent.Create(nonExistentTag)
-        };
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"/tags/{ownerId}") { Content = JsonContent.Create(nonExistentTag) };
         var response = await App.Client.SendAsync(request);
 
         // Assert - RemoveTag is idempotent, returns NoContent even if tag doesn't exist
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
-
 
 
     [Test]
@@ -311,7 +300,7 @@ public class TagsEndpointsTests
         var tags = new TagsDto(["restaurant", "", "   ", "cafe", "  ", "bar"]);
 
         // Act
-        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}/define", tags);
+        var response = await App.Client.PostAsJsonAsync($"/tags/{ownerId}", tags);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -320,5 +309,26 @@ public class TagsEndpointsTests
         var catalog = await App.DbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         catalog.ShouldNotBeNull();
         catalog.Tags.Select(t => t.Value).ShouldBe(["restaurant", "cafe", "bar"], ignoreOrder: true);
+    }
+
+    [Test]
+    public async Task GetTags_allows_access_when_ownerId_matches_authenticated_user()
+    {
+        // Arrange
+        var ownerId = AuthenticationTestHandler.TestUserId;
+        var catalog = new TagCatalog(ownerId);
+        catalog.DefineTags(["restaurant", "cafe"]);
+
+        await App.DbContext.TagCatalogs.AddAsync(catalog);
+        await App.DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await App.Client.GetAsync($"/tags/{ownerId}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<TagCatalogDto>();
+        result.ShouldNotBeNull();
+        result.Tags.ShouldBe(["restaurant", "cafe"], ignoreOrder: true);
     }
 }

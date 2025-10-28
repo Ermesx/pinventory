@@ -1,11 +1,12 @@
 ﻿@page "/import"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Options
+@using Pinventory.Google.Configuration
 @using Pinventory.Web.Components.Shared
-@using static Pinventory.Web.Components.Shared.AlertMessage
+@using static Shared.AlertMessage
 @attribute [Authorize]
 
-@inject IOptions<PinventoryOptions> Options
+@inject IOptions<GooglePlatformOptions> Options
 
 <PageTitle>Import Starred Places</PageTitle>
 
