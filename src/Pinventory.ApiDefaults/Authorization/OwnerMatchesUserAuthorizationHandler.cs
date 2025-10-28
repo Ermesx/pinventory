@@ -28,6 +28,8 @@ public class OwnerMatchesUserAuthorizationHandler() : AuthorizationHandler<Owner
             context.Succeed(requirement);
         }
 
+        // Explicitly fail if neither condition is met
+        context.Fail();
         return Task.CompletedTask;
     }
 }
