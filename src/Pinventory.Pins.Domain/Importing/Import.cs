@@ -1,19 +1,19 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
-using Pinventory.Pins.Domain.Import.Events;
+using Pinventory.Pins.Domain.Importing.Events;
 
-namespace Pinventory.Pins.Domain.Import;
+namespace Pinventory.Pins.Domain.Importing;
 
-public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id)
+public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
 {
-    private ImportJob() : this(string.Empty) { }
+    private Import() : this(string.Empty) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
     public string UserId { get; } = userId;
 
     public string? ArchiveJobId { get; private set; }
-    public ImportJobState State { get; private set; } = ImportJobState.Unspecified;
+    public ImportState State { get; private set; } = ImportState.Unspecified;
 
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
@@ -31,12 +31,12 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
             return Result.Fail(Errors.ImportJob.ArchiveJobIdCannotBeEmpty());
         }
 
-        if (State != ImportJobState.Unspecified || !await policy.CanStartImportAsync(UserId))
+        if (State != ImportState.Unspecified || !await policy.CanStartImportAsync(UserId))
         {
             return Result.Fail(Errors.ImportJob.ImportAlreadyStartedOrFinished(State));
         }
 
-        State = ImportJobState.InProgress;
+        State = ImportState.InProgress;
         ArchiveJobId = archiveJobId;
         StartedAt = DateTimeOffset.UtcNow;
 
@@ -47,7 +47,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
 
     public Result<Success> AppendBatch(int processed, int created, int updated, int failed, int conflicts)
     {
-        if (State != ImportJobState.InProgress)
+        if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
         }
@@ -69,12 +69,12 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
 
     public Result<Success> Complete()
     {
-        if (State != ImportJobState.InProgress)
+        if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
         }
 
-        State = ImportJobState.Complete;
+        State = ImportState.Complete;
         CompletedAt = DateTimeOffset.UtcNow;
         Raise(new ImportCompleted(Id));
 
@@ -83,7 +83,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
 
     public Result<Success> Fail(string error)
     {
-        if (State != ImportJobState.InProgress)
+        if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
         }
@@ -93,7 +93,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
             return Result.Fail(Errors.ImportJob.ErrorMessageCannotBeEmpty());
         }
 
-        State = ImportJobState.Failed;
+        State = ImportState.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
         Raise(new ImportFailed(Id, error));
 
@@ -102,12 +102,12 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
 
     public Result<Success> Cancel()
     {
-        if (State != ImportJobState.InProgress)
+        if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
         }
 
-        State = ImportJobState.Cancelled;
+        State = ImportState.Cancelled;
         CompletedAt = DateTimeOffset.UtcNow;
         Raise(new ImportCancelled(Id));
 
@@ -116,7 +116,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
 
     public void UpdateTotal(uint count)
     {
-        if (State != ImportJobState.InProgress)
+        if (State != ImportState.InProgress)
         {
             return;
         }

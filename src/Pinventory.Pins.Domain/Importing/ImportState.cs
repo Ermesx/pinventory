@@ -1,6 +1,6 @@
-﻿namespace Pinventory.Pins.Domain.Import;
+﻿namespace Pinventory.Pins.Domain.Importing;
 
-public enum ImportJobState
+public enum ImportState
 {
     Unspecified = 0,
     InProgress,

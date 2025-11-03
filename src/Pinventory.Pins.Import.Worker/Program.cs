@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Pinventory.Google;
 using Pinventory.Identity.Tokens.Grpc;
 using Pinventory.Pins.Application.Import.Services;
-using Pinventory.Pins.Domain.Import;
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Import.Worker;
 using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Infrastructure;

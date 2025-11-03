@@ -8,7 +8,7 @@ using Pinventory.Google.Configuration;
 using Pinventory.Google.Tokens;
 using Pinventory.Pins.Application.Import.Services;
 using Pinventory.Pins.Domain;
-using Pinventory.Pins.Domain.Import;
+using Pinventory.Pins.Domain.Importing;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
@@ -46,7 +46,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
         return response.ArchiveJobId;
     }
 
-    public async Task<(ImportJobState State, IEnumerable<Uri> Urls)> CheckJobAsync(string archiveJobId,
+    public async Task<(ImportState State, IEnumerable<Uri> Urls)> CheckJobAsync(string archiveJobId,
         CancellationToken cancellationToken = default)
     {
         var resource = CreateArchiveResource(archiveJobId);
@@ -54,14 +54,14 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
 
         var state = response.State switch
         {
-            "IN_PROGRESS" => ImportJobState.InProgress,
-            "COMPLETED" => ImportJobState.Complete,
-            "FAILED" => ImportJobState.Failed,
-            "CANCELLED" => ImportJobState.Cancelled,
-            _ => ImportJobState.Unspecified
+            "IN_PROGRESS" => ImportState.InProgress,
+            "COMPLETED" => ImportState.Complete,
+            "FAILED" => ImportState.Failed,
+            "CANCELLED" => ImportState.Cancelled,
+            _ => ImportState.Unspecified
         };
 
-        if (state != ImportJobState.Complete)
+        if (state != ImportState.Complete)
         {
             return (state, []);
         }

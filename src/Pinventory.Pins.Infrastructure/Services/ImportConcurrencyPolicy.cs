@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-using Pinventory.Pins.Domain.Import;
+using Pinventory.Pins.Domain.Importing;
 
 namespace Pinventory.Pins.Infrastructure.Services;
 
 public sealed class ImportConcurrencyPolicy(PinsDbContext dbContext) : IImportConcurrencyPolicy
 {
     public async Task<bool> CanStartImportAsync(string userId, CancellationToken cancellationToken = default) =>
-        !await dbContext.ImportJobs
-            .AnyAsync(job => job.UserId == userId && job.State == ImportJobState.InProgress, cancellationToken);
+        !await dbContext.Imports
+            .AnyAsync(import => import.UserId == userId && import.State == ImportState.InProgress, cancellationToken);
 }

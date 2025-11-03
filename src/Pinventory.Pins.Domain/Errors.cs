@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-using Pinventory.Pins.Domain.Import;
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Domain;
@@ -25,9 +25,9 @@ public static class Errors
     {
         public static Error ArchiveJobIdCannotBeEmpty() => new("Archive job id cannot be empty");
 
-        public static Error ImportAlreadyStartedOrFinished(ImportJobState state) => new($"Import already started or finished: {state}");
+        public static Error ImportAlreadyStartedOrFinished(ImportState state) => new($"Import already started or finished: {state}");
 
-        public static Error ImportNotInProgress(ImportJobState state) => new($"Import is not in progress: {state}");
+        public static Error ImportNotInProgress(ImportState state) => new($"Import is not in progress: {state}");
 
         public static Error ErrorMessageCannotBeEmpty() => new("Error message cannot be empty");
 

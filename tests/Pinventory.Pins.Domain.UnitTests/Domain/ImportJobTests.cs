@@ -1,7 +1,7 @@
 ﻿using Moq;
 
-using Pinventory.Pins.Domain.Import;
-using Pinventory.Pins.Domain.Import.Events;
+using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Domain.UnitTests.TestUtils;
 
 using Shouldly;
@@ -16,7 +16,7 @@ public class ImportJobTests
         // Arrange
         var userId = "user123";
         var archiveJobId = "archive456";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(true);
 
@@ -25,7 +25,7 @@ public class ImportJobTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        importJob.State.ShouldBe(ImportJobState.InProgress);
+        importJob.State.ShouldBe(ImportState.InProgress);
         importJob.ArchiveJobId.ShouldBe(archiveJobId);
         importJob.StartedAt.ShouldNotBeNull();
         importJob.CompletedAt.ShouldBeNull();
@@ -41,7 +41,7 @@ public class ImportJobTests
     {
         // Arrange
         var userId = "user123";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(true);
 
@@ -51,7 +51,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Archive job id cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.DomainEvents.ShouldBeEmpty();
     }
 
@@ -60,7 +60,7 @@ public class ImportJobTests
     {
         // Arrange
         var userId = "user123";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(true);
 
@@ -70,7 +70,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Archive job id cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.DomainEvents.ShouldBeEmpty();
     }
 
@@ -79,7 +79,7 @@ public class ImportJobTests
     {
         // Arrange
         var userId = "user123";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(true);
 
@@ -89,7 +89,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Archive job id cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.DomainEvents.ShouldBeEmpty();
     }
 
@@ -99,7 +99,7 @@ public class ImportJobTests
         // Arrange
         var userId = "user123";
         var archiveJobId = "archive456";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(false);
 
@@ -109,7 +109,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Import already started or finished"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.DomainEvents.ShouldBeEmpty();
     }
 
@@ -119,7 +119,7 @@ public class ImportJobTests
         // Arrange
         var userId = "user123";
         var archiveJobId = "archive456";
-        var importJob = new ImportJob(userId);
+        var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(userId, default)).ReturnsAsync(true);
 
@@ -131,7 +131,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Import already started or finished"));
-        importJob.State.ShouldBe(ImportJobState.InProgress);
+        importJob.State.ShouldBe(ImportState.InProgress);
         importJob.ArchiveJobId.ShouldBe(archiveJobId);
         importJob.DomainEvents.Count.ShouldBe(1);
     }
@@ -185,7 +185,7 @@ public class ImportJobTests
     public void AppendBatch_fails_when_state_is_not_in_progress()
     {
         // Arrange
-        var importJob = new ImportJob("user123");
+        var importJob = new Import("user123");
 
         // Act
         var result = importJob.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
@@ -283,7 +283,7 @@ public class ImportJobTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        importJob.State.ShouldBe(ImportJobState.Complete);
+        importJob.State.ShouldBe(ImportState.Complete);
         importJob.CompletedAt.ShouldNotBeNull();
 
         var evt = importJob.DomainEvents.Last().ShouldBeOfType<ImportCompleted>();
@@ -294,7 +294,7 @@ public class ImportJobTests
     public void Complete_fails_when_state_is_not_in_progress()
     {
         // Arrange
-        var importJob = new ImportJob("user123");
+        var importJob = new Import("user123");
 
         // Act
         var result = importJob.Complete();
@@ -302,7 +302,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Import is not in progress"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -318,7 +318,7 @@ public class ImportJobTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        importJob.State.ShouldBe(ImportJobState.Failed);
+        importJob.State.ShouldBe(ImportState.Failed);
         importJob.CompletedAt.ShouldNotBeNull();
 
         var evt = importJob.DomainEvents.Last().ShouldBeOfType<ImportFailed>();
@@ -330,7 +330,7 @@ public class ImportJobTests
     public void Fail_fails_when_state_is_not_in_progress()
     {
         // Arrange
-        var importJob = new ImportJob("user123");
+        var importJob = new Import("user123");
 
         // Act
         var result = importJob.Fail("Error message");
@@ -338,7 +338,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Import is not in progress"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -354,7 +354,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.InProgress);
+        importJob.State.ShouldBe(ImportState.InProgress);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -370,7 +370,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.InProgress);
+        importJob.State.ShouldBe(ImportState.InProgress);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -386,7 +386,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        importJob.State.ShouldBe(ImportJobState.InProgress);
+        importJob.State.ShouldBe(ImportState.InProgress);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -401,7 +401,7 @@ public class ImportJobTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        importJob.State.ShouldBe(ImportJobState.Cancelled);
+        importJob.State.ShouldBe(ImportState.Cancelled);
         importJob.CompletedAt.ShouldNotBeNull();
 
         var evt = importJob.DomainEvents.Last().ShouldBeOfType<ImportCancelled>();
@@ -412,7 +412,7 @@ public class ImportJobTests
     public void Cancel_fails_when_state_is_not_in_progress()
     {
         // Arrange
-        var importJob = new ImportJob("user123");
+        var importJob = new Import("user123");
 
         // Act
         var result = importJob.Cancel();
@@ -420,7 +420,7 @@ public class ImportJobTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("Import is not in progress"));
-        importJob.State.ShouldBe(ImportJobState.Unspecified);
+        importJob.State.ShouldBe(ImportState.Unspecified);
         importJob.CompletedAt.ShouldBeNull();
     }
 
@@ -442,7 +442,7 @@ public class ImportJobTests
     public void UpdateTotal_does_not_update_when_state_is_not_in_progress()
     {
         // Arrange
-        var importJob = new ImportJob("user123");
+        var importJob = new Import("user123");
 
         // Act
         importJob.UpdateTotal(100);

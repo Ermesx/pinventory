@@ -9,7 +9,7 @@ using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Import.Commands;
 using Pinventory.Pins.Application.Import.Messages;
 using Pinventory.Pins.Application.Import.Services;
-using Pinventory.Pins.Domain.Import;
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
@@ -32,7 +32,7 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(command.UserId);
         var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
 
-        var importJob = new ImportJob(command.UserId);
+        var importJob = new Domain.Importing.Import(command.UserId);
         var result = await importJob.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)
@@ -40,7 +40,7 @@ public sealed class ImportHandler(
             return Result.Fail(result.Errors);
         }
 
-        await dbContext.ImportJobs.AddAsync(importJob, cancellationToken);
+        await dbContext.Imports.AddAsync(importJob, cancellationToken);
         await RaiseEventsAsync(importJob);
 
         await bus.PublishAsync(new CheckJobMessage(importJob.UserId, importJob.ArchiveJobId!));
@@ -52,7 +52,7 @@ public sealed class ImportHandler(
     {
         logger.LogInformation("Cancelling import for {UserId}", command.UserId);
 
-        var importJob = await dbContext.ImportJobs
+        var importJob = await dbContext.Imports
             .FirstOrDefaultAsync(job => job.UserId == command.UserId && job.ArchiveJobId == command.ArchiveJobId, cancellationToken);
 
         if (importJob is null)
@@ -60,7 +60,7 @@ public sealed class ImportHandler(
             return Result.Fail(Errors.ImportJob.ImportNotFound(command));
         }
 
-        if (importJob.State != ImportJobState.InProgress)
+        if (importJob.State != ImportState.InProgress)
         {
             return Result.Fail(Errors.ImportJob.ImportNotInProgress(importJob));
         }
@@ -78,7 +78,7 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(check.UserId);
         var archiveResult = await client.CheckJobAsync(check.ArchiveJobId, cancellationToken);
 
-        if (archiveResult.State == ImportJobState.InProgress)
+        if (archiveResult.State == ImportState.InProgress)
         {
             logger.LogInformation("Archive {ArchiveJobId} is still in progress", check.ArchiveJobId);
             await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckInterval));

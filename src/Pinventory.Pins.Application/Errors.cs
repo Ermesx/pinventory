@@ -26,7 +26,7 @@ public static class Errors
         public static Error ImportNotFound(CancelImportCommand command) =>
             new NotFoundError($"Import {command.ArchiveJobId} not found for user {command.UserId}");
 
-        public static Error ImportNotInProgress(Domain.Import.ImportJob importJob) => new(
+        public static Error ImportNotInProgress(Domain.Importing.Import importJob) => new(
             $"Import {importJob.ArchiveJobId} is not in progress: {importJob.State} for user {importJob.UserId}");
     }
 }
