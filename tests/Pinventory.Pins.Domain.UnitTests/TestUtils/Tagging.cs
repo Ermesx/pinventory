@@ -1,6 +1,6 @@
 ﻿using Pinventory.Pins.Domain.Places;
 
-namespace Pinventory.Pins.UnitTests.TestUtils;
+namespace Pinventory.Pins.Domain.UnitTests.TestUtils;
 
 public static class Tagging
 {

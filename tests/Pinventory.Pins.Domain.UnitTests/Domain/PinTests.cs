@@ -1,10 +1,10 @@
 ﻿using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Places.Events;
-using Pinventory.Pins.UnitTests.TestUtils;
+using Pinventory.Pins.Domain.UnitTests.TestUtils;
 
 using Shouldly;
 
-namespace Pinventory.Pins.UnitTests.Domain;
+namespace Pinventory.Pins.Domain.UnitTests.Domain;
 
 public class PinTests
 {

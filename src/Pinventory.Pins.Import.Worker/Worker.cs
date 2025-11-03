@@ -14,7 +14,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(10000, stoppingToken);
-            // await TestRun(stoppingToken);
+            await TestRun(stoppingToken);
         }
     }
 
@@ -54,6 +54,10 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
             {
                 var archiveResult = await importService.CheckJobAsync(_name, stoppingToken);
                 logger.LogInformation("Archive name: {Name}, Archive state: {State}", _name, archiveResult.State);
+                foreach (var url in archiveResult.Urls)
+                {
+                    logger.LogInformation("Archive url: {Url}", url);
+                }
             }
             catch (GoogleApiException e)
             {

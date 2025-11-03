@@ -49,7 +49,8 @@
   </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
-    <Project Path="tests/Pinventory.Pins.UnitTests/Pinventory.Pins.UnitTests.csproj" />
+    <Project Path="tests/Pinventory.Pins.Application.UnitTests/Pinventory.Pins.Application.UnitTests.csproj"/>
+    <Project Path="tests/Pinventory.Pins.Domain.UnitTests/Pinventory.Pins.Domain.UnitTests.csproj"/>
   </Folder>
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />

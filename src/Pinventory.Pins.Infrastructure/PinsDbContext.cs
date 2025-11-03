@@ -82,17 +82,30 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         });
 
         // ImportJob
-        // builder.Entity<ImportJob>(entity =>
-        // {
-        //     entity.HasKey(x => x.Id);
-        //     entity.Property(x => x.UserId).IsRequired();
-        //     entity.Property(x => x.State).IsRequired();
-        //
-        //     entity.HasIndex(x => new { x.UserId, x.State })
-        //         .HasFilter("state = 'InProgress'")
-        //         .IsUnique();
-        // });
-        //
+        builder.Entity<ImportJob>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.UserId).IsRequired();
+            entity.Property(x => x.ArchiveJobId).IsRequired(false);
+            entity.Property(x => x.State).HasConversion<string>().IsRequired();
+            entity.Property(x => x.StartedAt).IsRequired(false);
+            entity.Property(x => x.CompletedAt).IsRequired(false);
+            entity.Property(x => x.Processed).IsRequired();
+            entity.Property(x => x.Created).IsRequired();
+            entity.Property(x => x.Updated).IsRequired();
+            entity.Property(x => x.Failed).IsRequired();
+            entity.Property(x => x.Conflicts).IsRequired();
+            entity.Property(x => x.Total).IsRequired();
+
+            entity.Property(x => x.Version).IsConcurrencyToken()
+                .HasDefaultValue(0)
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.HasIndex(x => new { x.UserId, x.State })
+                .HasFilter("[State] = 'InProgress'")
+                .IsUnique();
+        });
+
         // // TaggingJob
         // builder.Entity<TaggingJob>(entity =>
         // {

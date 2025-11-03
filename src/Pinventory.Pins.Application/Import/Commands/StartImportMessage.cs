@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Application.Import.Commands;
 
-public record StartImportCommand(string Id, string UserId, Period? Period);
+public record StartImportCommand(string UserId, Period? Period);

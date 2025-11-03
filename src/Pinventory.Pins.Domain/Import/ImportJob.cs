@@ -10,7 +10,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
     private ImportJob() : this(string.Empty) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
-    public string UserId { get; private set; } = userId;
+    public string UserId { get; } = userId;
 
     public string? ArchiveJobId { get; private set; }
     public ImportJobState State { get; private set; } = ImportJobState.Unspecified;
@@ -22,6 +22,7 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
     public int Updated { get; private set; }
     public int Failed { get; private set; }
     public int Conflicts { get; private set; }
+    public uint Total { get; private set; }
 
     public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
     {
@@ -111,5 +112,15 @@ public sealed class ImportJob(string userId, Guid? id = null) : AggregateRoot(id
         Raise(new ImportCancelled(Id));
 
         return Result.Ok();
+    }
+
+    public void UpdateTotal(uint count)
+    {
+        if (State != ImportJobState.InProgress)
+        {
+            return;
+        }
+
+        Total += count;
     }
 }
