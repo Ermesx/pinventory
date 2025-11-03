@@ -1,13 +1,13 @@
 using Google;
 
-using Pinventory.Pins.Import.Worker.DataPortability;
+using Pinventory.Pins.Application.Import.Services;
 
 namespace Pinventory.Pins.Import.Worker;
 
 public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceFactory) : BackgroundService
 {
-    private bool _oneTime;
     private string _name = string.Empty;
+    private bool _oneTime;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -35,7 +35,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
             {
                 try
                 {
-                    var archiveName = await importService.InitiateDataArchiveAsync(null, stoppingToken);
+                    var archiveName = await importService.InitiateAsync(null, stoppingToken);
                     _name = archiveName;
                     _oneTime = true;
                     logger.LogInformation("Initiated archive: {Name}", archiveName);
@@ -52,7 +52,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
 
             try
             {
-                var archiveResult = await importService.CheckDataArchiveAsync(_name, stoppingToken);
+                var archiveResult = await importService.CheckJobAsync(_name, stoppingToken);
                 logger.LogInformation("Archive name: {Name}, Archive state: {State}", _name, archiveResult.State);
             }
             catch (GoogleApiException e)

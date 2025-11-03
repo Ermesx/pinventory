@@ -1,6 +1,7 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
+using Pinventory.Pins.Domain.Places.Events;
 
 namespace Pinventory.Pins.Domain.Places;
 
@@ -12,9 +13,8 @@ public sealed class Pin(
     PinStatus status = PinStatus.Unknown,
     Guid? id = null) : AggregateRoot(id)
 {
-    private Pin() : this(null, GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
-
     private readonly HashSet<Tag> _tags = [];
+    private Pin() : this(null, GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
 
     public string? OwnerId { get; private set; } = ownerId;
     public GooglePlaceId PlaceId { get; private set; } = googlePlaceId;
@@ -29,7 +29,7 @@ public sealed class Pin(
     public Result<IEnumerable<Tag>> AssignTags(IEnumerable<string> tags, ITagVerifier tagVerifier)
     {
         var distinctTags = tags
-            .Where(tagVerifier.IsAllowed)
+            .Where(tag => tagVerifier.IsAllowed(OwnerId, tag))
             .ToList();
 
         _tags.Clear();
@@ -45,7 +45,7 @@ public sealed class Pin(
 
         if (_tags.Any())
         {
-            Raise(new Events.PinTagsAssigned(Id, _tags.Select(t => t.Value)));
+            Raise(new PinTagsAssigned(Id, _tags.Select(t => t.Value)));
         }
 
         return results.Any(r => !r.IsSuccess) ? Result.Merge(results.ToArray()) : Result.Ok();
@@ -68,7 +68,7 @@ public sealed class Pin(
                 var previousStatus = Status;
                 Status = status;
                 StatusUpdatedAt = DateTimeOffset.UtcNow;
-                Raise(new Events.PinClosed(Id, Status, previousStatus));
+                Raise(new PinClosed(Id, Status, previousStatus));
             }
 
             return Result.Ok();
@@ -89,7 +89,7 @@ public sealed class Pin(
             var previousStatus = Status;
             Status = PinStatus.Open;
             StatusUpdatedAt = DateTimeOffset.UtcNow;
-            Raise(new Events.PinOpened(Id, Status, previousStatus));
+            Raise(new PinOpened(Id, Status, previousStatus));
             return Result.Ok();
         }
     }

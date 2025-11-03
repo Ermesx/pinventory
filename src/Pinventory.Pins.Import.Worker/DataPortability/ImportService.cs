@@ -6,10 +6,13 @@ using Microsoft.Extensions.Options;
 using Pinventory.Google;
 using Pinventory.Google.Configuration;
 using Pinventory.Google.Tokens;
+using Pinventory.Pins.Application.Import.Services;
+using Pinventory.Pins.Domain;
+using Pinventory.Pins.Domain.Import;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability;
 
-public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAccessToken token, TimeProvider timeProvider)
+public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAccessToken token)
     : IImportService, IDisposable
 {
     private static readonly string[] Scopes = [GoogleScopes.DataPortabilityMapsStarredPlaces];
@@ -23,38 +26,60 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
                     ClientSecrets = new ClientSecrets { ClientId = options.Value.ClientId, ClientSecret = options.Value.ClientSecret },
                     Scopes = Scopes
                 }), "user",
-            new TokenResponse { AccessToken = token.Token, RefreshToken = token.RefreshToken.Token, ExpiresInSeconds = 3600, }),
+            new TokenResponse { AccessToken = token.Token, RefreshToken = token.RefreshToken.Token, ExpiresInSeconds = 3600 }),
         ApplicationName = "Pinventory"
     });
-
-    public DateTimeOffset LastUsed { get; private set; }
-
-    public async Task<string> InitiateDataArchiveAsync(Period? period = null, CancellationToken cancellationToken = default)
-    {
-        LastUsed = timeProvider.GetUtcNow();
-
-        var initiate = new InitiatePortabilityArchiveRequest
-        {
-            Resources = Resources,
-            StartTimeDateTimeOffset = period?.Start,
-            EndTimeDateTimeOffset = period?.End,
-        };
-
-        var initResp = await _service.PortabilityArchive.Initiate(initiate).ExecuteAsync(cancellationToken);
-        return initResp.ArchiveJobId;
-    }
-
-    public async Task<DataArchiveResult> CheckDataArchiveAsync(string archiveJobId, CancellationToken cancellationToken = default)
-    {
-        LastUsed = timeProvider.GetUtcNow();
-
-        var resource = $"archiveJobs/{archiveJobId}/portabilityArchiveState";
-        var state = await _service.ArchiveJobs.GetPortabilityArchiveState(resource).ExecuteAsync(cancellationToken);
-        return new DataArchiveResult(state.State, state.Urls);
-    }
 
     public void Dispose()
     {
         _service.Dispose();
     }
+
+    public async Task<string> InitiateAsync(Period? period = null, CancellationToken cancellationToken = default)
+    {
+        var request = new InitiatePortabilityArchiveRequest
+        {
+            Resources = Resources, StartTimeDateTimeOffset = period?.Start, EndTimeDateTimeOffset = period?.End,
+        };
+
+        var response = await _service.PortabilityArchive.Initiate(request).ExecuteAsync(cancellationToken);
+        return response.ArchiveJobId;
+    }
+
+    public async Task<(ImportJobState State, IEnumerable<Uri> Urls)> CheckJobAsync(string archiveJobId,
+        CancellationToken cancellationToken = default)
+    {
+        var resource = CreateArchiveResource(archiveJobId);
+        var response = await _service.ArchiveJobs.GetPortabilityArchiveState(resource).ExecuteAsync(cancellationToken);
+
+        var state = response.State switch
+        {
+            "IN_PROGRESS" => ImportJobState.InProgress,
+            "COMPLETED" => ImportJobState.Complete,
+            "FAILED" => ImportJobState.Failed,
+            "CANCELLED" => ImportJobState.Cancelled,
+            _ => ImportJobState.Unspecified
+        };
+
+        if (state != ImportJobState.Complete)
+        {
+            return (state, []);
+        }
+
+        var urls = response.Urls.Select(x => new Uri(x)).ToList();
+        return (state, urls);
+    }
+
+    public async Task CancelJobAsync(string archiveJobId, CancellationToken cancellationToken = default)
+    {
+        var resource = CreateArchiveResource(archiveJobId);
+        await _service.ArchiveJobs.Cancel(new CancelPortabilityArchiveRequest(), resource).ExecuteAsync(cancellationToken);
+    }
+
+    public async Task DisposeDataArchivesAsync(CancellationToken cancellationToken = default)
+    {
+        await _service.Authorization.Reset(new ResetAuthorizationRequest()).ExecuteAsync(cancellationToken);
+    }
+
+    private static string CreateArchiveResource(string archiveJobId) => $"archiveJobs/{archiveJobId}/portabilityArchiveState";
 }

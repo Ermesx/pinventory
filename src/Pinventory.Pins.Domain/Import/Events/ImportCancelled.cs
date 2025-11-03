@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Domain.Import.Events;
 
-public record ImportFailed(Guid AggregateId, string Error) : DomainEvent(AggregateId);
+public record ImportCancelled(Guid AggregateId) : DomainEvent(AggregateId);

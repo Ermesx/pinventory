@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using Pinventory.Pins.Domain.Import;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Tags;
 
@@ -8,11 +9,11 @@ namespace Pinventory.Pins.Infrastructure;
 public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbContext(options)
 {
     public DbSet<Pin> Pins => Set<Pin>();
-
-    /*public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
-    public DbSet<TaggingJob> TaggingJobs => Set<TaggingJob>();
-    public DbSet<VerificationJob> VerificationJobs => Set<VerificationJob>();*/
+    public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
     public DbSet<TagCatalog> TagCatalogs => Set<TagCatalog>();
+
+    /*public DbSet<TaggingJob> TaggingJobs => Set<TaggingJob>();
+    public DbSet<VerificationJob> VerificationJobs => Set<VerificationJob>();*/
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

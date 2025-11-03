@@ -1,3 +1,5 @@
-﻿namespace Pinventory.Pins.Domain.Import.Events;
+﻿using Pinventory.Pins.Domain.Abstractions;
 
-public record ImportCompleted(Guid ImportJobId);
+namespace Pinventory.Pins.Domain.Import.Events;
+
+public record ImportCompleted(Guid AggregateId) : DomainEvent(AggregateId);

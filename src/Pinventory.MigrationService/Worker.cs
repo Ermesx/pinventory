@@ -21,12 +21,14 @@ public class Worker(
 
         try
         {
+            // TODO: offline database migration for Wolverine https://wolverinefx.net/guide/durability/managing.html#disable-automatic-storage-migration
+
             using var scope = serviceProvider.CreateScope();
             IEnumerable<DbContext> dbContexts =
-                [
-                    scope.ServiceProvider.GetRequiredService<UserDbContext>(),
-                    scope.ServiceProvider.GetRequiredService<PinsDbContext>()
-                ];
+            [
+                scope.ServiceProvider.GetRequiredService<UserDbContext>(),
+                scope.ServiceProvider.GetRequiredService<PinsDbContext>()
+            ];
 
             foreach (var dbContext in dbContexts)
             {

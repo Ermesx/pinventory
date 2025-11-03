@@ -13,7 +13,7 @@ public class PinTests
     {
         // Arrange
         var pin = TestUtils.Pins.CreatePin();
-        var tags = new[] { " foo  ", "foo", "bar", "bar", "", "   ", null, "bad" }!;
+        var tags = new[] { " foo  ", "foo", "bar", "bar", "", "   ", null, "bad" };
         var verifier = Tagging.CreateTagVerifier();
 
         // Act
@@ -176,7 +176,6 @@ public class PinTests
 
         // Act
         var first = pin.Open();
-        var before = pin.DomainEvents.Count;
         var second = pin.Open();
 
         // Assert
@@ -227,7 +226,7 @@ public class PinTests
     {
         // Arrange
         var pin = TestUtils.Pins.CreatePin();
-        var tags = new[] { " foo ", "FOO", "Foo", "BAR" }!;
+        var tags = new[] { " foo ", "FOO", "Foo", "BAR" };
         var verifier = Tagging.CreateTagVerifier();
 
         // Act
@@ -249,7 +248,7 @@ public class PinTests
         var before = pin.DomainEvents.Count;
 
         // Act
-        pin.AssignTags(new[] { "bad", "   ", null }!, verifier);
+        pin.AssignTags(["bad", "   ", null!]!, verifier);
 
         // Assert
         pin.Tags.ShouldBeEmpty();
@@ -309,5 +308,4 @@ public class PinTests
         pin.StatusUpdatedAt.ShouldBe(afterClose);
         pin.DomainEvents.Count.ShouldBe(beforeCount);
     }
-
 }

@@ -8,12 +8,7 @@
 public interface IImportConcurrencyPolicy
 {
     /// <summary>
-    /// Throws if an import is already in progress for the specified user.
-    /// </summary>
-    Task EnsureNoActiveImportAsync(Guid userId, CancellationToken ct = default);
-
-    /// <summary>
     /// Returns true if no active import exists for the specified user.
     /// </summary>
-    Task<bool> CanStartImportAsync(Guid userId, CancellationToken ct = default);
+    Task<bool> CanStartImportAsync(string userId, CancellationToken cancellationToken = default);
 }

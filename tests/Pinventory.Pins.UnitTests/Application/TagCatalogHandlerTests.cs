@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using Moq;
 
@@ -27,7 +28,7 @@ public class TagCatalogHandlerTests
         var (handler, dbContext, busMock) = CreateHandler();
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -54,7 +55,7 @@ public class TagCatalogHandlerTests
         var (handler, dbContext, busMock) = CreateHandler();
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -72,16 +73,16 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var existingCatalog = new TagCatalog(ownerId);
-        existingCatalog.DefineTags(new[] { "existing" });
+        existingCatalog.DefineTags(["existing"]);
 
         var (handler, dbContext, _) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(existingCatalog);
         await dbContext.SaveChangesAsync();
 
-        var command = new DefineTagCatalogCommand(ownerId, new[] { "new" });
+        var command = new DefineTagCatalogCommand(ownerId, ["new"]);
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -89,7 +90,7 @@ public class TagCatalogHandlerTests
 
         var catalogs = await dbContext.TagCatalogs.Where(c => c.OwnerId == ownerId).ToListAsync();
         catalogs.Count.ShouldBe(1);
-        catalogs[0].Tags.Select(t => t.Value).ShouldBe(new[] { "existing" });
+        catalogs[0].Tags.Select(t => t.Value).ShouldBe(["existing"]);
     }
 
     [Test]
@@ -103,7 +104,7 @@ public class TagCatalogHandlerTests
         var (handler, dbContext, busMock) = CreateHandler();
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         // Note: Based on TagCatalog.DefineTags implementation, empty/whitespace tags are filtered out
@@ -113,7 +114,7 @@ public class TagCatalogHandlerTests
         await dbContext.SaveChangesAsync();
         var catalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         catalog.ShouldNotBeNull();
-        catalog.Tags.Select(t => t.Value).ShouldBe(new[] { "valid" });
+        catalog.Tags.Select(t => t.Value).ShouldBe(["valid"]);
     }
 
     [Test]
@@ -122,7 +123,7 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var catalog = new TagCatalog(ownerId);
-        catalog.DefineTags(new[] { "foo", "bar" });
+        catalog.DefineTags(["foo", "bar"]);
 
         var (handler, dbContext, busMock) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(catalog);
@@ -132,14 +133,14 @@ public class TagCatalogHandlerTests
         var command = new AddTagCommand(ownerId, "baz");
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
         var updatedCatalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
-        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(new[] { "foo", "bar", "baz" }, ignoreOrder: true);
+        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["foo", "bar", "baz"], ignoreOrder: true);
 
         busMock.Invocations.Count.ShouldBe(1);
         busMock.Invocations[0].Arguments[0].ShouldBeOfType<TagCatalogTagAdded>();
@@ -155,7 +156,7 @@ public class TagCatalogHandlerTests
         var (handler, dbContext, busMock) = CreateHandler();
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -170,7 +171,7 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var catalog = new TagCatalog(ownerId);
-        catalog.DefineTags(new[] { "foo", "bar" });
+        catalog.DefineTags(["foo", "bar"]);
 
         var (handler, dbContext, busMock) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(catalog);
@@ -180,7 +181,7 @@ public class TagCatalogHandlerTests
         var command = new AddTagCommand(ownerId, "FOO"); // Case-insensitive duplicate
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -188,7 +189,7 @@ public class TagCatalogHandlerTests
 
         var updatedCatalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
-        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(new[] { "foo", "bar" }, ignoreOrder: true);
+        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
     }
 
     [Test]
@@ -197,7 +198,7 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var catalog = new TagCatalog(ownerId);
-        catalog.DefineTags(new[] { "foo", "bar", "baz" });
+        catalog.DefineTags(["foo", "bar", "baz"]);
 
         var (handler, dbContext, busMock) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(catalog);
@@ -207,14 +208,14 @@ public class TagCatalogHandlerTests
         var command = new RemoveTagCommand(ownerId, "bar");
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
         var updatedCatalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
-        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(new[] { "foo", "baz" }, ignoreOrder: true);
+        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["foo", "baz"], ignoreOrder: true);
 
         busMock.Invocations.Count.ShouldBe(1);
         busMock.Invocations[0].Arguments[0].ShouldBeOfType<TagCatalogTagRemoved>();
@@ -230,7 +231,7 @@ public class TagCatalogHandlerTests
         var (handler, dbContext, busMock) = CreateHandler();
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -245,7 +246,7 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var catalog = new TagCatalog(ownerId);
-        catalog.DefineTags(new[] { "foo", "bar" });
+        catalog.DefineTags(["foo", "bar"]);
 
         var (handler, dbContext, busMock) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(catalog);
@@ -255,14 +256,14 @@ public class TagCatalogHandlerTests
         var command = new RemoveTagCommand(ownerId, "nonexistent");
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
         var updatedCatalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
-        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(new[] { "foo", "bar" }, ignoreOrder: true);
+        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
 
         // No event should be published for removing a non-existent tag
         busMock.Invocations.Count.ShouldBe(0);
@@ -274,7 +275,7 @@ public class TagCatalogHandlerTests
         // Arrange
         var ownerId = "123";
         var catalog = new TagCatalog(ownerId);
-        catalog.DefineTags(new[] { "foo", "bar" });
+        catalog.DefineTags(["foo", "bar"]);
 
         var (handler, dbContext, busMock) = CreateHandler();
         await dbContext.TagCatalogs.AddAsync(catalog);
@@ -284,14 +285,14 @@ public class TagCatalogHandlerTests
         var command = new RemoveTagCommand(ownerId, "FOO"); // Different case
 
         // Act
-        var result = await handler.Handle(command);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
         var updatedCatalog = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
         updatedCatalog.ShouldNotBeNull();
-        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(new[] { "bar" });
+        updatedCatalog.Tags.Select(t => t.Value).ShouldBe(["bar"]);
 
         busMock.Invocations.Count.ShouldBe(1);
         busMock.Invocations[0].Arguments[0].ShouldBeOfType<TagCatalogTagRemoved>();
@@ -303,10 +304,11 @@ public class TagCatalogHandlerTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
+        var logger = Mock.Of<ILogger<TagCatalogHandler>>();
         var dbContext = new PinsDbContext(options);
         var busMock = new Mock<IMessageBus>();
 
-        var handler = new TagCatalogHandler(dbContext, busMock.Object);
+        var handler = new TagCatalogHandler(logger, dbContext, busMock.Object);
 
         return (handler, dbContext, busMock);
     }

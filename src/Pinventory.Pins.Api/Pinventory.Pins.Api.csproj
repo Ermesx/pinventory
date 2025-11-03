@@ -10,8 +10,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
-    <PackageReference Include="WolverineFx.EntityFrameworkCore"/>
-    <PackageReference Include="WolverineFx.MemoryPack"/>
     <PackageReference Include="WolverineFx.Postgresql"/>
     <PackageReference Include="WolverineFx.RabbitMQ"/>
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild">

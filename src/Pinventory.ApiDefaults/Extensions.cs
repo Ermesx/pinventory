@@ -23,9 +23,6 @@ public static class Extensions
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
 
-        // Add telemetry for Wolverine
-        builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddSource("Wolverine"));
-
         builder.AddJwtBearerGoogleAuthentication();
         builder.AddApiAuthorization();
 
