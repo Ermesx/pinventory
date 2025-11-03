@@ -41,7 +41,7 @@
     <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.10" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
     <!-- Test Packages packages -->
-    <PackageVersion Include="TUnit" Version="0.80.0"/>
+    <PackageVersion Include="TUnit" Version="0.90.6"/>
     <PackageVersion Include="TUnit.Core" Version="0.80.0"/>
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
