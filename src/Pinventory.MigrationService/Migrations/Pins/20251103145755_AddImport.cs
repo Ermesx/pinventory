@@ -38,9 +38,9 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 name: "IX_Imports_UserId_State",
                 schema: "pins",
                 table: "Imports",
-                columns: new[] { "UserId", "State" },
+                columns: ["UserId", "State"],
                 unique: true,
-                filter: "[State] = 'InProgress'");
+                filter: "\"State\" = 'InProgress'");
         }
 
         /// <inheritdoc />

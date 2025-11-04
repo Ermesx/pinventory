@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace Pinventory.Pins.Application.Import.Services;
+namespace Pinventory.Pins.Application.Importing.Services;
 
 public interface IImportServiceFactory
 {

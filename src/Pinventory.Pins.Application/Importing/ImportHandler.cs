@@ -1,0 +1,283 @@
+﻿using FluentResults;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+using Pinventory.Pins.Application.Abstractions;
+using Pinventory.Pins.Application.Importing.Commands;
+using Pinventory.Pins.Application.Importing.Messages;
+using Pinventory.Pins.Application.Importing.Services;
+using Pinventory.Pins.Application.Importing.Services.Archive;
+using Pinventory.Pins.Application.Tagging.Messages;
+using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Domain.Places;
+using Pinventory.Pins.Infrastructure;
+
+using Wolverine;
+
+namespace Pinventory.Pins.Application.Importing;
+
+public sealed class ImportHandler(
+    ILogger<ImportHandler> logger,
+    IImportServiceFactory factory,
+    PinsDbContext dbContext,
+    IMessageContext bus,
+    IImportConcurrencyPolicy concurrencyPolicy,
+    IArchiveDownloader downloader) : ApplicationHandler(bus)
+{
+    private const int BatchSize = 50;
+
+    private const string RemovedPlaceComment = "No location information is available for this saved place";
+    private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
+
+    public async Task<Result<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Starting importMessage for {UserId}", command.UserId);
+
+        var client = await CreateClientAsync(command.UserId);
+        var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
+
+        var importJob = new Import(command.UserId);
+        var result = await importJob.StartAsync(archiveJobId, concurrencyPolicy);
+
+        if (result.IsFailed)
+        {
+            return Result.Fail(result.Errors);
+        }
+
+        await dbContext.Imports.AddAsync(importJob, cancellationToken);
+        await RaiseEventsAsync(importJob);
+
+        await bus.PublishAsync(new CheckJobMessage(importJob.UserId, archiveJobId));
+
+        return Result.Ok(archiveJobId);
+    }
+
+    public async Task<Result<Success>> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
+
+        var importJob = await GetCurrentImport(command, cancellationToken);
+        if (importJob is null)
+        {
+            return Result.Fail(Errors.ImportJob.RunningImportNotFound(command));
+        }
+
+        var result = importJob.Cancel();
+        if (result.IsSuccess)
+        {
+            var client = await CreateClientAsync(command.UserId);
+            await client.CancelJobAsync(command.ArchiveJobId, cancellationToken);
+        }
+
+        await RaiseEventsAsync(importJob);
+        return result;
+    }
+
+    public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.UserId);
+
+        var importJob = await GetCurrentImport(check, cancellationToken);
+        if (importJob is null)
+        {
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.UserId);
+            return;
+        }
+
+        var client = await CreateClientAsync(check.UserId);
+        var archiveResult = await client.CheckJobAsync(check.ArchiveJobId, cancellationToken);
+
+        Result<Success> result;
+        switch (archiveResult.State)
+        {
+            case ImportState.InProgress:
+                logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.UserId);
+                await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckInterval));
+                return;
+            case ImportState.Failed:
+                logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.UserId);
+                result = importJob.Fail("Archive job failed");
+                if (result.IsFailed)
+                {
+                    logger.LogError("Failed to fail import job: {Errors}", result.Errors);
+                    return;
+                }
+
+                break;
+            case ImportState.Cancelled:
+                logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.UserId);
+                result = importJob.Cancel();
+                if (result.IsFailed)
+                {
+                    logger.LogError("Failed to cancel import job: {Errors}", result.Errors);
+                    return;
+                }
+
+                break;
+            default:
+                await bus.PublishAsync(DownloadArchiveMessage.Create(check, archiveResult.Urls.ToArray()));
+                break;
+        }
+
+        await RaiseEventsAsync(importJob);
+    }
+
+    public async Task HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
+
+        var importJob = await GetCurrentImport(download, cancellationToken);
+        if (importJob is null)
+        {
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
+            return;
+        }
+
+        if (download.Urls.Length < 2)
+        {
+            logger.LogError("Not enough URLs to download archive");
+            return;
+        }
+
+        var archiveBrowserUri = download.Urls[0];
+        var dataFilesUri = download.Urls[1];
+
+        var result = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
+        if (result.IsFailed)
+        {
+            logger.LogError("Failed to download archive: {Errors}", result.Errors);
+            return;
+        }
+
+        var records = result.Value.Data.Features;
+        importJob.UpdateTotal((uint)records.Length);
+
+        foreach (var batch in records.Chunk(BatchSize))
+        {
+            var starredPlaces = batch.Select(MapStarredPlace).ToList();
+            await bus.PublishAsync(ProcessPinsBatchMessage.Create(download, starredPlaces));
+        }
+
+        return;
+
+        static StarredPlace MapStarredPlace(Feature place)
+        {
+            return new StarredPlace(
+                place.Properties.Location?.Name,
+                place.Properties.GoogleMapsUrl,
+                place.Properties.Location?.Address,
+                place.Properties.Location?.CountryCode,
+                place.Geometry.Coordinates[0],
+                place.Geometry.Coordinates[1],
+                place.Properties.Date,
+                place.Properties.Comment);
+        }
+    }
+
+    public async Task HandleAsync(ProcessPinsBatchMessage batch, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Import {ArchiveJobId}: Processing batch of {Count} pins for {UserId}", batch.ArchiveJobId,
+            batch.StarredPlaces.Count(), batch.UserId);
+
+        var importJob = await GetCurrentImport(batch, cancellationToken);
+        if (importJob is null)
+        {
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
+            return;
+        }
+
+        int processed = 0, created = 0, updated = 0, failed = 0, conflicts = 0;
+        List<ReportedPlace> conflictingPlaces = [], failedPlaces = [];
+        List<Pin> pinsToCreate = [], updatedPins = [];
+
+        var existingPins = dbContext.Pins.Where(x => x.OwnerId == batch.UserId).ToList();
+        foreach (var place in batch.StarredPlaces)
+        {
+            processed++;
+
+            if (place.Comment == RemovedPlaceComment)
+            {
+                failedPlaces.Add(new ReportedPlace(place.GoogleMapsUrl, place.AddedDate));
+                failed++;
+                continue;
+            }
+
+            // Conflicted places are those with the same name but different place ID
+            var possibleConflictedPin = existingPins.FirstOrDefault(x => x.Name == place.Name);
+            if (possibleConflictedPin is not null)
+            {
+                conflictingPlaces.Add(new ReportedPlace(place.GoogleMapsUrl, place.AddedDate));
+                conflicts++;
+                continue;
+            }
+
+            var placeId = GooglePlaceId.Parse(place.GoogleMapsUrl);
+            var existingPin = existingPins.FirstOrDefault(x => x.PlaceId == placeId);
+            if (existingPin is null)
+            {
+                pinsToCreate.Add(CreatePin(placeId, place));
+                created++;
+                continue;
+            }
+
+            existingPin.Rename(place.Name!);
+            updatedPins.Add(existingPin);
+            updated++;
+        }
+
+        var appendBatch = importJob.AppendBatch(processed, created, updated, failed, conflicts);
+        if (appendBatch.IsFailed)
+        {
+            logger.LogError("Failed to append batch: {Errors}", appendBatch.Errors);
+            return;
+        }
+
+        importJob.ReportConflictsAndFailures(conflictingPlaces, failedPlaces);
+
+        var tryComplete = importJob.TryComplete();
+        if (tryComplete.IsFailed)
+        {
+            logger.LogError("Failed to complete import job: {Errors}", tryComplete.Errors);
+            return;
+        }
+
+        await RaiseEventsAsync(importJob);
+
+        await dbContext.AddRangeAsync(pinsToCreate, cancellationToken);
+
+        var pinsIdsToTag = updatedPins.Select(x => x.Id).ToList().Concat(pinsToCreate.Select(x => x.Id));
+        foreach (Guid pinId in pinsIdsToTag)
+        {
+            await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
+        }
+
+        return;
+
+        Pin CreatePin(GooglePlaceId placeId, StarredPlace place)
+        {
+            return new Pin(batch.UserId, place.Name!, placeId, new Address(place.Address!, place.CountryCode!.Value),
+                new Location(place.Latitude!.Value, place.Longitude!.Value), place.AddedDate);
+        }
+    }
+
+    private async Task<IImportService> CreateClientAsync(string userId)
+    {
+        var result = await factory.CreateAsync(userId);
+        if (result.IsFailed)
+        {
+            logger.LogError("Failed to create import service: {Errors}", result.Errors);
+            throw new InvalidOperationException("Failed to create import service");
+        }
+
+        return result.Value;
+    }
+
+    private async Task<Import?> GetCurrentImport(ICorrelatedMessage message, CancellationToken cancellationToken)
+    {
+        return await dbContext.Imports
+            .FirstOrDefaultAsync(
+                x => x.UserId == message.UserId && x.ArchiveJobId == message.ArchiveJobId && x.State == ImportState.InProgress,
+                cancellationToken);
+    }
+}

@@ -32,10 +32,12 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
             entity.Property(x => x.Status).HasConversion<string>().IsRequired();
             entity.Property(x => x.StatusUpdatedAt).IsRequired();
+            entity.Property(x => x.AddedAt).IsRequired();
 
             entity.ComplexProperty(x => x.Address, cb =>
             {
-                cb.Property(p => p.Line).HasColumnName("Address");
+                cb.Property(p => p.Line).HasColumnName("Address").IsRequired();
+                cb.Property(p => p.CountryCode).HasColumnName("CountryCode").HasConversion<string>().IsRequired();
             });
             entity.ComplexProperty(x => x.Location, cb =>
             {
@@ -51,7 +53,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             {
                 b.ToTable("PinTags");
                 b.WithOwner().HasForeignKey("PinId");
-                b.Property(t => t.Value).HasColumnName("Value").IsRequired();
+                b.Property(t => t.Value).IsRequired();
                 b.HasKey("PinId", "Value");
                 b.HasIndex("Value");
             });
@@ -73,7 +75,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             {
                 e.ToTable("CatalogTags");
                 e.WithOwner().HasForeignKey("CatalogId");
-                e.Property(i => i.Value).HasColumnName("Value").IsRequired();
+                e.Property(i => i.Value).IsRequired();
                 e.HasKey("CatalogId", "Value");
                 e.HasIndex("Value");
             });
@@ -86,10 +88,10 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.UserId).IsRequired();
-            entity.Property(x => x.ArchiveJobId).IsRequired(false);
+            entity.Property(x => x.ArchiveJobId);
             entity.Property(x => x.State).HasConversion<string>().IsRequired();
-            entity.Property(x => x.StartedAt).IsRequired(false);
-            entity.Property(x => x.CompletedAt).IsRequired(false);
+            entity.Property(x => x.StartedAt);
+            entity.Property(x => x.CompletedAt);
             entity.Property(x => x.Processed).IsRequired();
             entity.Property(x => x.Created).IsRequired();
             entity.Property(x => x.Updated).IsRequired();
@@ -101,8 +103,29 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
+            entity.OwnsMany(x => x.ConflictedPlaces, e =>
+            {
+                e.ToTable("ImportConflictedPlaces");
+                e.WithOwner().HasForeignKey("ImportId");
+                e.Property(p => p.MapsUrl).IsRequired();
+                e.Property(p => p.AddedDate).IsRequired();
+                e.HasKey("ImportId", "MapsUrl", "AddedDate");
+            });
+
+            entity.OwnsMany(x => x.FailedPlaces, e =>
+            {
+                e.ToTable("ImportFailedPlaces");
+                e.WithOwner().HasForeignKey("ImportId");
+                e.Property(p => p.MapsUrl).IsRequired();
+                e.Property(p => p.AddedDate).IsRequired();
+                e.HasKey("ImportId", "MapsUrl", "AddedDate");
+            });
+
+            entity.Navigation(x => x.ConflictedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(x => x.FailedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
+
             entity.HasIndex(x => new { x.UserId, x.State })
-                .HasFilter("[State] = 'InProgress'")
+                .HasFilter("\"State\" = 'InProgress'")
                 .IsUnique();
         });
 

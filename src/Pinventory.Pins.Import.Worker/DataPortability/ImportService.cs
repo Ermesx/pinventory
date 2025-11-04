@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using Pinventory.Google;
 using Pinventory.Google.Configuration;
 using Pinventory.Google.Tokens;
-using Pinventory.Pins.Application.Import.Services;
+using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 
@@ -55,7 +55,7 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
         var state = response.State switch
         {
             "IN_PROGRESS" => ImportState.InProgress,
-            "COMPLETED" => ImportState.Complete,
+            "COMPLETE" => ImportState.Complete,
             "FAILED" => ImportState.Failed,
             "CANCELLED" => ImportState.Cancelled,
             _ => ImportState.Unspecified

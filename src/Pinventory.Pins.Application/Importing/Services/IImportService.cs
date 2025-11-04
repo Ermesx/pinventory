@@ -1,7 +1,7 @@
 ﻿using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 
-namespace Pinventory.Pins.Application.Import.Services;
+namespace Pinventory.Pins.Application.Importing.Services;
 
 public interface IImportService
 {

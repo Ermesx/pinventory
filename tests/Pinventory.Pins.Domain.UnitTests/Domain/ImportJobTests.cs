@@ -279,7 +279,7 @@ public class ImportJobTests
         var importJob = ImportJobs.CreateStartedImportJob();
 
         // Act
-        var result = importJob.Complete();
+        var result = importJob.TryComplete();
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -297,7 +297,7 @@ public class ImportJobTests
         var importJob = new Import("user123");
 
         // Act
-        var result = importJob.Complete();
+        var result = importJob.TryComplete();
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -457,7 +457,7 @@ public class ImportJobTests
         // Arrange
         var importJob = ImportJobs.CreateStartedImportJob();
         importJob.UpdateTotal(100);
-        importJob.Complete();
+        importJob.TryComplete();
 
         // Act
         importJob.UpdateTotal(50);

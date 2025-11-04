@@ -6,24 +6,25 @@ using Pinventory.Pins.Domain.Places.Events;
 namespace Pinventory.Pins.Domain.Places;
 
 public sealed class Pin(
-    string? ownerId,
+    string ownerId,
+    string name,
     GooglePlaceId googlePlaceId,
     Address address,
     Location location,
+    DateTimeOffset addedAt,
     PinStatus status = PinStatus.Unknown,
     Guid? id = null) : AggregateRoot(id)
 {
     private readonly HashSet<Tag> _tags = [];
-    private Pin() : this(null, GooglePlaceId.Unknown, Address.Unknown, Location.Default) { }
-
-    public string? OwnerId { get; private set; } = ownerId;
+    private Pin() : this(string.Empty, "no-name", GooglePlaceId.Unknown, Address.Unknown, Location.Default, DateTimeOffset.UtcNow) { }
+    public string OwnerId { get; private set; } = ownerId;
+    public string Name { get; private set; } = name;
     public GooglePlaceId PlaceId { get; private set; } = googlePlaceId;
     public Address Address { get; private set; } = address;
     public Location Location { get; private set; } = location;
-
     public PinStatus Status { get; private set; } = status;
     public DateTimeOffset StatusUpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
-
+    public DateTimeOffset AddedAt { get; private set; } = addedAt;
     public IReadOnlyCollection<Tag> Tags => _tags;
 
     public Result<IEnumerable<Tag>> AssignTags(IEnumerable<string> tags, ITagVerifier tagVerifier)
@@ -91,6 +92,15 @@ public sealed class Pin(
             StatusUpdatedAt = DateTimeOffset.UtcNow;
             Raise(new PinOpened(Id, Status, previousStatus));
             return Result.Ok();
+        }
+    }
+
+    public void Rename(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && Name != name)
+        {
+            Name = name;
+            StatusUpdatedAt = DateTimeOffset.UtcNow;
         }
     }
 }

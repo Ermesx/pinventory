@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentResults" />
+    <PackageReference Include="Nager.Country"/>
   </ItemGroup>
 
 </Project>

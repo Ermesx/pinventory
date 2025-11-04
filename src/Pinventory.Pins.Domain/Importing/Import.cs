@@ -7,14 +7,14 @@ namespace Pinventory.Pins.Domain.Importing;
 
 public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
 {
+    private readonly List<ReportedPlace> _conflictedPlaces = [];
+    private readonly List<ReportedPlace> _failedPlaces = [];
     private Import() : this(string.Empty) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
     public string UserId { get; } = userId;
-
     public string? ArchiveJobId { get; private set; }
     public ImportState State { get; private set; } = ImportState.Unspecified;
-
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public int Processed { get; private set; }
@@ -23,6 +23,8 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
     public int Failed { get; private set; }
     public int Conflicts { get; private set; }
     public uint Total { get; private set; }
+    public IReadOnlyCollection<ReportedPlace> ConflictedPlaces => _conflictedPlaces;
+    public IReadOnlyCollection<ReportedPlace> FailedPlaces => _failedPlaces;
 
     public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
     {
@@ -33,7 +35,7 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
 
         if (State != ImportState.Unspecified || !await policy.CanStartImportAsync(UserId))
         {
-            return Result.Fail(Errors.ImportJob.ImportAlreadyStartedOrFinished(State));
+            return Result.Fail(Errors.ImportJob.ImportAlreadyStartedOrFinished(this));
         }
 
         State = ImportState.InProgress;
@@ -49,7 +51,7 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
+            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
         }
 
         if (processed < 0 || created < 0 || updated < 0 || failed < 0 || conflicts < 0)
@@ -67,11 +69,16 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
         return Result.Ok();
     }
 
-    public Result<Success> Complete()
+    public Result<Success> TryComplete()
     {
+        if (Processed < Total)
+        {
+            return Result.Fail(Errors.ImportJob.ImportNotCompleteYet(this));
+        }
+
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
+            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
         }
 
         State = ImportState.Complete;
@@ -85,7 +92,7 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
+            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
         }
 
         if (string.IsNullOrWhiteSpace(error))
@@ -104,7 +111,7 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(State));
+            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
         }
 
         State = ImportState.Cancelled;
@@ -122,5 +129,11 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
         }
 
         Total += count;
+    }
+
+    public void ReportConflictsAndFailures(IEnumerable<ReportedPlace> conflictingPlaces, IEnumerable<ReportedPlace> failedPlaces)
+    {
+        _conflictedPlaces.AddRange(conflictingPlaces);
+        _failedPlaces.AddRange(failedPlaces);
     }
 }

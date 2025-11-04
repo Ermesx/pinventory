@@ -25,12 +25,18 @@ public static class Errors
     {
         public static Error ArchiveJobIdCannotBeEmpty() => new("Archive job id cannot be empty");
 
-        public static Error ImportAlreadyStartedOrFinished(ImportState state) => new($"Import already started or finished: {state}");
+        public static Error ImportAlreadyStartedOrFinished(Import import) =>
+            new($"Import {import.ArchiveJobId} already started or finished: {import.State} for user {import.UserId}");
 
-        public static Error ImportNotInProgress(ImportState state) => new($"Import is not in progress: {state}");
+        public static Error ImportNotInProgress(Import import) =>
+            new($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");
 
         public static Error ErrorMessageCannotBeEmpty() => new("Error message cannot be empty");
 
         public static Error BatchCountersMustBeNonNegative() => new("Batch counters must be non-negative");
+
+        public static Error ImportNotCompleteYet(Import import) =>
+            new(
+                $"Import {import.ArchiveJobId} is not complete ({import.Processed} of {import.Total} processed) yet for user {import.UserId}");
     }
 }

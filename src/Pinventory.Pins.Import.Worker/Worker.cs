@@ -1,6 +1,6 @@
 using Google;
 
-using Pinventory.Pins.Application.Import.Services;
+using Pinventory.Pins.Application.Importing.Services;
 
 namespace Pinventory.Pins.Import.Worker;
 
@@ -22,7 +22,7 @@ public class Worker(ILogger<Worker> logger, IImportServiceFactory importServiceF
     {
         if (logger.IsEnabled(LogLevel.Error))
         {
-            var result = await importServiceFactory.CreateAsync("7d047a61-cae8-45cf-b82e-1d32533bb82d", stoppingToken);
+            var result = await importServiceFactory.CreateAsync("6aa93c5b-8e1f-433a-b52d-120282520103", stoppingToken);
             if (result.IsFailed)
             {
                 logger.LogError("Failed to create import service: {Errors}", result.Errors);
