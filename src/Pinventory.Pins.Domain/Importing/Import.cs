@@ -1,7 +1,6 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
-using Pinventory.Pins.Domain.Importing.Events;
 
 namespace Pinventory.Pins.Domain.Importing;
 
@@ -43,7 +42,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         ArchiveJobId = archiveJobId;
         StartedAt = DateTimeOffset.UtcNow;
 
-        Raise(new ImportStarted(Id, UserId, ArchiveJobId));
+        Raise(new Events.ImportStarted(Id, UserId, ArchiveJobId));
 
         return Result.Ok();
     }
@@ -65,7 +64,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         Updated += updated;
         Failed += failed;
         Conflicts += conflicts;
-        Raise(new ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
+        Raise(new Events.ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
 
         return Result.Ok();
     }
@@ -84,7 +83,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Complete;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCompleted(Id));
+        Raise(new Events.ImportCompleted(Id));
 
         return Result.Ok();
     }
@@ -103,7 +102,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportFailed(Id, error));
+        Raise(new Events.ImportFailed(Id, error));
 
         return Result.Ok();
     }
@@ -117,7 +116,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Cancelled;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCancelled(Id));
+        Raise(new Events.ImportCancelled(Id));
 
         return Result.Ok();
     }

@@ -1,7 +1,6 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
-using Pinventory.Pins.Domain.Places.Events;
 
 namespace Pinventory.Pins.Domain.Places;
 
@@ -46,7 +45,7 @@ public sealed class Pin(
 
         if (_tags.Any())
         {
-            Raise(new PinTagsAssigned(Id, _tags.Select(t => t.Value)));
+            Raise(new Events.PinTagsAssigned(Id, _tags.Select(t => t.Value)));
         }
 
         return results.Any(r => !r.IsSuccess) ? Result.Merge(results.ToArray()) : Result.Ok();
@@ -69,7 +68,7 @@ public sealed class Pin(
                 var previousStatus = Status;
                 Status = status;
                 StatusUpdatedAt = DateTimeOffset.UtcNow;
-                Raise(new PinClosed(Id, Status, previousStatus));
+                Raise(new Events.PinClosed(Id, Status, previousStatus));
             }
 
             return Result.Ok();
@@ -90,7 +89,7 @@ public sealed class Pin(
             var previousStatus = Status;
             Status = PinStatus.Open;
             StatusUpdatedAt = DateTimeOffset.UtcNow;
-            Raise(new PinOpened(Id, Status, previousStatus));
+            Raise(new Events.PinOpened(Id, Status, previousStatus));
             return Result.Ok();
         }
     }
