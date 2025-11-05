@@ -5,10 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="WolverineFx.Postgresql"/>
+    <PackageReference Include="WolverineFx.RabbitMQ"/>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj"/>
     <ProjectReference Include="..\Pinventory.ServiceDefaults\Pinventory.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>
+

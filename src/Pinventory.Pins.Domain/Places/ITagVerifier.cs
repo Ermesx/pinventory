@@ -2,5 +2,5 @@
 
 public interface ITagVerifier
 {
-    bool IsAllowed(string tag);
+    bool IsAllowed(string? ownerId, string tag);
 }

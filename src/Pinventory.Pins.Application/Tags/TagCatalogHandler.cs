@@ -1,6 +1,7 @@
 ﻿using FluentResults;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Tags.Commands;
@@ -12,11 +13,14 @@ using Wolverine;
 namespace Pinventory.Pins.Application.Tags;
 
 // dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
-public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) : ApplicationHandler(bus)
+public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbContext dbContext, IMessageBus bus)
+    : ApplicationHandler(bus)
 {
-    public async Task<Result<Guid>> Handle(DefineTagCatalogCommand command)
+    public async Task<Result<Guid>> HandleAsync(DefineTagCatalogCommand command, CancellationToken cancellationToken = default)
     {
-        var tagsCatalog = await GetTagCatalog(command);
+        logger.LogInformation("Defining tag catalog for {OwnerId}", command.OwnerId);
+
+        var tagsCatalog = await GetTagCatalogAsync(command, cancellationToken);
         if (tagsCatalog is not null)
         {
             return Result.Fail(Errors.TagCatalogHandler.CatalogAlreadyExists(command));
@@ -29,15 +33,17 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(result.Errors);
         }
 
-        await dbContext.TagCatalogs.AddAsync(tagsCatalog);
-        await RaiseEvents(tagsCatalog);
+        await dbContext.TagCatalogs.AddAsync(tagsCatalog, cancellationToken);
+        await RaiseEventsAsync(tagsCatalog);
 
         return Result.Ok(tagsCatalog.Id);
     }
 
-    public async Task<Result<Success>> Handle(AddTagCommand command)
+    public async Task<Result<Success>> HandleAsync(AddTagCommand command, CancellationToken cancellationToken = default)
     {
-        var tagCatalog = await GetTagCatalog(command);
+        logger.LogInformation("Adding tag {Tag} to catalog for {OwnerId}", command.Tag, command.OwnerId);
+
+        var tagCatalog = await GetTagCatalogAsync(command, cancellationToken);
         if (tagCatalog is null)
         {
             return Result.Fail(Errors.TagCatalogHandler.CatalogNotFound(command));
@@ -49,14 +55,16 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(result.Errors);
         }
 
-        await RaiseEvents(tagCatalog);
+        await RaiseEventsAsync(tagCatalog);
 
         return Result.Ok();
     }
 
-    public async Task<Result<Success>> Handle(RemoveTagCommand command)
+    public async Task<Result<Success>> HandleAsync(RemoveTagCommand command, CancellationToken cancellationToken = default)
     {
-        var tagCatalog = await GetTagCatalog(command);
+        logger.LogInformation("Removing tag {Tag} from catalog for {OwnerId}", command.Tag, command.OwnerId);
+
+        var tagCatalog = await GetTagCatalogAsync(command, cancellationToken);
         if (tagCatalog is null)
         {
             return Result.Fail(Errors.TagCatalogHandler.CatalogNotFound(command));
@@ -68,13 +76,13 @@ public sealed class TagCatalogHandler(PinsDbContext dbContext, IMessageBus bus) 
             return Result.Fail(result.Errors);
         }
 
-        await RaiseEvents(tagCatalog);
+        await RaiseEventsAsync(tagCatalog);
 
         return Result.Ok();
     }
 
-    private async Task<TagCatalog?> GetTagCatalog(OwnerCommand command)
+    private async Task<TagCatalog?> GetTagCatalogAsync(OwnerCommand command, CancellationToken cancellationToken)
     {
-        return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == command.OwnerId);
+        return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == command.OwnerId, cancellationToken);
     }
 }
