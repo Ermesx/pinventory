@@ -4,7 +4,6 @@ using Pinventory.Google;
 using Pinventory.Identity.Tokens.Grpc;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Import.Worker;
 using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Services;
@@ -18,8 +17,6 @@ using Wolverine.RabbitMQ;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
-
-builder.Services.AddHostedService<Worker>();
 
 // Add services to the container.
 
@@ -42,6 +39,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddGoogleAuthOptions();
 builder.Services.AddSingleton<IImportServiceFactory, ImportServiceFactory>();
 builder.Services.AddScoped<IImportConcurrencyPolicy, ImportConcurrencyPolicy>();
+builder.Services.AddTransient<IArchiveDownloader, ArchiveDownloader>();
 
 builder.Services.AddGrpcClient<Tokens.TokensClient>(options =>
     options.Address = new Uri("http://pinventory-identity-tokens-grpc")

@@ -1,4 +1,6 @@
-﻿using Pinventory.Pins.Domain.Places;
+﻿using Microsoft.EntityFrameworkCore;
+
+using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Infrastructure.Services;
 
@@ -13,9 +15,13 @@ public sealed class TagVerifier(PinsDbContext dbContext) : ITagVerifier
 
         var normalizedTag = tag.Trim().ToLower();
 
-        return dbContext.TagCatalogs
+        var allowedTags = dbContext.TagCatalogs
+            .AsNoTracking()
             .Where(catalog => catalog.OwnerId == ownerId)
             .SelectMany(catalog => catalog.Tags)
-            .Any(t => t.Value == normalizedTag);
+            .Select(t => t.Value)
+            .ToHashSet();
+
+        return allowedTags.Contains(normalizedTag);
     }
 }
