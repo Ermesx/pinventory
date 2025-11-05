@@ -206,7 +206,7 @@ public sealed class ImportHandler(
             }
 
             // Conflicted places are those with the same name but different place ID
-            var possibleConflictedPin = existingPins.FirstOrDefault(x => x.Name == place.Name);
+            var possibleConflictedPin = existingPins.SingleOrDefault(x => x.Name == place.Name);
             if (possibleConflictedPin is not null)
             {
                 conflictingPlaces.Add(new ReportedPlace(place.GoogleMapsUrl, place.AddedDate));
