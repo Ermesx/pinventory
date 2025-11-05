@@ -21,8 +21,10 @@ This document distills enforceable business rules from doc/pins-ubiquitous-langu
 - AddTag adds when missing; duplicate add fails; raises TagCatalogTagAdded only on add.
 - RemoveTag removes by normalized match; missing is a success but raises no event; raises TagCatalogTagRemoved only when removed.
 
-### ImportJob
-- At most one ImportJob may be active (InProgress) per user at a time — enforced by IImportConcurrencyPolicy in application/infrastructure.
+### Import
+
+- At most one Import may be active (InProgress) per user at a time — enforced by IImportConcurrencyPolicy in
+  application/infrastructure.
 - Progress counters (Processed, Created, Updated, Failed, Conflicts) are non‑negative and accumulate during InProgress.
 - AppendBatch is only valid while InProgress.
 - Complete and Fail are only valid from InProgress and are terminal; no further batches after terminal.
