@@ -37,7 +37,7 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(command.UserId);
         var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
 
-        var importJob = new Import(command.UserId);
+        var importJob = new Import(command.UserId, command.Period);
         var result = await importJob.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)

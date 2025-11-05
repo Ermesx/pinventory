@@ -99,6 +99,13 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.Conflicts).IsRequired();
             entity.Property(x => x.Total).IsRequired();
 
+
+            entity.ComplexProperty(x => x.Period, cb =>
+            {
+                cb.Property(p => p.Start).HasColumnName("PeriodStart").IsRequired();
+                cb.Property(p => p.End).HasColumnName("PeriodEnd").IsRequired();
+            });
+
             entity.Property(x => x.Version).IsConcurrencyToken()
                 .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();

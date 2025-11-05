@@ -5,7 +5,7 @@ using Pinventory.Pins.Domain.Importing.Events;
 
 namespace Pinventory.Pins.Domain.Importing;
 
-public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
+public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
 {
     private readonly List<ReportedPlace> _conflictedPlaces = [];
     private readonly List<ReportedPlace> _failedPlaces = [];
@@ -13,6 +13,7 @@ public sealed class Import(string userId, Guid? id = null) : AggregateRoot(id)
 
     // TODO: Add value objects for UserId and ArchiveJobId
     public string UserId { get; } = userId;
+    public Period Period { get; private set; } = period ?? Period.AllTime;
     public string? ArchiveJobId { get; private set; }
     public ImportState State { get; private set; } = ImportState.Unspecified;
     public DateTimeOffset? StartedAt { get; private set; }

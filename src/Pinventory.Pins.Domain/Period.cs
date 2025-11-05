@@ -11,6 +11,8 @@ public sealed record Period
         End = end;
     }
 
+    public static Period AllTime => new(DateTimeOffset.MinValue, DateTimeOffset.UtcNow);
+
     public DateTimeOffset Start { get; }
     public DateTimeOffset End { get; }
 

@@ -12,7 +12,7 @@ public class TagCatalogTests
     {
         // Arrange
         var catalog = new TagCatalog();
-        var tags = new[] { " foo  ", "foo", "BAR", "bar", "", "   ", string.Empty }!;
+        var tags = new[] { " foo  ", "foo", "BAR", "bar", "", "   ", string.Empty };
 
         // Act
         var result = catalog.DefineTags(tags);

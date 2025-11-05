@@ -308,4 +308,38 @@ public class PinTests
         pin.StatusUpdatedAt.ShouldBe(afterClose);
         pin.DomainEvents.Count.ShouldBe(beforeCount);
     }
+
+    [Test]
+    public void Rename_updates_name_and_StatusUpdatedAt()
+    {
+        // Arrange
+        var pin = TestUtils.Pins.CreatePin();
+        var before = pin.StatusUpdatedAt;
+        var newName = "Even Greater Place";
+
+        // Act
+        Thread.Sleep(1);
+        pin.Rename(newName);
+
+        // Assert
+        pin.Name.ShouldBe(newName);
+        pin.StatusUpdatedAt.ShouldBeGreaterThan(before);
+    }
+
+    [Test]
+    public void Rename_ignores_whitespace_or_same_name()
+    {
+        // Arrange
+        var pin = TestUtils.Pins.CreatePin();
+        var beforeName = pin.Name;
+        var before = pin.StatusUpdatedAt;
+
+        // Act
+        pin.Rename("   ");
+        pin.Rename(beforeName); // same name
+
+        // Assert
+        pin.Name.ShouldBe(beforeName);
+        pin.StatusUpdatedAt.ShouldBe(before);
+    }
 }
