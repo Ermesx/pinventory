@@ -1,15 +1,12 @@
-using JasperFx;
-using JasperFx.CodeGeneration;
-
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Tags;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.ServiceDefaults;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
-using Wolverine.MemoryPack;
 using Wolverine.Postgresql;
 using Wolverine.RabbitMQ;
 
@@ -21,32 +18,17 @@ builder.AddApiDefaults();
 if (!OpenApi.IsGenerating)
 {
     var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");
-
     builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => options.UseNpgsql(connectionString));
 
     builder.Host.UseWolverine(options =>
     {
-        options.Services.AddJasperFx(x =>
-        {
-            x.Production.ResourceAutoCreate = AutoCreate.None;
-            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-            x.Production.AssertAllPreGeneratedTypesExist = true;
-        });
-
-        options.UseMemoryPackSerialization();
-
-        options.UseEntityFrameworkCoreTransactions();
         options.PersistMessagesWithPostgresql(connectionString!);
 
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
             .UseConventionalRouting();
 
-        options.Policies.UseDurableOutboxOnAllSendingEndpoints();
-        options.Policies.UseDurableInboxOnAllListeners();
-        options.Policies.UseDurableLocalQueues();
-        options.Policies.ConventionalLocalRoutingIsAdditive();
-        options.Policies.AutoApplyTransactions();
+        options.AddDefaultWolverineOptions();
     });
 }
 

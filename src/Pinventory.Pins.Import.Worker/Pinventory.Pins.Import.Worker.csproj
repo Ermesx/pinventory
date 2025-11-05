@@ -4,6 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
     <PackageReference Include="FluentResults" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Net.Client" />
@@ -14,10 +15,14 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Google.Apis.DataPortability.v1" />
+    <PackageReference Include="WolverineFx.Postgresql"/>
+    <PackageReference Include="WolverineFx.RabbitMQ"/>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Pinventory.Google\Pinventory.Google.csproj" />
+    <ProjectReference Include="..\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj"/>
+    <ProjectReference Include="..\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj"/>
     <ProjectReference Include="..\Pinventory.ServiceDefaults\Pinventory.ServiceDefaults.csproj" />
   </ItemGroup>
   

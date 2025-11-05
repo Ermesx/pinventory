@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 
+using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Tags.Commands;
 
 namespace Pinventory.Pins.Application;
@@ -7,6 +8,8 @@ namespace Pinventory.Pins.Application;
 public static class Errors
 {
     private const string GlobalUser = "global";
+
+    public class NotFoundError(string message) : Error(message);
 
     public static class TagCatalogHandler
     {
@@ -18,5 +21,9 @@ public static class Errors
         private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerId;
     }
 
-    public class NotFoundError(string message) : Error(message);
+    public static class Import
+    {
+        public static Error RunningImportNotFound(CancelImportCommand command) =>
+            new NotFoundError($"Import {command.ArchiveJobId} not found for user {command.UserId}");
+    }
 }

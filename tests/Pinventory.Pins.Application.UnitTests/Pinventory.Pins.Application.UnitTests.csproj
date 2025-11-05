@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+    <PackageReference Include="Moq"/>
+    <PackageReference Include="TUnit"/>
+    <PackageReference Include="Shouldly"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj"/>
+    <ProjectReference Include="..\..\src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj"/>
+  </ItemGroup>
+
+</Project>
+

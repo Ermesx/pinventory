@@ -2,7 +2,7 @@
 
 public abstract class Entity(Guid? id)
 {
-    public Guid Id { get; } = id ?? Guid.NewGuid();
+    public Guid Id { get; } = id ?? Guid.CreateVersion7();
 
     public override bool Equals(object? obj) => obj is Entity other && Id == other.Id;
 

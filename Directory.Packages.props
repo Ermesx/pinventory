@@ -20,13 +20,13 @@
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.10" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.5.2"/>
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.10" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.10" />
+    <PackageVersion Include="Nager.Country" Version="4.3.4"/>
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageVersion Include="Refit" Version="8.0.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
@@ -41,14 +41,14 @@
     <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.10" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
     <!-- Test Packages packages -->
-    <PackageVersion Include="TUnit" Version="0.87.8"/>
-    <PackageVersion Include="TUnit.Core" Version="0.87.8"/>
+    <PackageVersion Include="TUnit" Version="0.90.35"/>
+    <PackageVersion Include="TUnit.Core" Version="0.90.35"/>
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.10" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.8.1" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.8.1" />
-    <PackageVersion Include="Respawn" Version="6.2.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10"/>
     <!-- Aspire packages -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.2"/>
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.5.2"/>

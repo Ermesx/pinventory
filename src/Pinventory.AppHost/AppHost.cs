@@ -1,6 +1,11 @@
 using Aspire.Hosting.Yarp.Transforms;
 
+using Projects;
+
 using Scalar.Aspire;
+
+// TODO: https://www.youtube.com/watch?v=4bvkIajqDjQ Refactor Aspire
+// TODO: https://www.youtube.com/watch?v=_ral_45_9XA Add additional info for Postgres
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
@@ -18,7 +23,7 @@ var identityDb = postgres.AddDatabase("pinventory-identity-db");
 var notificationsDb = postgres.AddDatabase("pinventory-notification-db");
 var pinsDb = postgres.AddDatabase("pinventory-pins-db");
 
-var migrations = builder.AddProject<Projects.Pinventory_MigrationService>("pinventory-migration-service")
+var migrations = builder.AddProject<Pinventory_MigrationService>("pinventory-migration-service")
     .WithReference(identityDb)
     .WithReference(pinsDb)
     .WithReference(notificationsDb)
@@ -26,29 +31,29 @@ var migrations = builder.AddProject<Projects.Pinventory_MigrationService>("pinve
     .WaitFor(pinsDb)
     .WaitFor(notificationsDb);
 
-var tokensGrpc = builder.AddProject<Projects.Pinventory_Identity_Tokens_Grpc>("pinventory-identity-tokens-grpc")
+var tokensGrpc = builder.AddProject<Pinventory_Identity_Tokens_Grpc>("pinventory-identity-tokens-grpc")
     .WithReference(identityDb)
     .WithReference(migrations)
     .WaitFor(identityDb)
     .WaitForCompletion(migrations);
 
-var notificationsApi = builder.AddProject<Projects.Pinventory_Notifications_Api>("pinventory-notifications-api")
+var notificationsApi = builder.AddProject<Pinventory_Notifications_Api>("pinventory-notifications-api")
     .WithReference(notificationsDb)
     .WithReference(rabbitMq)
     .WaitFor(notificationsDb)
     .WaitFor(rabbitMq);
 
-var pinApi = builder.AddProject<Projects.Pinventory_Pins_Api>("pinventory-pins-api")
+var pinApi = builder.AddProject<Pinventory_Pins_Api>("pinventory-pins-api")
     .WithReference(pinsDb)
     .WithReference(rabbitMq)
     .WaitFor(pinsDb)
     .WaitFor(rabbitMq);
 
-builder.AddProject<Projects.Pinventory_Pins_Import_Worker>("pinventory-pins-import-worker")
+builder.AddProject<Pinventory_Pins_Import_Worker>("pinventory-pins-import-worker")
     .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
     .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
 
-builder.AddProject<Projects.Pinventory_Pins_Tagging_Worker>("pinventory-pins-tagging-worker")
+builder.AddProject<Pinventory_Pins_Tagging_Worker>("pinventory-pins-tagging-worker")
     .WithReference(pinsDb)
     .WithReference(rabbitMq)
     .WaitFor(pinsDb)
@@ -88,7 +93,7 @@ var yarp = builder.AddYarp("api")
     .WaitFor(scalar)
     .WithUrl("/scalar/", "API Documentation");
 
-builder.AddProject<Projects.Pinventory_Web>("pinventory-web")
+builder.AddProject<Pinventory_Web>("pinventory-web")
     .WithReference(identityDb)
     .WithReference(migrations)
     .WithReference(yarp)
