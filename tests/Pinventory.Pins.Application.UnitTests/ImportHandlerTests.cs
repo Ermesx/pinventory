@@ -394,7 +394,7 @@ public class ImportHandlerTests
         dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ImportState.Cancelled, Array.Empty<Uri>()));
+            .ReturnsAsync((ImportState.Cancelled, []));
 
         var message = new CheckJobMessage(userId, archiveJobId);
 
