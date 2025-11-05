@@ -283,6 +283,7 @@ public class ImportTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldBeTrue();
         import.State.ShouldBe(ImportState.Complete);
         import.CompletedAt.ShouldNotBeNull();
 
@@ -460,6 +461,7 @@ public class ImportTests
         import.AppendBatch(processed: 100, created: 0, updated: 0, failed: 0, conflicts: 0);
         var completeResult = import.TryComplete();
         completeResult.IsSuccess.ShouldBeTrue();
+        completeResult.Value.ShouldBeTrue();
 
         // Act
         import.UpdateTotal(50);
@@ -510,8 +512,8 @@ public class ImportTests
         var result = import.TryComplete();
 
         // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("not complete"));
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldBeFalse();
         import.State.ShouldBe(ImportState.InProgress);
         import.DomainEvents.OfType<ImportCompleted>().ShouldBeEmpty();
     }
@@ -590,6 +592,7 @@ public class ImportTests
 
         // Assert
         completeResult.IsSuccess.ShouldBeTrue();
+        completeResult.Value.ShouldBeTrue();
         import.Period.ShouldBe(period);
     }
 }

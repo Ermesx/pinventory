@@ -21,7 +21,7 @@ public static class Errors
         private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerId;
     }
 
-    public static class ImportJob
+    public static class Import
     {
         public static Error RunningImportNotFound(CancelImportCommand command) =>
             new NotFoundError($"Import {command.ArchiveJobId} not found for user {command.UserId}");

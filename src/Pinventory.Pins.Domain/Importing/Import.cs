@@ -1,6 +1,7 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
+using Pinventory.Pins.Domain.Importing.Events;
 
 namespace Pinventory.Pins.Domain.Importing;
 
@@ -30,19 +31,19 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
     {
         if (string.IsNullOrWhiteSpace(archiveJobId))
         {
-            return Result.Fail(Errors.ImportJob.ArchiveJobIdCannotBeEmpty());
+            return Result.Fail(Errors.Import.ArchiveJobIdCannotBeEmpty());
         }
 
         if (State != ImportState.Unspecified || !await policy.CanStartImportAsync(UserId))
         {
-            return Result.Fail(Errors.ImportJob.ImportAlreadyStartedOrFinished(this));
+            return Result.Fail(Errors.Import.ImportAlreadyStartedOrFinished(this));
         }
 
         State = ImportState.InProgress;
         ArchiveJobId = archiveJobId;
         StartedAt = DateTimeOffset.UtcNow;
 
-        Raise(new Events.ImportStarted(Id, UserId, ArchiveJobId));
+        Raise(new ImportStarted(Id, UserId, ArchiveJobId));
 
         return Result.Ok();
     }
@@ -51,12 +52,12 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
+            return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
         if (processed < 0 || created < 0 || updated < 0 || failed < 0 || conflicts < 0)
         {
-            return Result.Fail(Errors.ImportJob.BatchCountersMustBeNonNegative());
+            return Result.Fail(Errors.Import.BatchCountersMustBeNonNegative());
         }
 
         Processed += processed;
@@ -64,45 +65,45 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         Updated += updated;
         Failed += failed;
         Conflicts += conflicts;
-        Raise(new Events.ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
+        Raise(new ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
 
         return Result.Ok();
     }
 
-    public Result<Success> TryComplete()
+    public Result<bool> TryComplete()
     {
         if (Processed < Total)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotCompleteYet(this));
+            return false;
         }
 
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
+            return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
         State = ImportState.Complete;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new Events.ImportCompleted(Id));
+        Raise(new ImportCompleted(Id));
 
-        return Result.Ok();
+        return true;
     }
 
     public Result<Success> Fail(string error)
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
+            return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
         if (string.IsNullOrWhiteSpace(error))
         {
-            return Result.Fail(Errors.ImportJob.ErrorMessageCannotBeEmpty());
+            return Result.Fail(Errors.Import.ErrorMessageCannotBeEmpty());
         }
 
         State = ImportState.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new Events.ImportFailed(Id, error));
+        Raise(new ImportFailed(Id, error));
 
         return Result.Ok();
     }
@@ -111,12 +112,12 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
     {
         if (State != ImportState.InProgress)
         {
-            return Result.Fail(Errors.ImportJob.ImportNotInProgress(this));
+            return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
         State = ImportState.Cancelled;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new Events.ImportCancelled(Id));
+        Raise(new ImportCancelled(Id));
 
         return Result.Ok();
     }

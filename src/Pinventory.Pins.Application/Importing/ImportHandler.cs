@@ -38,18 +38,18 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(command.UserId);
         var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
 
-        var importJob = new Import(command.UserId, command.Period ?? Period.AllTime);
-        var result = await importJob.StartAsync(archiveJobId, concurrencyPolicy);
+        var import = new Import(command.UserId, command.Period ?? Period.AllTime);
+        var result = await import.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)
         {
             return Result.Fail(result.Errors);
         }
 
-        await dbContext.Imports.AddAsync(importJob, cancellationToken);
-        await RaiseEventsAsync(importJob);
+        await dbContext.Imports.AddAsync(import, cancellationToken);
+        await RaiseEventsAsync(import);
 
-        await bus.PublishAsync(new CheckJobMessage(importJob.UserId, archiveJobId));
+        await bus.PublishAsync(new CheckJobMessage(import.UserId, archiveJobId));
 
         return Result.Ok(archiveJobId);
     }
@@ -58,20 +58,20 @@ public sealed class ImportHandler(
     {
         logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
 
-        var importJob = await GetCurrentImport(command, cancellationToken);
-        if (importJob is null)
+        var import = await GetCurrentImport(command, cancellationToken);
+        if (import is null)
         {
-            return Result.Fail(Errors.ImportJob.RunningImportNotFound(command));
+            return Result.Fail(Errors.Import.RunningImportNotFound(command));
         }
 
-        var result = importJob.Cancel();
+        var result = import.Cancel();
         if (result.IsSuccess)
         {
             var client = await CreateClientAsync(command.UserId);
             await client.CancelJobAsync(command.ArchiveJobId, cancellationToken);
         }
 
-        await RaiseEventsAsync(importJob);
+        await RaiseEventsAsync(import);
         return result;
     }
 
@@ -79,8 +79,8 @@ public sealed class ImportHandler(
     {
         logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.UserId);
 
-        var importJob = await GetCurrentImport(check, cancellationToken);
-        if (importJob is null)
+        var import = await GetCurrentImport(check, cancellationToken);
+        if (import is null)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.UserId);
             return;
@@ -98,7 +98,7 @@ public sealed class ImportHandler(
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.UserId);
-                result = importJob.Fail("Archive job failed");
+                result = import.Fail("Archive job failed");
                 if (result.IsFailed)
                 {
                     logger.LogError("Failed to fail import job: {Errors}", result.Errors);
@@ -108,7 +108,7 @@ public sealed class ImportHandler(
                 break;
             case ImportState.Cancelled:
                 logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.UserId);
-                result = importJob.Cancel();
+                result = import.Cancel();
                 if (result.IsFailed)
                 {
                     logger.LogError("Failed to cancel import job: {Errors}", result.Errors);
@@ -122,15 +122,15 @@ public sealed class ImportHandler(
                 break;
         }
 
-        await RaiseEventsAsync(importJob);
+        await RaiseEventsAsync(import);
     }
 
     public async Task HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
 
-        var importJob = await GetCurrentImport(download, cancellationToken);
-        if (importJob is null)
+        var import = await GetCurrentImport(download, cancellationToken);
+        if (import is null)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
             return;
@@ -153,7 +153,7 @@ public sealed class ImportHandler(
         }
 
         var records = result.Value.Data.Features;
-        importJob.UpdateTotal((uint)records.Length);
+        import.UpdateTotal((uint)records.Length);
 
         foreach (var batch in records.Chunk(BatchSize))
         {
@@ -182,8 +182,8 @@ public sealed class ImportHandler(
         logger.LogInformation("Import {ArchiveJobId}: Processing batch of {Count} pins for {UserId}", batch.ArchiveJobId,
             batch.StarredPlaces.Count(), batch.UserId);
 
-        var importJob = await GetCurrentImport(batch, cancellationToken);
-        if (importJob is null)
+        var import = await GetCurrentImport(batch, cancellationToken);
+        if (import is null)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
             return;
@@ -228,28 +228,37 @@ public sealed class ImportHandler(
             updated++;
         }
 
-        var appendBatch = importJob.AppendBatch(processed, created, updated, failed, conflicts);
+        var appendBatch = import.AppendBatch(processed, created, updated, failed, conflicts);
         if (appendBatch.IsFailed)
         {
             logger.LogError("Failed to append batch: {Errors}", appendBatch.Errors);
             return;
         }
 
-        importJob.ReportConflictsAndFailures(conflictingPlaces, failedPlaces);
+        import.ReportConflictsAndFailures(conflictingPlaces, failedPlaces);
 
-        var tryComplete = importJob.TryComplete();
+        var tryComplete = import.TryComplete();
         if (tryComplete.IsFailed)
         {
             logger.LogError("Failed to complete import job: {Errors}", tryComplete.Errors);
             return;
         }
 
-        await RaiseEventsAsync(importJob);
+        if (tryComplete.Value)
+        {
+            logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", batch.ArchiveJobId, batch.UserId);
+        }
+        else
+        {
+            logger.LogInformation("Import {ArchiveJobId} not complete yet for {UserId}", batch.ArchiveJobId, batch.UserId);
+        }
+
+        await RaiseEventsAsync(import);
 
         await dbContext.AddRangeAsync(pinsToCreate, cancellationToken);
 
-        var pinsIdsToTag = updatedPins.Select(x => x.Id).ToList().Concat(pinsToCreate.Select(x => x.Id));
-        foreach (Guid pinId in pinsIdsToTag)
+        var pinsIdsToAssignTags = updatedPins.Select(x => x.Id).ToList().Concat(pinsToCreate.Select(x => x.Id));
+        foreach (Guid pinId in pinsIdsToAssignTags)
         {
             await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
         }
