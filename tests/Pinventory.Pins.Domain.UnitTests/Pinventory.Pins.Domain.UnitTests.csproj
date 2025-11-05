@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="TUnit.Core" />
     <ProjectReference Include="..\..\src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj"/>
   </ItemGroup>
 

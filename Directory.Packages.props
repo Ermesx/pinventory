@@ -42,7 +42,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
     <!-- Test Packages packages -->
     <PackageVersion Include="TUnit" Version="0.90.35"/>
-    <PackageVersion Include="TUnit.Core" Version="0.90.35"/>
+    <PackageVersion Include="TUnit.Core" Version="0.90.45"/>
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.10" />

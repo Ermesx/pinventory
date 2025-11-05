@@ -9,6 +9,7 @@
     <PackageReference Include="Moq" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="TUnit.Core" VersionOverride="0.90.45" />
     <ProjectReference Include="../../src/Pinventory.Identity/Pinventory.Identity.csproj" />
     <ProjectReference Include="../../src/Pinventory.Google/Pinventory.Google.csproj" />
   </ItemGroup>
