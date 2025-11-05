@@ -379,6 +379,128 @@ public class ImportHandlerTests
     }
 
 
+    [Test]
+    public async Task CheckJob_marks_import_cancelled_when_archive_cancelled()
+    {
+        // Arrange
+        var userId = "user-1";
+        var archiveJobId = "job-123";
+        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+
+        var import = new Import(userId, Period.AllTime);
+        var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
+        await dbContext.Imports.AddAsync(import);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ImportState.Cancelled, Array.Empty<Uri>()));
+
+        var message = new CheckJobMessage(userId, archiveJobId);
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        startResult.IsSuccess.ShouldBeTrue();
+        busMock.Invocations.Count.ShouldBe(1);
+        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportCancelled>();
+    }
+
+    [Test]
+    public async Task CheckJob_does_nothing_when_running_import_not_found()
+    {
+        // Arrange
+        var userId = "user-1";
+        var archiveJobId = "job-404";
+        var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
+
+        var message = new CheckJobMessage(userId, archiveJobId);
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task DownloadArchive_does_nothing_when_running_import_not_found()
+    {
+        // Arrange
+        var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
+        var message = new DownloadArchiveMessage("user-1", "job-404", new List<string> { "https://a", "https://b" });
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task DownloadArchive_does_nothing_when_downloader_fails()
+    {
+        // Arrange
+        var userId = "user-1";
+        var archiveJobId = "job-123";
+        var (handler, dbContext, busMock, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+
+        var import = new Import(userId, Period.AllTime);
+        var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
+        await dbContext.Imports.AddAsync(import);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        downloaderMock.Setup(d => d.DownloadAsync(It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Fail("download failed"));
+
+        var message = new DownloadArchiveMessage(userId, archiveJobId, new List<string> { "https://a", "https://b" });
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        startResult.IsSuccess.ShouldBeTrue();
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task ProcessPinsBatch_does_nothing_when_running_import_not_found()
+    {
+        // Arrange
+        var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
+        var places = new[]
+        {
+            new StarredPlace("Name", "https://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow, null)
+        };
+        var message = new ProcessPinsBatchMessage("user-1", "job-404", places);
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task StartImport_throws_when_service_factory_fails()
+    {
+        // Arrange
+        var userId = "user-1";
+        var (handler, dbContext, busMock, factoryMock, _, _, _) = await CreateHandlerAsync();
+
+        factoryMock.Setup(f => f.CreateAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Fail<IImportService>("factory failed"));
+
+        var command = new StartImportCommand(userId, Period.AllTime);
+
+        // Act + Assert
+        await Should.ThrowAsync<InvalidOperationException>(async () => await handler.HandleAsync(command));
+        (await dbContext.Imports.CountAsync()).ShouldBe(0);
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
     private static async Task<(ImportHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock, Mock<IImportServiceFactory>
         factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IArchiveDownloader>
         downloaderMock)> CreateHandlerAsync()
