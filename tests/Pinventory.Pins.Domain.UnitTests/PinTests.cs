@@ -4,7 +4,7 @@ using Pinventory.Pins.Domain.UnitTests.TestUtils;
 
 using Shouldly;
 
-namespace Pinventory.Pins.Domain.UnitTests.Domain;
+namespace Pinventory.Pins.Domain.UnitTests;
 
 public class PinTests
 {
