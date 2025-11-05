@@ -9,7 +9,6 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Application.Tagging.Messages;
-using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
@@ -38,7 +37,7 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(command.UserId);
         var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
 
-        var import = new Import(command.UserId, command.Period ?? Period.AllTime);
+        var import = new Import(command.UserId, command.Period);
         var result = await import.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)
