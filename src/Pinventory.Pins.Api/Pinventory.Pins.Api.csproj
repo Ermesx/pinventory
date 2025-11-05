@@ -12,9 +12,6 @@
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
     <PackageReference Include="WolverineFx.Postgresql"/>
     <PackageReference Include="WolverineFx.RabbitMQ"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
