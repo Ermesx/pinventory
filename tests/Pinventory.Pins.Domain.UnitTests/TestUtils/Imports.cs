@@ -4,9 +4,9 @@ using Pinventory.Pins.Domain.Importing;
 
 namespace Pinventory.Pins.Domain.UnitTests.TestUtils;
 
-public static class ImportJobs
+public static class Imports
 {
-    public static Import CreateStartedImportJob(string userId = "user123", string archiveJobId = "archive456")
+    public static Import CreateStartedImport(string userId = "user123", string archiveJobId = "archive456")
     {
         var importJob = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();

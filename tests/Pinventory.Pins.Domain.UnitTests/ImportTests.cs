@@ -140,7 +140,7 @@ public class ImportTests
     public void AppendBatch_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
@@ -166,7 +166,7 @@ public class ImportTests
     public void AppendBatch_accumulates_counters_across_multiple_batches()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
@@ -201,7 +201,7 @@ public class ImportTests
     public void AppendBatch_fails_when_processed_is_negative()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: -1, created: 5, updated: 3, failed: 1, conflicts: 1);
@@ -216,7 +216,7 @@ public class ImportTests
     public void AppendBatch_fails_when_created_is_negative()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: 10, created: -1, updated: 3, failed: 1, conflicts: 1);
@@ -231,7 +231,7 @@ public class ImportTests
     public void AppendBatch_fails_when_updated_is_negative()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: 10, created: 5, updated: -1, failed: 1, conflicts: 1);
@@ -246,7 +246,7 @@ public class ImportTests
     public void AppendBatch_fails_when_failed_is_negative()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: -1, conflicts: 1);
@@ -261,7 +261,7 @@ public class ImportTests
     public void AppendBatch_fails_when_conflicts_is_negative()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: -1);
@@ -276,7 +276,7 @@ public class ImportTests
     public void Complete_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.TryComplete();
@@ -310,7 +310,7 @@ public class ImportTests
     public void Fail_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         var errorMessage = "Something went wrong";
 
         // Act
@@ -346,7 +346,7 @@ public class ImportTests
     public void Fail_fails_when_error_message_is_null()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.Fail(null!);
@@ -362,7 +362,7 @@ public class ImportTests
     public void Fail_fails_when_error_message_is_empty()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.Fail("");
@@ -378,7 +378,7 @@ public class ImportTests
     public void Fail_fails_when_error_message_is_whitespace()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.Fail("   ");
@@ -394,7 +394,7 @@ public class ImportTests
     public void Cancel_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         var result = import.Cancel();
@@ -428,7 +428,7 @@ public class ImportTests
     public void UpdateTotal_updates_total_when_state_is_in_progress()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
 
         // Act
         import.UpdateTotal(100);
@@ -455,7 +455,7 @@ public class ImportTests
     public void UpdateTotal_does_not_update_after_completion()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         import.UpdateTotal(100);
         import.AppendBatch(processed: 100, created: 0, updated: 0, failed: 0, conflicts: 0);
         var completeResult = import.TryComplete();
@@ -472,7 +472,7 @@ public class ImportTests
     public void UpdateTotal_does_not_update_after_failure()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         import.UpdateTotal(100);
         import.Fail("Error");
 
@@ -487,7 +487,7 @@ public class ImportTests
     public void UpdateTotal_does_not_update_after_cancellation()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         import.UpdateTotal(100);
         import.Cancel();
 
@@ -502,7 +502,7 @@ public class ImportTests
     public void Complete_fails_when_not_all_items_processed()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         import.UpdateTotal(100);
         import.AppendBatch(processed: 50, created: 0, updated: 0, failed: 0, conflicts: 0);
 
@@ -520,7 +520,7 @@ public class ImportTests
     public void ReportConflictsAndFailures_adds_items_to_collections()
     {
         // Arrange
-        var import = ImportJobs.CreateStartedImportJob();
+        var import = Imports.CreateStartedImport();
         var now = DateTimeOffset.UtcNow;
         var conflicts = new[]
         {

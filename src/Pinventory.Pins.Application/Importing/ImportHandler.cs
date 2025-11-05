@@ -9,6 +9,7 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Application.Tagging.Messages;
+using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
@@ -37,7 +38,7 @@ public sealed class ImportHandler(
         var client = await CreateClientAsync(command.UserId);
         var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
 
-        var importJob = new Import(command.UserId, command.Period);
+        var importJob = new Import(command.UserId, command.Period ?? Period.AllTime);
         var result = await importJob.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)
@@ -116,7 +117,8 @@ public sealed class ImportHandler(
 
                 break;
             default:
-                await bus.PublishAsync(DownloadArchiveMessage.Create(check, archiveResult.Urls.ToArray()));
+                var urls = archiveResult.Urls.Select(x => x.ToString()).ToList();
+                await bus.PublishAsync(DownloadArchiveMessage.Create(check, urls));
                 break;
         }
 
@@ -134,14 +136,14 @@ public sealed class ImportHandler(
             return;
         }
 
-        if (download.Urls.Length < 2)
+        if (download.Urls.Count < 2)
         {
             logger.LogError("Not enough URLs to download archive");
             return;
         }
 
-        var archiveBrowserUri = download.Urls[0];
-        var dataFilesUri = download.Urls[1];
+        var archiveBrowserUri = new Uri(download.Urls[0]);
+        var dataFilesUri = new Uri(download.Urls[1]);
 
         var result = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
         if (result.IsFailed)

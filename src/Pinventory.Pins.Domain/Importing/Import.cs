@@ -9,7 +9,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 {
     private readonly List<ReportedPlace> _conflictedPlaces = [];
     private readonly List<ReportedPlace> _failedPlaces = [];
-    private Import() : this(string.Empty) { }
+    private Import() : this(string.Empty, Period.AllTime) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
     public string UserId { get; } = userId;
