@@ -243,21 +243,13 @@ public sealed class ImportHandler(
             return;
         }
 
-        if (tryComplete.Value)
-        {
-            logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", batch.ArchiveJobId, batch.UserId);
-        }
-        else
-        {
-            logger.LogInformation("Import {ArchiveJobId} not complete yet for {UserId}", batch.ArchiveJobId, batch.UserId);
-        }
+        LogCompletion(tryComplete.Value);
 
         await RaiseEventsAsync(import);
 
         await dbContext.AddRangeAsync(pinsToCreate, cancellationToken);
 
-        var pinsIdsToAssignTags = updatedPins.Select(x => x.Id).ToList().Concat(pinsToCreate.Select(x => x.Id));
-        foreach (Guid pinId in pinsIdsToAssignTags)
+        foreach (Guid pinId in GetChangedPinIds())
         {
             await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
         }
@@ -268,6 +260,20 @@ public sealed class ImportHandler(
         {
             return new Pin(batch.UserId, place.Name!, placeId, new Address(place.Address!, place.CountryCode!.Value),
                 new Location(place.Latitude!.Value, place.Longitude!.Value), place.AddedDate);
+        }
+
+        IEnumerable<Guid> GetChangedPinIds() => updatedPins.Select(x => x.Id).Concat(pinsToCreate.Select(x => x.Id)).ToList();
+
+        void LogCompletion(bool completed)
+        {
+            if (completed)
+            {
+                logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", batch.ArchiveJobId, batch.UserId);
+            }
+            else
+            {
+                logger.LogInformation("Import {ArchiveJobId} not complete yet for {UserId}", batch.ArchiveJobId, batch.UserId);
+            }
         }
     }
 
