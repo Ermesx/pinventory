@@ -16,8 +16,13 @@ public sealed record Period
     public DateTimeOffset Start { get; }
     public DateTimeOffset End { get; }
 
-    public static Result<Period> Create(DateTimeOffset start, DateTimeOffset end) =>
-        start >= end
+    public static Result<Period> Create(DateTimeOffset? start, DateTimeOffset? end)
+    {
+        start ??= DateTimeOffset.MinValue;
+        end ??= DateTimeOffset.UtcNow;
+
+        return start >= end
             ? Result.Fail<Period>("Start must be earlier than end")
-            : new Period(start, end);
+            : new Period(start.Value, end.Value);
+    }
 }

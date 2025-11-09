@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
+using Pinventory.Pins.Api.Importing;
 using Pinventory.Pins.Api.Tags;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.ServiceDefaults;
@@ -39,6 +40,7 @@ app.MapApiDefaultEndpoints();
 
 // Configure the HTTP request pipeline
 app.MapTagsEndpoints();
+app.MapImportingEndpoints();
 
 app.Run();
 

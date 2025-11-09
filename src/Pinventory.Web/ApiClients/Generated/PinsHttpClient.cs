@@ -32,6 +32,22 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
         [Delete("/tags/{ownerId}")]
         Task RemoveTag(string ownerId, [Body] TagDto body);
 
+        [Headers("Accept: application/problem+json, application/json")]
+        [Get("/imports")]
+        Task<IEnumerable<ImportDto>> GetImports();
+
+        [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
+        [Post("/imports")]
+        Task<string> StartImport([Body] StartImportDto body);
+
+        [Headers("Accept: application/problem+json, application/json")]
+        [Get("/imports/{archiveJobId}")]
+        Task<ImportDto> GetImport(string archiveJobId);
+
+        [Headers("Accept: application/problem+json")]
+        [Post("/imports/{archiveJobId}/cancel")]
+        Task CancelImport(string archiveJobId);
+
 
     }
 
@@ -90,6 +106,54 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImportDto
+    {
+
+        [JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; }
+
+        [JsonPropertyName("archiveJobId")]
+        public string ArchiveJobId { get; set; }
+
+        [JsonPropertyName("state")]
+        public int State { get; set; }
+
+        [JsonPropertyName("startedAt")]
+        public System.DateTimeOffset? StartedAt { get; set; }
+
+        [JsonPropertyName("completedAt")]
+        public System.DateTimeOffset? CompletedAt { get; set; }
+
+        [JsonPropertyName("processed")]
+        public int Processed { get; set; }
+
+        [JsonPropertyName("created")]
+        public int Created { get; set; }
+
+        [JsonPropertyName("updated")]
+        public int Updated { get; set; }
+
+        [JsonPropertyName("failed")]
+        public int Failed { get; set; }
+
+        [JsonPropertyName("conflicts")]
+        public int Conflicts { get; set; }
+
+        [JsonPropertyName("total")]
+        public int Total { get; set; }
+
+        [JsonPropertyName("conflictedPlaces")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public IEnumerable<ValueTupleOfstringAndDateTimeOffset> ConflictedPlaces { get; set; } = new List<ValueTupleOfstringAndDateTimeOffset>();
+
+        [JsonPropertyName("failedPlaces")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public IEnumerable<object> FailedPlaces { get; set; } = new List<object>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ProblemDetails
     {
 
@@ -107,6 +171,18 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
 
         [JsonPropertyName("instance")]
         public string Instance { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class StartImportDto
+    {
+
+        [JsonPropertyName("start")]
+        public System.DateTimeOffset? Start { get; set; }
+
+        [JsonPropertyName("end")]
+        public System.DateTimeOffset? End { get; set; }
 
     }
 
@@ -150,6 +226,12 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
         [JsonPropertyName("tags")]
         [System.ComponentModel.DataAnnotations.Required]
         public IEnumerable<string> Tags { get; set; } = new List<string>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ValueTupleOfstringAndDateTimeOffset
+    {
 
     }
 

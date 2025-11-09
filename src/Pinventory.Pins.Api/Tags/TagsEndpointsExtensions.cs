@@ -19,8 +19,7 @@ public static class TagsEndpointsExtensions
     {
         var tagsEndpoint = app.MapGroup("/tags")
             .RequireAuthorization(AuthPolicy.OwnerMatchesUser)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesValidationProblem();
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         // Get Tags from a catalog
         tagsEndpoint.MapGet("/{ownerId?}", GetTags)
@@ -38,23 +37,30 @@ public static class TagsEndpointsExtensions
         tagsEndpoint.MapPut("/{ownerId?}", AddTag)
             .WithName("AddTag")
             .Produces(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesValidationProblem();
 
         // Remove Tag from catalog
         tagsEndpoint.MapDelete("/{ownerId?}", RemoveTag)
             .WithName("RemoveTag")
             .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesValidationProblem();
 
         return app;
     }
 
     private static async Task<IResult> GetTags(string? ownerId, [FromServices] PinsDbContext dbContext)
     {
-        var tags = await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == ownerId);
-        return tags is null
+        var catalog = await dbContext.TagCatalogs
+            .Include(x => x.Tags)
+            .Where(x => x.OwnerId == ownerId)
+            .AsNoTracking()
+            .SingleOrDefaultAsync();
+
+        return catalog is null
             ? Results.NotFound()
-            : Results.Ok(new TagCatalogDto(tags.Tags.Select(t => t.Value)));
+            : Results.Ok(new TagCatalogDto(catalog.Tags.Select(t => t.Value).ToList()));
     }
 
     private static async Task<IResult> DefineTags(string? ownerId, [FromBody] TagsDto request, [FromServices] IMessageBus bus)
@@ -70,29 +76,23 @@ public static class TagsEndpointsExtensions
     {
         var command = new AddTagCommand(ownerId, request.Tag);
         var result = await bus.InvokeAsync<Result<Success>>(command);
-        if (result.IsSuccess)
-        {
-            return Results.Created();
-        }
 
-        var error = result.Errors.Single();
-        return error is Errors.NotFoundError
-            ? Results.NotFound(error.Message)
-            : Results.BadRequest(error.Message);
+        return result.IsSuccess
+            ? Results.Created()
+            : result.HasError<Errors.NotFoundError>()
+                ? Results.NotFound(result.Errors)
+                : Results.BadRequest(result.Errors);
     }
 
     private static async Task<IResult> RemoveTag(string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus)
     {
         var command = new RemoveTagCommand(ownerId, request.Tag);
         var result = await bus.InvokeAsync<Result<Success>>(command);
-        if (result.IsSuccess)
-        {
-            return Results.NoContent();
-        }
 
-        var error = result.Errors.Single();
-        return error is Errors.NotFoundError
-            ? Results.NotFound(error.Message)
-            : Results.BadRequest(error.Message);
+        return result.IsSuccess
+            ? Results.NoContent()
+            : result.HasError<Errors.NotFoundError>()
+                ? Results.NotFound(result.Errors)
+                : Results.BadRequest(result.Errors);
     }
 }
