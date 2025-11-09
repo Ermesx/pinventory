@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddApiDefaults();
 
 // Add services to the container.
+builder.Services.AddSignalR();
 
 if (!OpenApi.IsGenerating)
 {
@@ -41,6 +42,7 @@ app.MapApiDefaultEndpoints();
 // Configure the HTTP request pipeline
 app.MapTagsEndpoints();
 app.MapImportingEndpoints();
+
 
 app.Run();
 

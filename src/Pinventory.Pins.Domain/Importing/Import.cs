@@ -65,7 +65,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         Updated += updated;
         Failed += failed;
         Conflicts += conflicts;
-        Raise(new ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
+        Raise(new ImportBatchProcessed(Id, UserId, ArchiveJobId!, processed, created, updated, failed, conflicts, Total));
 
         return Result.Ok();
     }
@@ -84,7 +84,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Complete;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCompleted(Id));
+        Raise(new ImportCompleted(Id, UserId, ArchiveJobId!));
 
         return true;
     }
@@ -103,7 +103,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportFailed(Id, error));
+        Raise(new ImportFailed(Id, UserId, ArchiveJobId!, error));
 
         return Result.Ok();
     }
@@ -117,7 +117,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         State = ImportState.Cancelled;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCancelled(Id));
+        Raise(new ImportCancelled(Id, UserId, ArchiveJobId!));
 
         return Result.Ok();
     }

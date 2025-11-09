@@ -1,12 +1,16 @@
 ﻿@page "/import"
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Options
 @using Pinventory.Google.Configuration
+@using Pinventory.Identity.Tokens
 @using Pinventory.Web.Components.Shared
 @using static Shared.AlertMessage
 @attribute [Authorize]
 
 @inject IOptions<GooglePlatformOptions> Options
+@inject TokenService TokenService
 
 <PageTitle>Import Starred Places</PageTitle>
 
@@ -45,12 +49,140 @@
 </p>
 <a href="https://myaccount.google.com/connections/link?project_number=@Options.Value.ProjectId" target="_blank"><button class="btn btn-primary">Renew access</button></a>
 
+<hr/>
+
+@if (hub is not null)
+{
+    <div class="mt-3">
+        <h4>Import Progress</h4>
+        @if (importId is not null)
+        {
+            <p>Import ID: @importId</p>
+        }
+        @if (!string.IsNullOrEmpty(archiveJobId))
+        {
+            <p>Archive Job: @archiveJobId</p>
+        }
+        <p>Status: @statusMessage</p>
+        <p>Processed: @processed | Created: @created | Updated: @updated | Failed: @failed | Conflicts: @conflicts</p>
+        @if (total > 0)
+        {
+            var pct = (int)Math.Min(100, Math.Round(processed * 100.0 / total));
+            <p>Total: @total | @pct%</p>
+        }
+    </div>
+}
+
 @code {
     [SupplyParameterFromQuery]
     private bool consentDenied { get; set; }
 
     [SupplyParameterFromQuery]
     private string? consentError { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private HubConnection? hub;
+
+    private Guid? importId;
+    private string? archiveJobId;
+    private int processed, created, updated, failed, conflicts;
+    private uint total;
+    private string statusMessage = "Idle";
+
+    private record ImportStartedDto(Guid ImportId, string ArchiveJobId);
+
+    private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, uint Total);
+
+    private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
+
+    private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
+
+    private record ImportCancelledDto(Guid ImportId, string ArchiveJobId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Build the authenticated SignalR connection to Pins.Api hub via YARP
+        hub = new HubConnectionBuilder()
+            .WithUrl("http://api/pins/hubs/imports", options =>
+            {
+                options.AccessTokenProvider = async () =>
+                {
+                    var principal = (await AuthState).User;
+                    var tokens = await TokenService.GetGoogleTokensAsync(principal);
+                    return tokens?.IdToken.Token;
+                };
+            })
+            .WithAutomaticReconnect()
+            .Build();
+
+        RegisterHandlers();
+
+        try
+        {
+            await hub.StartAsync();
+            statusMessage = "Connected";
+        }
+        catch
+        {
+            statusMessage = "Connection failed";
+        }
+    }
+
+    private void RegisterHandlers()
+    {
+        hub!.On<ImportProgressDto>("ProgressUpdated", dto =>
+        {
+            if (importId is null || importId == dto.ImportId)
+            {
+                importId ??= dto.ImportId;
+                archiveJobId = dto.ArchiveJobId;
+                processed += dto.Processed;
+                created += dto.Created;
+                updated += dto.Updated;
+                failed += dto.Failed;
+                conflicts += dto.Conflicts;
+                total = dto.Total;
+                statusMessage = "Import in progress";
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        hub!.On<ImportCompletedDto>("ImportCompleted", dto =>
+        {
+            if (importId == dto.ImportId)
+            {
+                archiveJobId = dto.ArchiveJobId;
+                statusMessage = "Import completed";
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        hub!.On<ImportFailedDto>("ImportFailed", dto =>
+        {
+            if (importId is null || importId == dto.ImportId)
+            {
+                archiveJobId = dto.ArchiveJobId;
+                statusMessage = $"Import failed: {dto.Error}";
+                InvokeAsync(StateHasChanged);
+            }
+        });
+    }
+
+    private void ResetCounters()
+    {
+        processed = created = updated = failed = conflicts = 0;
+        total = 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+        }
+    }
 
     private void DismissConsentDenied()
     {
@@ -62,4 +194,3 @@
         consentError = null;
     }
 }
-

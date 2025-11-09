@@ -2,7 +2,7 @@
 
 namespace Pinventory.Pins.Api.Importing.Dtos;
 
-public record ImportDto(
+public sealed record ImportDto(
     Guid Id,
     string? ArchiveJobId,
     ImportState State,

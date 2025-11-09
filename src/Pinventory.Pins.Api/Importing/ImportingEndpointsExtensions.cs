@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Importing.Dtos;
+using Pinventory.Pins.Api.Importing.Realtime;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
@@ -47,6 +48,9 @@ public static class ImportingEndpointsExtensions
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem();
+
+        // Add SignalR hub
+        app.MapHub<ImportProgressHub>("/hubs/imports").RequireAuthorization();
 
         return app;
     }
