@@ -1,16 +1,22 @@
 ﻿@page "/import"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Authorization
+@using System.Net
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Options
 @using Pinventory.Google.Configuration
 @using Pinventory.Identity.Tokens
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode
+@using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
 @using Pinventory.Web.Components.Shared
+@using Refit
 @using static Shared.AlertMessage
-@attribute [Authorize]
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 @inject IOptions<GooglePlatformOptions> Options
 @inject TokenService TokenService
+@inject IPinsHttpClient PinsClient
+
 
 <PageTitle>Import Starred Places</PageTitle>
 
@@ -29,6 +35,16 @@
         Something went wrong during Google consent (error: @consentError). Please try again.
     </AlertMessage>
 }
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <AlertMessage Type="AlertType.Error" Message="@errorMessage" OnDismiss="DismissError"/>
+}
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <AlertMessage Type="AlertType.Success" Message="@successMessage" OnDismiss="DismissSuccess"/>
+}
+
 
 <p>
     Before starting the import, please grant the Google permission for accessing your starred places.
@@ -50,6 +66,17 @@
 <a href="https://myaccount.google.com/connections/link?project_number=@Options.Value.ProjectId" target="_blank"><button class="btn btn-primary">Renew access</button></a>
 
 <hr/>
+
+<div class="d-flex gap-2 mb-3">
+    <button class="btn btn-success" disabled="@(isProcessing || isImportRunning)" @onclick="OnStartImportAsync">Start
+        Import
+    </button>
+    <button class="btn btn-outline-danger" disabled="@(!isImportRunning || isProcessing)" @onclick="OnCancelImportAsync">
+        Cancel Import
+    </button>
+</div>
+
+
 
 @if (hub is not null)
 {
@@ -73,6 +100,62 @@
     </div>
 }
 
+<div class="mt-4">
+    <h4>Import Jobs</h4>
+    @if (isLoadingJobs)
+    {
+        <div class="d-flex justify-content-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (importJobs is null || importJobs.Count == 0)
+    {
+        <p class="text-muted">No imports yet.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Archive Job</th>
+                    <th>State</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Processed/Total</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Failed</th>
+                    <th>Conflicts</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var j in importJobs)
+                {
+                    var started = j.StartedAt?.ToLocalTime().ToString("g");
+                    var completed = j.CompletedAt?.ToLocalTime().ToString("g");
+                    var pct = j.Total > 0 ? Math.Min(100, (int)Math.Round((double)j.Processed * 100 / j.Total)) : 0;
+                    <tr>
+                        <td>@(string.IsNullOrWhiteSpace(j.ArchiveJobId) ? "-" : j.ArchiveJobId)</td>
+                        <td>@GetStateName(j.State)</td>
+                        <td>@(started ?? "-")</td>
+                        <td>@(completed ?? "-")</td>
+                        <td>@j.Processed/@j.Total (@pct%)</td>
+                        <td>@j.Created</td>
+                        <td>@j.Updated</td>
+                        <td>@j.Failed</td>
+                        <td>@j.Conflicts</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+
 @code {
     [SupplyParameterFromQuery]
     private bool consentDenied { get; set; }
@@ -91,14 +174,17 @@
     private uint total;
     private string statusMessage = "Idle";
 
+    private List<ImportDto> importJobs = new();
+    private bool isLoadingJobs;
+    private bool isProcessing;
+    private bool isImportRunning;
+    private string? errorMessage;
+    private string? successMessage;
+
     private record ImportStartedDto(Guid ImportId, string ArchiveJobId);
-
     private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, uint Total);
-
     private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
-
     private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
-
     private record ImportCancelledDto(Guid ImportId, string ArchiveJobId);
 
     protected override async Task OnInitializedAsync()
@@ -128,6 +214,8 @@
         {
             statusMessage = "Connection failed";
         }
+
+        await LoadJobsAsync();
     }
 
     private void RegisterHandlers()
@@ -145,6 +233,7 @@
                 conflicts += dto.Conflicts;
                 total = dto.Total;
                 statusMessage = "Import in progress";
+                isImportRunning = true;
                 InvokeAsync(StateHasChanged);
             }
         });
@@ -155,7 +244,12 @@
             {
                 archiveJobId = dto.ArchiveJobId;
                 statusMessage = "Import completed";
-                InvokeAsync(StateHasChanged);
+                isImportRunning = false;
+                _ = InvokeAsync(async () =>
+                {
+                    await LoadJobsAsync();
+                    StateHasChanged();
+                });
             }
         });
 
@@ -165,6 +259,7 @@
             {
                 archiveJobId = dto.ArchiveJobId;
                 statusMessage = $"Import failed: {dto.Error}";
+                isImportRunning = false;
                 InvokeAsync(StateHasChanged);
             }
         });
@@ -174,6 +269,109 @@
     {
         processed = created = updated = failed = conflicts = 0;
         total = 0;
+    }
+
+    private async Task LoadJobsAsync()
+    {
+        isLoadingJobs = true;
+        errorMessage = null;
+
+        try
+        {
+            var jobs = await PinsClient.GetImports();
+            importJobs = jobs.OrderByDescending(j => j.StartedAt ?? DateTimeOffset.MinValue).ToList();
+
+            var running = importJobs.FirstOrDefault(j => j.State == 1);
+            if (running is not null)
+            {
+                isImportRunning = true;
+                archiveJobId = running.ArchiveJobId;
+            }
+            else
+            {
+                isImportRunning = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load import jobs: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingJobs = false;
+        }
+    }
+
+    private async Task OnStartImportAsync()
+    {
+        if (isImportRunning || isProcessing)
+        {
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            ResetCounters();
+            statusMessage = "Starting import...";
+            var id = await PinsClient.StartImport(new StartImportDto());
+            archiveJobId = id;
+            isImportRunning = true;
+            successMessage = "Import started.";
+            await LoadJobsAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            successMessage = "An import is already in progress.";
+            await LoadJobsAsync();
+            isImportRunning = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to start import: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task OnCancelImportAsync()
+    {
+        if (!isImportRunning || string.IsNullOrWhiteSpace(archiveJobId) || isProcessing)
+        {
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            await PinsClient.CancelImport(archiveJobId!);
+            successMessage = "Cancel requested.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            errorMessage = "No running import was found.";
+            isImportRunning = false;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            errorMessage = "Import could not be cancelled at this stage.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to cancel import: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -193,4 +391,25 @@
     {
         consentError = null;
     }
+
+    private void DismissError()
+    {
+        errorMessage = null;
+    }
+
+    private void DismissSuccess()
+    {
+        successMessage = null;
+    }
+
+    // TODO: Fixed mapping in .net 10
+    private static string GetStateName(int state) => state switch
+    {
+        0 => "Unspecified",
+        1 => "In Progress",
+        2 => "Complete",
+        3 => "Failed",
+        4 => "Cancelled",
+        _ => "Unknown"
+    };
 }
