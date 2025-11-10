@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="WolverineFx" VersionOverride="5.1.0" />
     <ProjectReference Include="..\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj"/>
   </ItemGroup>
 
