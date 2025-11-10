@@ -52,7 +52,7 @@
     <!-- Aspire packages -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.2"/>
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="9.5.2"/>
-    <PackageVersion Include="Scalar.Aspire" Version="0.6.0" />
+    <PackageVersion Include="Scalar.Aspire" Version="0.7.3" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="9.5.2"/>
     <PackageVersion Include="Aspire.Hosting.Yarp" Version="9.5.2-preview.1.25522.3"/>
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
