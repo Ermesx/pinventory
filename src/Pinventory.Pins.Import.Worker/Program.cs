@@ -29,7 +29,8 @@ builder.UseWolverine(options =>
 
     options.UseRabbitMqUsingNamedConnection("rabbit-mq")
         .EnableWolverineControlQueues()
-        .UseConventionalRouting();
+        .UseConventionalRouting()
+        .AutoProvision();
 
     options.AddDefaultWolverineOptions();
 });

@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
-using Wolverine.MemoryPack;
 
 namespace Pinventory.ServiceDefaults;
 
@@ -21,8 +20,6 @@ public static class WolverineExtensions
             x.Production.GeneratedCodeMode = TypeLoadMode.Static;
             x.Production.AssertAllPreGeneratedTypesExist = true;
         });
-
-        options.UseMemoryPackSerialization();
 
         options.UseEntityFrameworkCoreTransactions();
 

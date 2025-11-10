@@ -50,8 +50,12 @@ var pinApi = builder.AddProject<Pinventory_Pins_Api>("pinventory-pins-api")
     .WaitFor(rabbitMq);
 
 builder.AddProject<Pinventory_Pins_Import_Worker>("pinventory-pins-import-worker")
-    .WithReference(pinsDb).WithReference(rabbitMq).WithReference(tokensGrpc)
-    .WaitFor(pinsDb).WaitFor(rabbitMq).WaitFor(tokensGrpc);
+    .WithReference(pinsDb)
+    .WithReference(rabbitMq)
+    .WithReference(tokensGrpc)
+    .WaitFor(pinsDb)
+    .WaitFor(rabbitMq)
+    .WaitFor(tokensGrpc);
 
 builder.AddProject<Pinventory_Pins_Tagging_Worker>("pinventory-pins-tagging-worker")
     .WithReference(pinsDb)

@@ -9,7 +9,6 @@ using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Api.Importing.Realtime;
 using Pinventory.Pins.Application.Importing.Commands;
-using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 
@@ -113,23 +112,14 @@ public static class ImportingEndpointsExtensions
     private static async Task<IResult> StartImport(ClaimsPrincipal user, [FromBody] StartImportDto request, [FromServices] IMessageBus bus)
     {
         var userId = user.GetIdentifier();
-        Period? period = null;
 
-        if (request.Start.HasValue || request.End.HasValue)
-        {
-            var periodResult = Period.Create(request.Start, request.End);
-            if (periodResult.IsFailed)
-            {
-                return Results.BadRequest(periodResult.Errors);
-            }
+        var archiveJobIdResult = await bus.InvokeAsync<Result<string>>(new StartImportCommand(userId, request.Start, request.End));
 
-            period = periodResult.Value;
-        }
-
-        var archiveJobIdResult = await bus.InvokeAsync<Result<string>>(new StartImportCommand(userId, period));
         return archiveJobIdResult.IsSuccess
             ? Results.Created($"/imports/{archiveJobIdResult.Value}", archiveJobIdResult.Value)
-            : Results.Conflict(archiveJobIdResult.Errors);
+            : archiveJobIdResult.HasError<Domain.Errors.Period.IncorrectPeriodDates>()
+                ? Results.BadRequest(archiveJobIdResult.Errors)
+                : Results.Conflict(archiveJobIdResult.Errors);
     }
 
     private static async Task<IResult> CancelImport(string archiveJobId, ClaimsPrincipal user, [FromServices] IMessageBus bus)

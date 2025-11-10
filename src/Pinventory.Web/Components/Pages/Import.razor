@@ -3,11 +3,13 @@
 @using System.Net
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Options
+@using Microsoft.Extensions.ServiceDiscovery
 @using Pinventory.Google.Configuration
 @using Pinventory.Identity.Tokens
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode
 @using Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
 @using Pinventory.Web.Components.Shared
+@using Pinventory.Web.SignalR
 @using Refit
 @using static Shared.AlertMessage
 
@@ -16,6 +18,8 @@
 @inject IOptions<GooglePlatformOptions> Options
 @inject TokenService TokenService
 @inject IPinsHttpClient PinsClient
+@inject IHttpMessageHandlerFactory MessageHandlerFactory
+@inject ServiceEndpointResolver EndPointResolver
 
 
 <PageTitle>Import Starred Places</PageTitle>
@@ -181,11 +185,9 @@
     private string? errorMessage;
     private string? successMessage;
 
-    private record ImportStartedDto(Guid ImportId, string ArchiveJobId);
     private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, uint Total);
     private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
     private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
-    private record ImportCancelledDto(Guid ImportId, string ArchiveJobId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,7 +201,7 @@
                     var tokens = await TokenService.GetGoogleTokensAsync(principal);
                     return tokens?.IdToken.Token;
                 };
-            })
+            }, MessageHandlerFactory, EndPointResolver)
             .WithAutomaticReconnect()
             .Build();
 
@@ -210,9 +212,9 @@
             await hub.StartAsync();
             statusMessage = "Connected";
         }
-        catch
+        catch (Exception ex)
         {
-            statusMessage = "Connection failed";
+            statusMessage = $"Connection failed: {ex.Message}";
         }
 
         await LoadJobsAsync();

@@ -28,7 +28,8 @@ if (!OpenApi.IsGenerating)
 
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
-            .UseConventionalRouting();
+            .UseConventionalRouting()
+            .AutoProvision();
 
         options.AddDefaultWolverineOptions();
     });

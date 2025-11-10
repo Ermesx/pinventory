@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿using FluentResults;
+
+using Moq;
 
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
@@ -312,10 +314,10 @@ public class ImportTests
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-        var errorMessage = "Something went wrong";
+        var error = new Error("Something went wrong");
 
         // Act
-        var result = import.Fail(errorMessage);
+        var result = import.Fail(error);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -324,7 +326,7 @@ public class ImportTests
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportFailed>();
         evt.AggregateId.ShouldBe(import.Id);
-        evt.Error.ShouldBe(errorMessage);
+        evt.Error.ShouldBe(error.Message);
     }
 
     [Test]
@@ -334,60 +336,12 @@ public class ImportTests
         var import = new Import("user123");
 
         // Act
-        var result = import.Fail("Error message");
+        var result = import.Fail(new Error("Error message"));
 
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("not in progress"));
         import.State.ShouldBe(ImportState.Unspecified);
-        import.CompletedAt.ShouldBeNull();
-    }
-
-    [Test]
-    public async Task Fail_fails_when_error_message_is_null()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-
-        // Act
-        var result = import.Fail(null!);
-
-        // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        import.State.ShouldBe(ImportState.InProgress);
-        import.CompletedAt.ShouldBeNull();
-    }
-
-    [Test]
-    public async Task Fail_fails_when_error_message_is_empty()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-
-        // Act
-        var result = import.Fail("");
-
-        // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        import.State.ShouldBe(ImportState.InProgress);
-        import.CompletedAt.ShouldBeNull();
-    }
-
-    [Test]
-    public async Task Fail_fails_when_error_message_is_whitespace()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-
-        // Act
-        var result = import.Fail("   ");
-
-        // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Error message cannot be empty"));
-        import.State.ShouldBe(ImportState.InProgress);
         import.CompletedAt.ShouldBeNull();
     }
 
@@ -476,7 +430,7 @@ public class ImportTests
         // Arrange
         var import = await Imports.CreateStartedImport();
         import.UpdateTotal(100);
-        import.Fail("Error");
+        import.Fail(new Error("Error"));
 
         // Act
         import.UpdateTotal(50);
@@ -539,7 +493,6 @@ public class ImportTests
         import.FailedPlaces.Select(p => p.MapsUrl).ShouldBe(["https://maps.google.com/3"]);
     }
 
-
     [Test]
     public void Period_defaults_to_AllTime_when_not_provided()
     {
@@ -549,7 +502,7 @@ public class ImportTests
         var after = DateTimeOffset.UtcNow;
 
         // Assert
-        import.Period.Start.ShouldBe(DateTimeOffset.MinValue);
+        import.Period.Start.ShouldBe(DateTimeOffset.UnixEpoch);
         import.Period.End.ShouldBeGreaterThanOrEqualTo(before);
         import.Period.End.ShouldBeLessThanOrEqualTo(after);
     }

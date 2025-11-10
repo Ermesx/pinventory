@@ -28,13 +28,13 @@ public class ArchiveDownloader(IHttpClientFactory httpClientFactory) : IArchiveD
         var serviceStatus = archiveBrowser.ServiceStatus.FirstOrDefault();
         if (serviceStatus is null)
         {
-            return Result.Fail(Errors.ArchiveDownload.MissingService());
+            return Result.Fail(Errors.ArchiveDownloader.MissingService());
         }
 
         var extractedMetadataFile = serviceStatus.ExtractedFile.FirstOrDefault();
         if (extractedMetadataFile is null)
         {
-            return Result.Fail(Errors.ArchiveDownload.MissingExtractedFileMetadata());
+            return Result.Fail(Errors.ArchiveDownloader.MissingExtractedFileMetadata());
         }
 
         var filePath = $"Portability/{serviceStatus.FolderName}/{extractedMetadataFile.Name}";
@@ -52,7 +52,7 @@ public class ArchiveDownloader(IHttpClientFactory httpClientFactory) : IArchiveD
 
         if (!response.IsSuccessStatusCode)
         {
-            return Result.Fail(Errors.ArchiveDownload.HttpRequestFailed(response));
+            return Result.Fail(Errors.ArchiveDownloader.HttpRequestFailed(response));
         }
 
         await using var zipStream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -61,7 +61,7 @@ public class ArchiveDownloader(IHttpClientFactory httpClientFactory) : IArchiveD
         var entry = archive.GetEntry(filePath);
         if (entry is null)
         {
-            return Result.Fail(Errors.ArchiveDownload.FileNotFound(filePath));
+            return Result.Fail(Errors.ArchiveDownloader.FileNotFound(filePath));
         }
 
         await using var entryStream = entry.Open();
@@ -70,11 +70,11 @@ public class ArchiveDownloader(IHttpClientFactory httpClientFactory) : IArchiveD
             var value = await JsonSerializer.DeserializeAsync<T>(entryStream, JsonOptions, cancellationToken);
             return value is not null
                 ? Result.Ok(value)
-                : Result.Fail(Errors.ArchiveDownload.FileDeserializationFailed(filePath));
+                : Result.Fail(Errors.ArchiveDownloader.FileDeserializationFailed(filePath));
         }
         catch (JsonException)
         {
-            return Result.Fail(Errors.ArchiveDownload.FileDeserializationFailed(filePath));
+            return Result.Fail(Errors.ArchiveDownloader.FileDeserializationFailed(filePath));
         }
     }
 }

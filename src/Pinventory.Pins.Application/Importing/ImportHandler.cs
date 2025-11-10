@@ -9,6 +9,7 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Application.Tagging.Messages;
+using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
@@ -33,11 +34,22 @@ public sealed class ImportHandler(
     public async Task<Result<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting importMessage for {UserId}", command.UserId);
+        var periodResult = Period.Create(command.Start, command.End);
+        if (periodResult.IsFailed)
+        {
+            return Result.Fail(periodResult.Errors);
+        }
 
         var client = await CreateClientAsync(command.UserId);
-        var archiveJobId = await client.InitiateAsync(command.Period, cancellationToken);
+        var archiveJobIdResult = await client.InitiateAsync(cancellationToken: cancellationToken);
+        if (archiveJobIdResult.IsFailed)
+        {
+            return Result.Fail(archiveJobIdResult.Errors);
+        }
 
-        var import = new Import(command.UserId, command.Period);
+        var archiveJobId = archiveJobIdResult.Value;
+
+        var import = new Import(command.UserId, periodResult.Value);
         var result = await import.StartAsync(archiveJobId, concurrencyPolicy);
 
         if (result.IsFailed)
@@ -63,11 +75,24 @@ public sealed class ImportHandler(
             return Result.Fail(Errors.Import.RunningImportNotFound(command));
         }
 
-        var result = import.Cancel();
-        if (result.IsSuccess)
+        var client = await CreateClientAsync(command.UserId);
+        var cancelResult = await client.CancelJobAsync(command.ArchiveJobId, cancellationToken);
+        if (cancelResult.IsFailed)
         {
-            var client = await CreateClientAsync(command.UserId);
-            await client.CancelJobAsync(command.ArchiveJobId, cancellationToken);
+            var failResult = import.Fail(cancelResult.Errors[0]);
+            if (failResult.IsFailed)
+            {
+                logger.LogError("Failed to fail import job: {Errors}", failResult.Errors);
+            }
+
+            var errors = cancelResult.Errors.Concat(failResult.Errors);
+            return Result.Fail(errors);
+        }
+
+        var result = import.Cancel();
+        if (result.IsFailed)
+        {
+            logger.LogError("Failed to cancel import job: {Errors}", result.Errors);
         }
 
         await RaiseEventsAsync(import);
@@ -87,9 +112,14 @@ public sealed class ImportHandler(
 
         var client = await CreateClientAsync(check.UserId);
         var archiveResult = await client.CheckJobAsync(check.ArchiveJobId, cancellationToken);
+        if (archiveResult.IsFailed)
+        {
+            logger.LogError("Failed to check archive job: {Errors}", archiveResult.Errors);
+            return;
+        }
 
         Result<Success> result;
-        switch (archiveResult.State)
+        switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
                 logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.UserId);
@@ -97,7 +127,7 @@ public sealed class ImportHandler(
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.UserId);
-                result = import.Fail("Archive job failed");
+                result = import.Fail(new Error("Archive job failed externally"));
                 if (result.IsFailed)
                 {
                     logger.LogError("Failed to fail import job: {Errors}", result.Errors);
@@ -116,7 +146,7 @@ public sealed class ImportHandler(
 
                 break;
             default:
-                var urls = archiveResult.Urls.Select(x => x.ToString()).ToList();
+                var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
                 await bus.PublishAsync(DownloadArchiveMessage.Create(check, urls));
                 break;
         }

@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-
-using Google.Protobuf.WellKnownTypes;
+﻿using Google.Protobuf.WellKnownTypes;
 
 using Grpc.Core;
 
@@ -16,8 +14,7 @@ public class TokenServiceGrpc(TokenService service) : Tokens.TokensBase
     {
         context.CancellationToken.ThrowIfCancellationRequested();
 
-        var principal = CreatePrincipal(request.UserId);
-        var tokens = await service.GetGoogleTokensAsync(principal);
+        var tokens = await service.GetGoogleTokensAsync(request.UserId);
 
         return tokens is not null
             ? CreateTokenResponse(tokens.AccessToken, tokens.DataPortabilityAccessToken)
@@ -45,7 +42,4 @@ public class TokenServiceGrpc(TokenService service) : Tokens.TokensBase
                 }
                 : null
         };
-
-    private static ClaimsPrincipal CreatePrincipal(string userId) =>
-        new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, userId)]));
 }

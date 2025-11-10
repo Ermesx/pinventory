@@ -29,15 +29,18 @@ public static class Errors
 
         public static Error ImportNotInProgress(Importing.Import import) => new NotInProgressError(import);
 
-        public static Error ErrorMessageCannotBeEmpty() => new("Error message cannot be empty");
-
         public static Error BatchCountersMustBeNonNegative() => new("Batch counters must be non-negative");
-
-        public static Error ImportNotCompleteYet(Importing.Import import) =>
-            new(
-                $"Import {import.ArchiveJobId} is not complete ({import.Processed} of {import.Total} processed) yet for user {import.UserId}");
 
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");
+    }
+
+    public static class Period
+    {
+        public static Error PeriodStartMustBeBeforeEnd(DateTimeOffset? start, DateTimeOffset? end) =>
+            new IncorrectPeriodDates(start, end);
+
+        public class IncorrectPeriodDates(DateTimeOffset? start, DateTimeOffset? end)
+            : Error($"Period start ({start}) must be before end ({end})");
     }
 }

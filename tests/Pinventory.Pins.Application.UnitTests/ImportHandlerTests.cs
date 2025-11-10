@@ -37,7 +37,7 @@ public class ImportHandlerTests
 
         var (handler, dbContext, busMock, _, _, _, _) = await CreateHandlerAsync();
 
-        var command = new StartImportCommand(userId, period);
+        var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act
         var result = await handler.HandleAsync(command);
@@ -67,7 +67,8 @@ public class ImportHandlerTests
         policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var command = new StartImportCommand(userId, Period.AllTime);
+        var period = Period.AllTime;
+        var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act
         var result = await handler.HandleAsync(command);
@@ -85,7 +86,11 @@ public class ImportHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock, _) = await CreateHandlerAsync();
+        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+
+        // The cancel request must succeed externally for the import to be cancelled
+        serviceMock.Setup(s => s.CancelJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Ok<Success>(null!));
 
         // Seed running import
         var import = new Import(userId, Period.AllTime);
@@ -140,7 +145,7 @@ public class ImportHandlerTests
         dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ImportState.InProgress, []));
+            .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.InProgress, [])));
 
         var message = new CheckJobMessage(userId, archiveJobId);
 
@@ -170,7 +175,9 @@ public class ImportHandlerTests
         dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ImportState.Complete, [new Uri("https://a"), new Uri("https://b")]));
+            .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Complete, [
+                new Uri("https://a"), new Uri("https://b")
+            ])));
 
         var message = new CheckJobMessage(userId, archiveJobId);
 
@@ -198,7 +205,7 @@ public class ImportHandlerTests
         dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ImportState.Failed, []));
+            .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Failed, [])));
 
         var message = new CheckJobMessage(userId, archiveJobId);
 
@@ -394,7 +401,7 @@ public class ImportHandlerTests
         dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ImportState.Cancelled, []));
+            .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Cancelled, [])));
 
         var message = new CheckJobMessage(userId, archiveJobId);
 
@@ -493,7 +500,8 @@ public class ImportHandlerTests
         factoryMock.Setup(f => f.CreateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<IImportService>("factory failed"));
 
-        var command = new StartImportCommand(userId, Period.AllTime);
+        var period = Period.AllTime;
+        var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act + Assert
         await Should.ThrowAsync<InvalidOperationException>(async () => await handler.HandleAsync(command));
@@ -522,7 +530,7 @@ public class ImportHandlerTests
 
         // sensible defaults
         serviceMock.Setup(s => s.InitiateAsync(It.IsAny<Period?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("job-123");
+            .ReturnsAsync(Result.Ok("job-123"));
         factoryMock.Setup(f => f.CreateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(serviceMock.Object));
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

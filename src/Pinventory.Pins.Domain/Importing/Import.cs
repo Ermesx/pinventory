@@ -89,21 +89,16 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         return true;
     }
 
-    public Result<Success> Fail(string error)
+    public Result<Success> Fail(IError error)
     {
         if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
-        if (string.IsNullOrWhiteSpace(error))
-        {
-            return Result.Fail(Errors.Import.ErrorMessageCannotBeEmpty());
-        }
-
         State = ImportState.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportFailed(Id, UserId, ArchiveJobId!, error));
+        Raise(new ImportFailed(Id, UserId, ArchiveJobId!, error.Message));
 
         return Result.Ok();
     }
