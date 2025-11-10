@@ -30,9 +30,9 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageVersion Include="Refit" Version="8.0.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
-    <PackageVersion Include="WolverineFx" Version="5.0.0"/>
+    <PackageVersion Include="WolverineFx" Version="5.1.0"/>
     <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="5.0.0"/>
-    <PackageVersion Include="WolverineFx.MemoryPack" Version="5.0.0"/>
+    <PackageVersion Include="WolverineFx.MemoryPack" Version="5.1.0"/>
     <PackageVersion Include="WolverineFx.Postgresql" Version="5.0.0"/>
     <PackageVersion Include="WolverineFx.RabbitMQ" Version="5.0.0"/>
     <!-- Tools Packages -->
