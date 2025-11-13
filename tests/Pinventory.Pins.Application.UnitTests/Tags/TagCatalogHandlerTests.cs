@@ -13,7 +13,7 @@ using Shouldly;
 
 using Wolverine;
 
-namespace Pinventory.Pins.Application.UnitTests;
+namespace Pinventory.Pins.Application.UnitTests.Tags;
 
 public class TagCatalogHandlerTests
 {

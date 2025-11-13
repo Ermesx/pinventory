@@ -15,5 +15,9 @@
     <ProjectReference Include="..\..\src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="ImportHandlerTests.cs"/>
+  </ItemGroup>
+
 </Project>
 

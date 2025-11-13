@@ -10,23 +10,23 @@ namespace Pinventory.Pins.Import.Worker.Handlers;
 [WolverineHandler]
 public static class ImportHandlers
 {
-    public static async Task<ResultDto<string>> HandleAsync(StartImportCommand command, ImportHandler app,
+    public static async Task<ResultDto<string>> HandleAsync(StartImportCommand command, ImportCommandHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 
-    public static async Task<ResultDto> HandleAsync(CancelImportCommand command, ImportHandler app,
+    public static async Task<ResultDto> HandleAsync(CancelImportCommand command, ImportCommandHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 
-    public static async Task HandleAsync(CheckJobMessage check, ImportHandler app,
+    public static async Task HandleAsync(CheckJobMessage check, ImportDownloadHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(check, cancellationToken);
 
-    public static async Task HandleAsync(DownloadArchiveMessage download, ImportHandler app,
+    public static async Task HandleAsync(DownloadArchiveMessage download, ImportDownloadHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(download, cancellationToken);
 
-    public static async Task HandleAsync(ProcessPinsBatchMessage batch, ImportHandler app,
+    public static async Task HandleAsync(ProcessPinsBatchMessage batch, ImportProcessingHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(batch, cancellationToken);
 }

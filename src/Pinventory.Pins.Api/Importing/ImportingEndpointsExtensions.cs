@@ -62,8 +62,6 @@ public static class ImportingEndpointsExtensions
     {
         var userId = user.GetIdentifier();
         var imports = await dbContext.Imports
-            .Include(x => x.ConflictedPlaces)
-            .Include(x => x.FailedPlaces)
             .Where(x => x.UserId == userId)
             .Select(x => new ImportDto(
                 x.Id,
@@ -90,8 +88,6 @@ public static class ImportingEndpointsExtensions
     {
         var userId = user.GetIdentifier();
         var import = await dbContext.Imports
-            .Include(x => x.ConflictedPlaces)
-            .Include(x => x.FailedPlaces)
             .Where(x => x.UserId == userId && x.ArchiveJobId == archiveJobId)
             .Select(x => new ImportDto(
                 x.Id,
