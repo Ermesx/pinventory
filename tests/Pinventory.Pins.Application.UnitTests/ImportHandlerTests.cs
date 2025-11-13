@@ -259,13 +259,13 @@ public class ImportHandlerTests
         var features = new[]
         {
             new Feature(new Geometry([1.0, 2.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "https://maps.google.com/?cid=111",
+                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=111",
                     new LocationAndName("Addr 1", Alpha2Code.PL, "Name 1"), null), "Feature"),
             new Feature(new Geometry([3.0, 4.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "https://maps.google.com/?cid=222",
+                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=222",
                     new LocationAndName("Addr 2", Alpha2Code.PL, "Name 2"), null), "Feature"),
             new Feature(new Geometry([5.0, 6.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "https://maps.google.com/?cid=333",
+                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=333",
                     new LocationAndName("Addr 3", Alpha2Code.PL, "Name 3"), null), "Feature")
         };
         var data = new SavedPlacesCollection("FeatureCollection", features);
@@ -309,13 +309,13 @@ public class ImportHandlerTests
         var removedComment = "No location information is available for this saved place"; // matches ImportHandler constant
         var places = new[]
         {
-            new StarredPlace("SameName", "https://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
+            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
                 null), // conflict by name
-            new StarredPlace("NewName", "https://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
+            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
                 null), // update by placeId
-            new StarredPlace("Created", "https://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
+            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
                 null), // create new
-            new StarredPlace("Removed", "https://maps.google.com/?cid=555", "Addr 4", Alpha2Code.PL, 7, 8, DateTimeOffset.UtcNow,
+            new StarredPlace("Removed", "http://maps.google.com/?cid=555", "Addr 4", Alpha2Code.PL, 7, 8, DateTimeOffset.UtcNow,
                 removedComment) // failed
         };
         var message = new ProcessPinsBatchMessage(userId, archiveJobId, places);
@@ -325,7 +325,7 @@ public class ImportHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        var reloadedImport = await dbContext.Imports.FirstAsync(i => i.UserId == userId);
+        var reloadedImport = await dbContext.Imports.SingleAsync(i => i.UserId == userId);
         reloadedImport.State.ShouldBe(ImportState.Complete);
         reloadedImport.Processed.ShouldBe(4);
         reloadedImport.Created.ShouldBe(1);
@@ -349,7 +349,7 @@ public class ImportHandlerTests
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
         // Ensure TryComplete will fail by setting Total higher than the number of processed items
-        import.UpdateTotal(100);
+        import.SetTotal(100);
         await dbContext.Imports.AddAsync(import);
 
         // existing pins: one for conflict by name, one to update by place id
@@ -363,11 +363,11 @@ public class ImportHandlerTests
 
         var places = new[]
         {
-            new StarredPlace("SameName", "https://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
+            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
                 null), // conflict by name
-            new StarredPlace("NewName", "https://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
+            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
                 null), // update by placeId
-            new StarredPlace("Created", "https://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
+            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
                 null) // create new
         };
         var message = new ProcessPinsBatchMessage(userId, archiveJobId, places);
@@ -479,7 +479,7 @@ public class ImportHandlerTests
         var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
         var places = new[]
         {
-            new StarredPlace("Name", "https://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow, null)
+            new StarredPlace("Name", "http://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow, null)
         };
         var message = new ProcessPinsBatchMessage("user-1", "job-404", places);
 

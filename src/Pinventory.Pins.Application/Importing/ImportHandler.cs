@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
+using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
@@ -18,6 +19,7 @@ using Wolverine;
 
 namespace Pinventory.Pins.Application.Importing;
 
+// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public sealed class ImportHandler(
     ILogger<ImportHandler> logger,
     IImportServiceFactory factory,
@@ -29,22 +31,32 @@ public sealed class ImportHandler(
     private const int BatchSize = 50;
 
     private const string RemovedPlaceComment = "No location information is available for this saved place";
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
 
-    public async Task<Result<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<ResultDto<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting importMessage for {UserId}", command.UserId);
         var periodResult = Period.Create(command.Start, command.End);
         if (periodResult.IsFailed)
         {
-            return Result.Fail(periodResult.Errors);
+            return Result.Fail<string>(periodResult.Errors).ToResultDto();
         }
 
         var client = await CreateClientAsync(command.UserId);
         var archiveJobIdResult = await client.InitiateAsync(cancellationToken: cancellationToken);
         if (archiveJobIdResult.IsFailed)
         {
-            return Result.Fail(archiveJobIdResult.Errors);
+            if (archiveJobIdResult.HasError<Errors.Import.ArchiveJobExists>())
+            {
+                var currentImport = await GetCurrentImport(command.UserId, cancellationToken);
+                if (currentImport is not null)
+                {
+                    await bus.PublishAsync(new CheckJobMessage(currentImport.UserId, currentImport.ArchiveJobId!));
+                    return Result.Ok(currentImport.ArchiveJobId!).ToResultDto();
+                }
+            }
+
+            logger.LogError("Failed to initiate archive job: {Errors}", archiveJobIdResult.Errors);
+            return Result.Fail<string>(archiveJobIdResult.Errors).ToResultDto();
         }
 
         var archiveJobId = archiveJobIdResult.Value;
@@ -54,7 +66,7 @@ public sealed class ImportHandler(
 
         if (result.IsFailed)
         {
-            return Result.Fail(result.Errors);
+            return Result.Fail<string>(result.Errors).ToResultDto();
         }
 
         await dbContext.Imports.AddAsync(import, cancellationToken);
@@ -62,17 +74,17 @@ public sealed class ImportHandler(
 
         await bus.PublishAsync(new CheckJobMessage(import.UserId, archiveJobId));
 
-        return Result.Ok(archiveJobId);
+        return Result.Ok(archiveJobId).ToResultDto();
     }
 
-    public async Task<Result<Success>> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
 
         var import = await GetCurrentImport(command, cancellationToken);
         if (import is null)
         {
-            return Result.Fail(Errors.Import.RunningImportNotFound(command));
+            return Result.Fail(Errors.Import.RunningImportNotFound(command)).ToResultDto();
         }
 
         var client = await CreateClientAsync(command.UserId);
@@ -86,17 +98,18 @@ public sealed class ImportHandler(
             }
 
             var errors = cancelResult.Errors.Concat(failResult.Errors);
-            return Result.Fail(errors);
+            return Result.Fail(errors).ToResultDto();
         }
 
         var result = import.Cancel();
         if (result.IsFailed)
         {
             logger.LogError("Failed to cancel import job: {Errors}", result.Errors);
+            return Result.Fail(result.Errors).ToResultDto();
         }
 
         await RaiseEventsAsync(import);
-        return result;
+        return ResultDto.Ok();
     }
 
     public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
@@ -123,7 +136,7 @@ public sealed class ImportHandler(
         {
             case ImportState.InProgress:
                 logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.UserId);
-                await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckInterval));
+                await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckJobMessage.CheckInterval));
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.UserId);
@@ -171,8 +184,8 @@ public sealed class ImportHandler(
             return;
         }
 
-        var archiveBrowserUri = new Uri(download.Urls[0]);
-        var dataFilesUri = new Uri(download.Urls[1]);
+        var dataFilesUri = new Uri(download.Urls[0]);
+        var archiveBrowserUri = new Uri(download.Urls[1]);
 
         var result = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
         if (result.IsFailed)
@@ -182,7 +195,7 @@ public sealed class ImportHandler(
         }
 
         var records = result.Value.Data.Features;
-        import.UpdateTotal((uint)records.Length);
+        import.SetTotal((uint)records.Length);
 
         foreach (var batch in records.Chunk(BatchSize))
         {
@@ -199,8 +212,8 @@ public sealed class ImportHandler(
                 place.Properties.GoogleMapsUrl,
                 place.Properties.Location?.Address,
                 place.Properties.Location?.CountryCode,
-                place.Geometry.Coordinates[0],
                 place.Geometry.Coordinates[1],
+                place.Geometry.Coordinates[0],
                 place.Properties.Date,
                 place.Properties.Comment);
         }
@@ -222,12 +235,12 @@ public sealed class ImportHandler(
         List<ReportedPlace> conflictingPlaces = [], failedPlaces = [];
         List<Pin> pinsToCreate = [], updatedPins = [];
 
-        var existingPins = dbContext.Pins.Where(x => x.OwnerId == batch.UserId).ToList();
+        var existingPins = await dbContext.Pins.Where(x => x.OwnerId == batch.UserId).ToListAsync(cancellationToken: cancellationToken);
         foreach (var place in batch.StarredPlaces)
         {
             processed++;
 
-            if (place.Comment == RemovedPlaceComment)
+            if (!IsValidPlace(place) || !GooglePlaceId.TryParse(place.GoogleMapsUrl, out var placeId))
             {
                 failedPlaces.Add(new ReportedPlace(place.GoogleMapsUrl, place.AddedDate));
                 failed++;
@@ -235,7 +248,7 @@ public sealed class ImportHandler(
             }
 
             // Conflicted places are those with the same name but different place ID
-            var possibleConflictedPin = existingPins.SingleOrDefault(x => x.Name == place.Name);
+            var possibleConflictedPin = existingPins.FirstOrDefault(x => x.Name == place.Name && x.PlaceId != placeId);
             if (possibleConflictedPin is not null)
             {
                 conflictingPlaces.Add(new ReportedPlace(place.GoogleMapsUrl, place.AddedDate));
@@ -243,8 +256,7 @@ public sealed class ImportHandler(
                 continue;
             }
 
-            var placeId = GooglePlaceId.Parse(place.GoogleMapsUrl);
-            var existingPin = existingPins.FirstOrDefault(x => x.PlaceId == placeId);
+            var existingPin = existingPins.SingleOrDefault(x => x.PlaceId == placeId);
             if (existingPin is null)
             {
                 pinsToCreate.Add(CreatePin(placeId, place));
@@ -286,13 +298,17 @@ public sealed class ImportHandler(
 
         return;
 
+        static bool IsValidPlace(StarredPlace place) =>
+            place is { Name: not null, Address: not null, Comment: not RemovedPlaceComment };
+
         Pin CreatePin(GooglePlaceId placeId, StarredPlace place)
         {
             return new Pin(batch.UserId, place.Name!, placeId, new Address(place.Address!, place.CountryCode!.Value),
                 new Location(place.Latitude!.Value, place.Longitude!.Value), place.AddedDate);
         }
 
-        IEnumerable<Guid> GetChangedPinIds() => updatedPins.Select(x => x.Id).Concat(pinsToCreate.Select(x => x.Id)).ToList();
+        IEnumerable<Guid> GetChangedPinIds() =>
+            updatedPins.Select(x => x.Id).Concat(pinsToCreate.Select(x => x.Id)).ToList();
 
         void LogCompletion(bool completed)
         {
@@ -319,11 +335,15 @@ public sealed class ImportHandler(
         return result.Value;
     }
 
+    private async Task<Import?> GetCurrentImport(string userId, CancellationToken cancellationToken)
+        => await dbContext.Imports
+            .AsSplitQuery()
+            .SingleOrDefaultAsync(x => x.UserId == userId && x.State == ImportState.InProgress, cancellationToken);
+
     private async Task<Import?> GetCurrentImport(ICorrelatedMessage message, CancellationToken cancellationToken)
-    {
-        return await dbContext.Imports
-            .FirstOrDefaultAsync(
+        => await dbContext.Imports
+            .AsSplitQuery()
+            .SingleOrDefaultAsync(
                 x => x.UserId == message.UserId && x.ArchiveJobId == message.ArchiveJobId && x.State == ImportState.InProgress,
                 cancellationToken);
-    }
 }

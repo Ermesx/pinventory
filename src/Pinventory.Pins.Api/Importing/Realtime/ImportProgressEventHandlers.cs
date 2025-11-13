@@ -3,8 +3,11 @@
 using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Domain.Importing.Events;
 
+using Wolverine.Attributes;
+
 namespace Pinventory.Pins.Api.Importing.Realtime;
 
+[WolverineHandler]
 public static class ImportProgressEventHandlers
 {
     public static Task Handle(ImportBatchProcessed @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)

@@ -1,5 +1,4 @@
-﻿using FluentResults;
-
+﻿using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
@@ -11,11 +10,11 @@ namespace Pinventory.Pins.Import.Worker.Handlers;
 [WolverineHandler]
 public static class ImportHandlers
 {
-    public static async Task<Result<string>> HandleAsync(StartImportCommand command, ImportHandler app,
+    public static async Task<ResultDto<string>> HandleAsync(StartImportCommand command, ImportHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 
-    public static async Task<Result<Success>> HandleAsync(CancelImportCommand command, ImportHandler app,
+    public static async Task<ResultDto> HandleAsync(CancelImportCommand command, ImportHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 

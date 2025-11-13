@@ -50,32 +50,34 @@ public static class TagsEndpointsExtensions
         return app;
     }
 
-    private static async Task<IResult> GetTags(string? ownerId, [FromServices] PinsDbContext dbContext)
+    private static async Task<IResult> GetTags(string? ownerId, [FromServices] PinsDbContext dbContext, CancellationToken cancellationToken)
     {
         var catalog = await dbContext.TagCatalogs
             .Include(x => x.Tags)
             .Where(x => x.OwnerId == ownerId)
             .AsNoTracking()
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken: cancellationToken);
 
         return catalog is null
             ? Results.NotFound()
             : Results.Ok(new TagCatalogDto(catalog.Tags.Select(t => t.Value).ToList()));
     }
 
-    private static async Task<IResult> DefineTags(string? ownerId, [FromBody] TagsDto request, [FromServices] IMessageBus bus)
+    private static async Task<IResult> DefineTags(string? ownerId, [FromBody] TagsDto request, [FromServices] IMessageBus bus,
+        CancellationToken cancellationToken)
     {
         var command = new DefineTagCatalogCommand(ownerId, request.Tags);
-        var result = await bus.InvokeAsync<Result<Guid>>(command);
+        var result = await bus.InvokeAsync<Result<Guid>>(command, cancellationToken);
         return result.IsSuccess
             ? Results.Created($"/tags/{command.OwnerId}", new TagCatalogIdDto(ownerId, result.Value))
             : Results.Conflict(result.Errors);
     }
 
-    private static async Task<IResult> AddTag(string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus)
+    private static async Task<IResult> AddTag(string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus,
+        CancellationToken cancellationToken)
     {
         var command = new AddTagCommand(ownerId, request.Tag);
-        var result = await bus.InvokeAsync<Result<Success>>(command);
+        var result = await bus.InvokeAsync<Result<Success>>(command, cancellationToken);
 
         return result.IsSuccess
             ? Results.Created()
@@ -84,10 +86,11 @@ public static class TagsEndpointsExtensions
                 : Results.BadRequest(result.Errors);
     }
 
-    private static async Task<IResult> RemoveTag(string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus)
+    private static async Task<IResult> RemoveTag(string? ownerId, [FromBody] TagDto request, [FromServices] IMessageBus bus,
+        CancellationToken cancellationToken)
     {
         var command = new RemoveTagCommand(ownerId, request.Tag);
-        var result = await bus.InvokeAsync<Result<Success>>(command);
+        var result = await bus.InvokeAsync<Result<Success>>(command, cancellationToken);
 
         return result.IsSuccess
             ? Results.NoContent()

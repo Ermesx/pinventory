@@ -7,8 +7,8 @@ namespace Pinventory.Pins.Domain.Importing;
 
 public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
 {
-    private readonly List<ReportedPlace> _conflictedPlaces = [];
-    private readonly List<ReportedPlace> _failedPlaces = [];
+    private readonly HashSet<ReportedPlace> _conflictedPlaces = [];
+    private readonly HashSet<ReportedPlace> _failedPlaces = [];
     private Import() : this(string.Empty, Period.AllTime) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
@@ -117,19 +117,24 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         return Result.Ok();
     }
 
-    public void UpdateTotal(uint count)
+    public void SetTotal(uint count)
     {
         if (State != ImportState.InProgress)
         {
             return;
         }
 
-        Total += count;
+        Total = count;
     }
 
     public void ReportConflictsAndFailures(IEnumerable<ReportedPlace> conflictingPlaces, IEnumerable<ReportedPlace> failedPlaces)
     {
-        _conflictedPlaces.AddRange(conflictingPlaces);
-        _failedPlaces.AddRange(failedPlaces);
+        if (State != ImportState.InProgress)
+        {
+            return;
+        }
+
+        _conflictedPlaces.UnionWith(conflictingPlaces);
+        _failedPlaces.UnionWith(failedPlaces);
     }
 }

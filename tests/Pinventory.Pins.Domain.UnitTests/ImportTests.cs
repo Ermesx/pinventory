@@ -380,75 +380,75 @@ public class ImportTests
     }
 
     [Test]
-    public async Task UpdateTotal_updates_total_when_state_is_in_progress()
+    public async Task SetTotal_sets_total_when_state_is_in_progress()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
 
         // Act
-        import.UpdateTotal(100);
-        import.UpdateTotal(50);
+        import.SetTotal(100);
+        import.SetTotal(50);
 
         // Assert
-        import.Total.ShouldBe(150u);
+        import.Total.ShouldBe(50u);
     }
 
     [Test]
-    public void UpdateTotal_does_not_update_when_state_is_not_in_progress()
+    public void SetTotal_does_not_update_when_state_is_not_in_progress()
     {
         // Arrange
         var import = new Import("user123");
 
         // Act
-        import.UpdateTotal(100);
+        import.SetTotal(100);
 
         // Assert
         import.Total.ShouldBe(0u);
     }
 
     [Test]
-    public async Task UpdateTotal_does_not_update_after_completion()
+    public async Task SetTotal_does_not_update_after_completion()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-        import.UpdateTotal(100);
+        import.SetTotal(100);
         import.AppendBatch(processed: 100, created: 0, updated: 0, failed: 0, conflicts: 0);
         var completeResult = import.TryComplete();
         completeResult.IsSuccess.ShouldBeTrue();
         completeResult.Value.ShouldBeTrue();
 
         // Act
-        import.UpdateTotal(50);
+        import.SetTotal(50);
 
         // Assert
         import.Total.ShouldBe(100u);
     }
 
     [Test]
-    public async Task UpdateTotal_does_not_update_after_failure()
+    public async Task SetTotal_does_not_update_after_failure()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-        import.UpdateTotal(100);
+        import.SetTotal(100);
         import.Fail(new Error("Error"));
 
         // Act
-        import.UpdateTotal(50);
+        import.SetTotal(50);
 
         // Assert
         import.Total.ShouldBe(100u);
     }
 
     [Test]
-    public async Task UpdateTotal_does_not_update_after_cancellation()
+    public async Task SetTotal_does_not_update_after_cancellation()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-        import.UpdateTotal(100);
+        import.SetTotal(100);
         import.Cancel();
 
         // Act
-        import.UpdateTotal(50);
+        import.SetTotal(50);
 
         // Assert
         import.Total.ShouldBe(100u);
@@ -459,7 +459,7 @@ public class ImportTests
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-        import.UpdateTotal(100);
+        import.SetTotal(100);
         import.AppendBatch(processed: 50, created: 0, updated: 0, failed: 0, conflicts: 0);
 
         // Act
@@ -539,7 +539,7 @@ public class ImportTests
         // Act
         var startResult = await import.StartAsync("archive456", policyMock.Object);
         startResult.IsSuccess.ShouldBeTrue();
-        import.UpdateTotal(2);
+        import.SetTotal(2);
         import.AppendBatch(2, 1, 1, 0, 0);
         var completeResult = import.TryComplete();
 

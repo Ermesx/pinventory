@@ -72,8 +72,8 @@
 <hr/>
 
 <div class="d-flex gap-2 mb-3">
-    <button class="btn btn-success" disabled="@(isProcessing || isImportRunning)" @onclick="OnStartImportAsync">Start
-        Import
+    <button class="btn btn-success" disabled="@(isProcessing)" @onclick="OnStartImportAsync">
+        @(isImportRunning ? "Renew Import" : "Start Import")
     </button>
     <button class="btn btn-outline-danger" disabled="@(!isImportRunning || isProcessing)" @onclick="OnCancelImportAsync">
         Cancel Import
@@ -234,7 +234,7 @@
                 failed += dto.Failed;
                 conflicts += dto.Conflicts;
                 total = dto.Total;
-                statusMessage = "Import in progress";
+                statusMessage = "Import in progress...";
                 isImportRunning = true;
                 InvokeAsync(StateHasChanged);
             }
@@ -306,7 +306,7 @@
 
     private async Task OnStartImportAsync()
     {
-        if (isImportRunning || isProcessing)
+        if (isProcessing)
         {
             return;
         }
@@ -322,12 +322,13 @@
             var id = await PinsClient.StartImport(new StartImportDto());
             archiveJobId = id;
             isImportRunning = true;
+            statusMessage = "Preparing data...";
             successMessage = "Import started.";
             await LoadJobsAsync();
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {
-            successMessage = "An import is already in progress.";
+            errorMessage = ex.Content;
             await LoadJobsAsync();
             isImportRunning = true;
         }

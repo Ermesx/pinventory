@@ -25,5 +25,7 @@ public static class Errors
     {
         public static Error RunningImportNotFound(CancelImportCommand command) =>
             new NotFoundError($"Import {command.ArchiveJobId} not found for user {command.UserId}");
+
+        public class ArchiveJobExists() : Error("Archive job already exists");
     }
 }

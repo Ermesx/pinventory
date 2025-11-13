@@ -13,6 +13,7 @@ using Wolverine;
 namespace Pinventory.Pins.Application.Tags;
 
 // dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
+// FluentResults can be used because this handler is used as internal MediatR
 public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbContext dbContext, IMessageBus bus)
     : ApplicationHandler(bus)
 {
