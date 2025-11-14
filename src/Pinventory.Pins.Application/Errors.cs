@@ -1,6 +1,5 @@
 ﻿using FluentResults;
 
-using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Tags.Commands;
 
 namespace Pinventory.Pins.Application;
@@ -23,8 +22,8 @@ public static class Errors
 
     public static class Import
     {
-        public static Error RunningImportNotFound(ICorrelatedMessage message) =>
-            new NotFoundError($"Import {message.ArchiveJobId} not found for user {message.UserId}");
+        public static Error RunningImportNotFound(string userId, string archiveJobId) =>
+            new NotFoundError($"Import {archiveJobId} not found for user {userId}");
 
         public class ArchiveJobExists() : Error("Archive job already exists");
     }

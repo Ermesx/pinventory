@@ -489,9 +489,7 @@
           "updated",
           "failed",
           "conflicts",
-          "total",
-          "conflictedPlaces",
-          "failedPlaces"
+          "total"
         ],
         "type": "object",
         "properties": {
@@ -538,17 +536,7 @@
           },
           "total": {
             "type": "integer",
-            "format": "uint32"
-          },
-          "conflictedPlaces": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ValueTupleOfstringAndDateTimeOffset"
-            }
-          },
-          "failedPlaces": {
-            "type": "array",
-            "items": {}
+            "format": "int32"
           }
         }
       },
@@ -655,9 +643,6 @@
             }
           }
         }
-      },
-      "ValueTupleOfstringAndDateTimeOffset": {
-        "type": "object"
       }
     }
   },

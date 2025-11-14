@@ -25,16 +25,16 @@ public sealed class ImportDownloadHandler(
 
     public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.UserId);
+        logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.ImportId);
 
-        var import = await dbContext.GetCurrentImport(check, cancellationToken);
+        var import = await dbContext.GetCurrentImport(check.ImportId, cancellationToken);
         if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.UserId);
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.ImportId);
             return;
         }
 
-        var clientResult = await factory.CreateAsync(check.UserId, cancellationToken);
+        var clientResult = await factory.CreateAsync(import.UserId, cancellationToken);
         if (clientResult.IsFailed)
         {
             logger.LogError("Failed to create import service: {Errors}", clientResult.Errors);
@@ -53,11 +53,11 @@ public sealed class ImportDownloadHandler(
         switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
-                logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.UserId);
+                logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.ImportId);
                 await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckJobMessage.CheckInterval));
                 return;
             case ImportState.Failed:
-                logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.UserId);
+                logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);
                 result = import.Fail(new Error("Archive job failed externally"));
                 if (result.IsFailed)
                 {
@@ -67,7 +67,7 @@ public sealed class ImportDownloadHandler(
 
                 break;
             case ImportState.Cancelled:
-                logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.UserId);
+                logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.ImportId);
                 result = import.Cancel();
                 if (result.IsFailed)
                 {
@@ -89,7 +89,7 @@ public sealed class ImportDownloadHandler(
     {
         logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
 
-        var import = await dbContext.GetCurrentImport(download, cancellationToken);
+        var import = await dbContext.GetCurrentImport(download.ImportId, cancellationToken);
         if (import is null)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
@@ -106,21 +106,28 @@ public sealed class ImportDownloadHandler(
         var dataFilesUri = new Uri(download.Urls[0]);
         var archiveBrowserUri = new Uri(download.Urls[1]);
 
-        var result = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
-        if (result.IsFailed)
+        var dataResult = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
+        if (dataResult.IsFailed)
         {
-            logger.LogError("Failed to download archive: {Errors}", result.Errors);
+            logger.LogError("Failed to download archive: {Errors}", dataResult.Errors);
             return;
         }
 
-        var records = result.Value.Data.Features;
-        import.SetTotal((uint)records.Length);
+        var records = dataResult.Value.Data.Features;
 
+        List<Result<Success>> results = [];
         foreach (var batch in records.Chunk(BatchSize))
         {
             var starredPlaces = batch.Select(MapStarredPlace).ToList();
-            await bus.PublishAsync(ProcessPinsBatchMessage.Create(download, starredPlaces));
+            results.Add(import.RegisterBatch(starredPlaces));
         }
+
+        if (results.Any(x => x.IsFailed))
+        {
+            logger.LogError("Failed to download archive: {Errors}", results.SelectMany(x => x.Errors));
+        }
+
+        await RaiseEventsAsync(import);
 
         return;
 

@@ -42,7 +42,7 @@ public class ImportDownloadHandlerTests
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.InProgress, [])));
 
-        var message = new CheckJobMessage(userId, archiveJobId);
+        var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);
@@ -73,7 +73,7 @@ public class ImportDownloadHandlerTests
                 new Uri("https://a"), new Uri("https://b")
             ])));
 
-        var message = new CheckJobMessage(userId, archiveJobId);
+        var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);
@@ -101,7 +101,7 @@ public class ImportDownloadHandlerTests
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Failed, [])));
 
-        var message = new CheckJobMessage(userId, archiveJobId);
+        var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);
@@ -129,7 +129,7 @@ public class ImportDownloadHandlerTests
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Cancelled, [])));
 
-        var message = new CheckJobMessage(userId, archiveJobId);
+        var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);
@@ -148,7 +148,7 @@ public class ImportDownloadHandlerTests
         var archiveJobId = "job-404";
         var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
 
-        var message = new CheckJobMessage(userId, archiveJobId);
+        var message = new CheckJobMessage(Guid.NewGuid(), userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);
@@ -170,7 +170,7 @@ public class ImportDownloadHandlerTests
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
 
-        var message = new DownloadArchiveMessage(userId, archiveJobId, ["https://only-one"]);
+        var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://only-one"]);
 
         // Act
         await handler.HandleAsync(message);
@@ -210,7 +210,7 @@ public class ImportDownloadHandlerTests
         downloaderMock.Setup(d => d.DownloadAsync(It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(((new ArchiveBrowser("now", "0", [])), data)));
 
-        var message = new DownloadArchiveMessage(userId, archiveJobId, ["https://a", "https://b"]);
+        var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://a", "https://b"]);
 
         // Act
         await handler.HandleAsync(message);
@@ -218,8 +218,9 @@ public class ImportDownloadHandlerTests
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         busMock.Invocations.Count.ShouldBe(1);
-        var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ProcessPinsBatchMessage>();
-        published.StarredPlaces.Count().ShouldBe(features.Length);
+        var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportBatchRegistered>();
+        published.UserId.ShouldBe(userId);
+        published.ArchiveJobId.ShouldBe(archiveJobId);
     }
 
     [Test]
@@ -227,7 +228,7 @@ public class ImportDownloadHandlerTests
     {
         // Arrange
         var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
-        var message = new DownloadArchiveMessage("user-1", "job-404", new List<string> { "https://a", "https://b" });
+        var message = new DownloadArchiveMessage(Guid.NewGuid(), "user-1", "job-404", new List<string> { "https://a", "https://b" });
 
         // Act
         await handler.HandleAsync(message);
@@ -253,7 +254,7 @@ public class ImportDownloadHandlerTests
         downloaderMock.Setup(d => d.DownloadAsync(It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail("download failed"));
 
-        var message = new DownloadArchiveMessage(userId, archiveJobId, new List<string> { "https://a", "https://b" });
+        var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, new List<string> { "https://a", "https://b" });
 
         // Act
         await handler.HandleAsync(message);

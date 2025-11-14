@@ -10,7 +10,6 @@ using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Api.Importing.Realtime;
 using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
-using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
@@ -74,9 +73,7 @@ public static class ImportingEndpointsExtensions
                 x.Updated,
                 x.Failed,
                 x.Conflicts,
-                x.Total,
-                x.ConflictedPlaces.Select<ReportedPlace, (string MapsUrl, DateTimeOffset AddedDate)>(p => new(p.MapsUrl, p.AddedDate)),
-                x.FailedPlaces.Select<ReportedPlace, (string MapsUrl, DateTimeOffset AddedDate)>(p => new(p.MapsUrl, p.AddedDate))))
+                x.Total))
             .AsNoTracking()
             .ToListAsync(cancellationToken: cancellationToken);
 
@@ -100,9 +97,7 @@ public static class ImportingEndpointsExtensions
                 x.Updated,
                 x.Failed,
                 x.Conflicts,
-                x.Total,
-                x.ConflictedPlaces.Select<ReportedPlace, (string MapsUrl, DateTimeOffset AddedDate)>(p => new(p.MapsUrl, p.AddedDate)),
-                x.FailedPlaces.Select<ReportedPlace, (string MapsUrl, DateTimeOffset AddedDate)>(p => new(p.MapsUrl, p.AddedDate))))
+                x.Total))
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
 
         return import is null

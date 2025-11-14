@@ -2,7 +2,7 @@
 
 namespace Pinventory.Pins.Domain.Importing.Events;
 
-public record ImportBatchProcessed(
+public sealed record ImportBatchProcessed(
     Guid AggregateId,
     string UserId,
     string ArchiveJobId,
@@ -11,5 +11,5 @@ public record ImportBatchProcessed(
     int Updated,
     int Failed,
     int Conflicts,
-    uint Total)
+    int Total)
     : DomainEvent(AggregateId);

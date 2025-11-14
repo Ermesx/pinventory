@@ -175,7 +175,7 @@
     private Guid? importId;
     private string? archiveJobId;
     private int processed, created, updated, failed, conflicts;
-    private uint total;
+    private int total;
     private string statusMessage = "Idle";
 
     private List<ImportDto> importJobs = new();
@@ -185,7 +185,7 @@
     private string? errorMessage;
     private string? successMessage;
 
-    private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, uint Total);
+    private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, int Total);
     private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
     private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
 

@@ -2,6 +2,7 @@
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
+using Pinventory.Pins.Domain.Importing.Events;
 
 using Wolverine.Attributes;
 
@@ -26,7 +27,11 @@ public static class ImportHandlers
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(download, cancellationToken);
 
-    public static async Task HandleAsync(ProcessPinsBatchMessage batch, ImportProcessingHandler app,
+    public static async Task HandleAsync(ImportBatchRegistered batch, ImportProcessingHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(batch, cancellationToken);
+
+    public static async Task HandleAsync(ImportBatchProcessed processed, ImportProcessingHandler app,
+        CancellationToken cancellationToken = default) =>
+        await app.HandleAsync(processed, cancellationToken);
 }

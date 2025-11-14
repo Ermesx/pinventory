@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Domain;
@@ -29,7 +30,13 @@ public static class Errors
 
         public static Error ImportNotInProgress(Importing.Import import) => new NotInProgressError(import);
 
-        public static Error BatchCountersMustBeNonNegative() => new("Batch counters must be non-negative");
+        public static Error CannotRegisterBatch(ImportState state) =>
+            new($"Cannot register batch because is not 'In Progress' (actual: '{state}')");
+
+        public static Error BatchCannotBeEmpty() => new("Batch cannot be empty");
+
+        public static Error BatchNotExists(Guid batchId, Importing.Import import) =>
+            new($"Batch '{batchId}' does not exist in import '{import.ArchiveJobId}' for user '{import.UserId}'");
 
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");

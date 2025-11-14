@@ -20,7 +20,7 @@ public class ImportTests
         var archiveJobId = "archive456";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -45,7 +45,7 @@ public class ImportTests
         var userId = "user123";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await import.StartAsync(null!, policyMock.Object);
@@ -64,7 +64,7 @@ public class ImportTests
         var userId = "user123";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await import.StartAsync("", policyMock.Object);
@@ -83,7 +83,7 @@ public class ImportTests
         var userId = "user123";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await import.StartAsync("   ", policyMock.Object);
@@ -103,7 +103,7 @@ public class ImportTests
         var archiveJobId = "archive456";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(false);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -123,7 +123,7 @@ public class ImportTests
         var archiveJobId = "archive456";
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(userId, CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         await import.StartAsync(archiveJobId, policyMock.Object);
 
@@ -139,146 +139,177 @@ public class ImportTests
     }
 
     [Test]
-    public async Task AppendBatch_succeeds_and_raises_event_when_state_is_in_progress()
+    public async Task RegisterBatch_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
 
         // Act
-        var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
+        var result = import.RegisterBatch(starredPlaces);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        import.Processed.ShouldBe(10);
-        import.Created.ShouldBe(5);
-        import.Updated.ShouldBe(3);
-        import.Failed.ShouldBe(1);
-        import.Conflicts.ShouldBe(1);
+        import.Total.ShouldBe(2);
+        import.Batches.Count.ShouldBe(1);
 
-        var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchProcessed>();
+        var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchRegistered>();
         evt.AggregateId.ShouldBe(import.Id);
-        evt.Processed.ShouldBe(10);
-        evt.Created.ShouldBe(5);
-        evt.Updated.ShouldBe(3);
-        evt.Failed.ShouldBe(1);
-        evt.Conflicts.ShouldBe(1);
     }
 
     [Test]
-    public async Task AppendBatch_accumulates_counters_across_multiple_batches()
+    public async Task RegisterBatch_accumulates_total_across_multiple_batches()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var batch1 = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        var batch2 = new List<StarredPlace>
+        {
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
 
         // Act
-        import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
-        import.AppendBatch(processed: 20, created: 10, updated: 7, failed: 2, conflicts: 1);
+        import.RegisterBatch(batch1);
+        import.RegisterBatch(batch2);
 
         // Assert
-        import.Processed.ShouldBe(30);
-        import.Created.ShouldBe(15);
-        import.Updated.ShouldBe(10);
-        import.Failed.ShouldBe(3);
-        import.Conflicts.ShouldBe(2);
-        import.DomainEvents.Count.ShouldBe(3); // StartAsync + 2 AppendBatch
+        import.Total.ShouldBe(3);
+        import.Batches.Count.ShouldBe(2);
+        import.DomainEvents.Count.ShouldBe(3); // StartAsync + 2 RegisterBatch
     }
 
     [Test]
-    public void AppendBatch_fails_when_state_is_not_in_progress()
+    public void RegisterBatch_fails_when_state_is_not_in_progress()
     {
         // Arrange
         var import = new Import("user123");
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
 
         // Act
-        var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: 1);
+        var result = import.RegisterBatch(starredPlaces);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("not in progress"));
-        import.Processed.ShouldBe(0);
+        result.Errors.ShouldContain(e => e.Message.Contains("Cannot register batch"));
+        import.Total.ShouldBe(0);
         import.DomainEvents.ShouldBeEmpty();
     }
 
     [Test]
-    public async Task AppendBatch_fails_when_processed_is_negative()
+    public async Task RegisterBatch_fails_when_batch_is_empty()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>();
 
         // Act
-        var result = import.AppendBatch(processed: -1, created: 5, updated: 3, failed: 1, conflicts: 1);
+        var result = import.RegisterBatch(starredPlaces);
 
         // Assert
         result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Batch counters must be non-negative"));
-        import.Processed.ShouldBe(0);
+        result.Errors.ShouldContain(e => e.Message.Contains("Batch cannot be empty"));
+        import.Total.ShouldBe(0);
     }
 
     [Test]
-    public async Task AppendBatch_fails_when_created_is_negative()
+    public async Task ProcessBatchAsync_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        var registerResult = import.RegisterBatch(starredPlaces);
+        registerResult.IsSuccess.ShouldBeTrue();
+        var batchId = import.Batches.Keys.First();
+
+        var validatorMock = new Mock<IStaredPlaceValidator>();
+        validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StarredPlaceState.New);
 
         // Act
-        var result = import.AppendBatch(processed: 10, created: -1, updated: 3, failed: 1, conflicts: 1);
+        var result = await import.ProcessBatchAsync(batchId, validatorMock.Object);
 
         // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Batch counters must be non-negative"));
-        import.Created.ShouldBe(0);
-    }
-
-    [Test]
-    public async Task AppendBatch_fails_when_updated_is_negative()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-
-        // Act
-        var result = import.AppendBatch(processed: 10, created: 5, updated: -1, failed: 1, conflicts: 1);
-
-        // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Batch counters must be non-negative"));
+        result.IsSuccess.ShouldBeTrue();
+        import.Processed.ShouldBe(2);
+        import.Created.ShouldBe(2);
         import.Updated.ShouldBe(0);
-    }
-
-    [Test]
-    public async Task AppendBatch_fails_when_failed_is_negative()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-
-        // Act
-        var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: -1, conflicts: 1);
-
-        // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Batch counters must be non-negative"));
         import.Failed.ShouldBe(0);
+        import.Conflicts.ShouldBe(0);
+
+        var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchProcessed>();
+        evt.AggregateId.ShouldBe(import.Id);
+        evt.Processed.ShouldBe(2);
+        evt.Created.ShouldBe(2);
+        evt.Updated.ShouldBe(0);
+        evt.Failed.ShouldBe(0);
+        evt.Conflicts.ShouldBe(0);
+        evt.Total.ShouldBe(2);
     }
 
     [Test]
-    public async Task AppendBatch_fails_when_conflicts_is_negative()
+    public async Task ProcessBatchAsync_accumulates_counters_across_multiple_batches()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var batch1 = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        var batch2 = new List<StarredPlace>
+        {
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(batch1);
+        import.RegisterBatch(batch2);
+        var batchIds = import.Batches.Keys.ToList();
+
+        var validatorMock = new Mock<IStaredPlaceValidator>();
+        validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StarredPlaceState.New);
 
         // Act
-        var result = import.AppendBatch(processed: 10, created: 5, updated: 3, failed: 1, conflicts: -1);
+        await import.ProcessBatchAsync(batchIds[0], validatorMock.Object);
+        await import.ProcessBatchAsync(batchIds[1], validatorMock.Object);
 
         // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("Batch counters must be non-negative"));
+        import.Processed.ShouldBe(3);
+        import.Created.ShouldBe(3);
+        import.Updated.ShouldBe(0);
+        import.Failed.ShouldBe(0);
         import.Conflicts.ShouldBe(0);
     }
 
     [Test]
-    public async Task Complete_succeeds_and_raises_event_when_state_is_in_progress()
+    public async Task TryComplete_succeeds_when_all_items_processed()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(starredPlaces);
+        var batchId = import.Batches.Keys.First();
+        var validatorMock = new Mock<IStaredPlaceValidator>();
+        validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StarredPlaceState.New);
+        await import.ProcessBatchAsync(batchId, validatorMock.Object);
 
         // Act
         var result = import.TryComplete();
@@ -294,7 +325,7 @@ public class ImportTests
     }
 
     [Test]
-    public void Complete_fails_when_state_is_not_in_progress()
+    public void TryComplete_fails_when_state_is_not_in_progress()
     {
         // Arrange
         var import = new Import("user123");
@@ -307,6 +338,29 @@ public class ImportTests
         result.Errors.ShouldContain(e => e.Message.Contains("not in progress"));
         import.State.ShouldBe(ImportState.Unspecified);
         import.CompletedAt.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task TryComplete_returns_false_when_not_all_items_processed()
+    {
+        // Arrange
+        var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(starredPlaces);
+        // Don't process the batch
+
+        // Act
+        var result = import.TryComplete();
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldBeFalse();
+        import.State.ShouldBe(ImportState.InProgress);
+        import.DomainEvents.OfType<ImportCompleted>().ShouldBeEmpty();
     }
 
     [Test]
@@ -380,117 +434,60 @@ public class ImportTests
     }
 
     [Test]
-    public async Task SetTotal_sets_total_when_state_is_in_progress()
+    public async Task ConflictedPlaces_returns_places_with_conflicted_state()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
-
-        // Act
-        import.SetTotal(100);
-        import.SetTotal(50);
-
-        // Assert
-        import.Total.ShouldBe(50u);
-    }
-
-    [Test]
-    public void SetTotal_does_not_update_when_state_is_not_in_progress()
-    {
-        // Arrange
-        var import = new Import("user123");
-
-        // Act
-        import.SetTotal(100);
-
-        // Assert
-        import.Total.ShouldBe(0u);
-    }
-
-    [Test]
-    public async Task SetTotal_does_not_update_after_completion()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-        import.SetTotal(100);
-        import.AppendBatch(processed: 100, created: 0, updated: 0, failed: 0, conflicts: 0);
-        var completeResult = import.TryComplete();
-        completeResult.IsSuccess.ShouldBeTrue();
-        completeResult.Value.ShouldBeTrue();
-
-        // Act
-        import.SetTotal(50);
-
-        // Assert
-        import.Total.ShouldBe(100u);
-    }
-
-    [Test]
-    public async Task SetTotal_does_not_update_after_failure()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-        import.SetTotal(100);
-        import.Fail(new Error("Error"));
-
-        // Act
-        import.SetTotal(50);
-
-        // Assert
-        import.Total.ShouldBe(100u);
-    }
-
-    [Test]
-    public async Task SetTotal_does_not_update_after_cancellation()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-        import.SetTotal(100);
-        import.Cancel();
-
-        // Act
-        import.SetTotal(50);
-
-        // Assert
-        import.Total.ShouldBe(100u);
-    }
-
-    [Test]
-    public async Task Complete_fails_when_not_all_items_processed()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-        import.SetTotal(100);
-        import.AppendBatch(processed: 50, created: 0, updated: 0, failed: 0, conflicts: 0);
-
-        // Act
-        var result = import.TryComplete();
-
-        // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBeFalse();
-        import.State.ShouldBe(ImportState.InProgress);
-        import.DomainEvents.OfType<ImportCompleted>().ShouldBeEmpty();
-    }
-
-    [Test]
-    public async Task ReportConflictsAndFailures_adds_items_to_collections()
-    {
-        // Arrange
-        var import = await Imports.CreateStartedImport();
-        var now = DateTimeOffset.UtcNow;
-        var conflicts = new[]
+        var starredPlaces = new List<StarredPlace>
         {
-            new ReportedPlace("https://maps.google.com/1", now), new ReportedPlace("https://maps.google.com/2", now.AddMinutes(1))
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
-        var failures = new[] { new ReportedPlace("https://maps.google.com/3", now.AddMinutes(2)) };
+        import.RegisterBatch(starredPlaces);
+        var batchId = import.Batches.Keys.First();
 
-        // Act
-        import.ReportConflictsAndFailures(conflicts, failures);
+        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var callCount = 0;
+        validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                callCount++;
+                return callCount <= 2 ? StarredPlaceState.Conflicted : StarredPlaceState.New;
+            });
 
-        // Assert
-        import.ConflictedPlaces.Select(p => p.MapsUrl)
+        await import.ProcessBatchAsync(batchId, validatorMock.Object);
+
+        // Act & Assert
+        import.ConflictedPlaces.Count.ShouldBe(2);
+        import.ConflictedPlaces.Select(p => p.GoogleMapsUrl)
             .ShouldBe(["https://maps.google.com/1", "https://maps.google.com/2"], ignoreOrder: true);
-        import.FailedPlaces.Select(p => p.MapsUrl).ShouldBe(["https://maps.google.com/3"]);
+    }
+
+    [Test]
+    public async Task FailedPlaces_returns_places_with_invalid_state()
+    {
+        // Arrange
+        var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(starredPlaces);
+        var batchId = import.Batches.Keys.First();
+
+        var validatorMock = new Mock<IStaredPlaceValidator>();
+        validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(StarredPlaceState.Invalid);
+
+        await import.ProcessBatchAsync(batchId, validatorMock.Object);
+
+        // Act & Assert
+        // Note: FailedPlaces currently filters by Invalid state
+        import.FailedPlaces.Count.ShouldBe(2);
+        import.FailedPlaces.Select(p => p.GoogleMapsUrl)
+            .ShouldBe(["https://maps.google.com/1", "https://maps.google.com/2"], ignoreOrder: true);
     }
 
     [Test]
@@ -505,47 +502,5 @@ public class ImportTests
         import.Period.Start.ShouldBe(DateTimeOffset.UnixEpoch);
         import.Period.End.ShouldBeGreaterThanOrEqualTo(before);
         import.Period.End.ShouldBeLessThanOrEqualTo(after);
-    }
-
-    [Test]
-    public void Period_is_set_when_provided_in_constructor()
-    {
-        // Arrange
-        var start = DateTimeOffset.UtcNow.AddDays(-7);
-        var end = DateTimeOffset.UtcNow.AddDays(-1);
-        var periodResult = Period.Create(start, end);
-        periodResult.IsSuccess.ShouldBeTrue();
-        var period = periodResult.Value;
-
-        // Act
-        var import = new Import("user123", period);
-
-        // Assert
-        import.Period.ShouldBe(period);
-    }
-
-    [Test]
-    public async Task Period_is_not_modified_by_state_changes()
-    {
-        // Arrange
-        var start = DateTimeOffset.UtcNow.AddDays(-30);
-        var end = DateTimeOffset.UtcNow.AddDays(-10);
-        var period = Period.Create(start, end).Value;
-        var import = new Import("user123", period);
-
-        var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(p => p.CanStartImportAsync(import.UserId, CancellationToken.None)).ReturnsAsync(true);
-
-        // Act
-        var startResult = await import.StartAsync("archive456", policyMock.Object);
-        startResult.IsSuccess.ShouldBeTrue();
-        import.SetTotal(2);
-        import.AppendBatch(2, 1, 1, 0, 0);
-        var completeResult = import.TryComplete();
-
-        // Assert
-        completeResult.IsSuccess.ShouldBeTrue();
-        completeResult.Value.ShouldBeTrue();
-        import.Period.ShouldBe(period);
     }
 }

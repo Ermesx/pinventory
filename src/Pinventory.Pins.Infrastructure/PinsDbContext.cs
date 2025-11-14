@@ -83,7 +83,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Navigation(x => x.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // ImportJob
+        // Import
         builder.Entity<Import>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -99,7 +99,6 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.Conflicts).IsRequired();
             entity.Property(x => x.Total).IsRequired();
 
-
             entity.ComplexProperty(x => x.Period, cb =>
             {
                 cb.Property(p => p.Start).HasColumnName("PeriodStart").IsRequired();
@@ -110,26 +109,37 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
-            entity.OwnsMany(x => x.ConflictedPlaces, e =>
+            entity.OwnsMany<Batch>("_batches", batch =>
             {
-                e.ToTable("ImportConflictedPlaces");
-                e.WithOwner().HasForeignKey("ImportId");
-                e.Property(p => p.MapsUrl).IsRequired();
-                e.Property(p => p.AddedDate).IsRequired();
-                e.HasKey("ImportId", "MapsUrl", "AddedDate");
+                batch.ToTable("ImportBatches");
+                batch.WithOwner().HasForeignKey("ImportId");
+                batch.HasKey("Id");
+
+                batch.OwnsMany(b => b.StarredPlaces, starredPlace =>
+                {
+                    starredPlace.ToTable("ImportStarredPlaces");
+                    starredPlace.WithOwner().HasForeignKey("BatchId");
+                    starredPlace.HasKey("Id");
+
+                    starredPlace.Property(p => p.Name);
+                    starredPlace.Property(p => p.GoogleMapsUrl).IsRequired();
+                    starredPlace.Property(p => p.Address);
+                    starredPlace.Property(p => p.CountryCode).HasConversion<string>();
+                    starredPlace.Property(p => p.Latitude);
+                    starredPlace.Property(p => p.Longitude);
+                    starredPlace.Property(p => p.AddedDate).IsRequired();
+                    starredPlace.Property(p => p.Comment);
+                    starredPlace.Property(p => p.State).HasConversion<string>().IsRequired();
+                    starredPlace.Property(p => p.IsProcessed).IsRequired();
+
+                    starredPlace.HasIndex("BatchId");
+                    starredPlace.HasIndex("State");
+                });
+
+                batch.Navigation(b => b.StarredPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
             });
 
-            entity.OwnsMany(x => x.FailedPlaces, e =>
-            {
-                e.ToTable("ImportFailedPlaces");
-                e.WithOwner().HasForeignKey("ImportId");
-                e.Property(p => p.MapsUrl).IsRequired();
-                e.Property(p => p.AddedDate).IsRequired();
-                e.HasKey("ImportId", "MapsUrl", "AddedDate");
-            });
-
-            entity.Navigation(x => x.ConflictedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
-            entity.Navigation(x => x.FailedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation("_batches").UsePropertyAccessMode(PropertyAccessMode.Field);
 
             entity.HasIndex(x => new { x.UserId, x.State })
                 .HasFilter("\"State\" = 'InProgress'")

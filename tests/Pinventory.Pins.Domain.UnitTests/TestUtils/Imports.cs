@@ -10,7 +10,7 @@ public static class Imports
     {
         var import = new Import(userId);
         var policyMock = new Mock<IImportConcurrencyPolicy>();
-        policyMock.Setup(policy => policy.CanStartImportAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(true);
+        policyMock.Setup(policy => policy.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await import.StartAsync(archiveJobId, policyMock.Object);
         return import;
     }

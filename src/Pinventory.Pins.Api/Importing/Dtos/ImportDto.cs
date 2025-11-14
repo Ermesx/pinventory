@@ -13,6 +13,4 @@ public sealed record ImportDto(
     int Updated,
     int Failed,
     int Conflicts,
-    uint Total,
-    IEnumerable<(string MapsUrl, DateTimeOffset AddedDate)> ConflictedPlaces,
-    IEnumerable<(string MapsUrl, DateTimeOffset AddedDate)> FailedPlaces);
+    int Total);

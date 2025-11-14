@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory"/>
+    <PackageReference Include="Moq"/>
+    <PackageReference Include="TUnit"/>
+    <PackageReference Include="Shouldly"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj"/>
+    <ProjectReference Include="..\..\src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj"/>
+  </ItemGroup>
+
+</Project>

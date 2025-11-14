@@ -1,5 +1,3 @@
-﻿using Pinventory.Pins.Application.Importing.Messages;
+﻿namespace Pinventory.Pins.Application.Importing.Commands;
 
-namespace Pinventory.Pins.Application.Importing.Commands;
-
-public record CancelImportCommand(string UserId, string ArchiveJobId) : ICorrelatedMessage;
+public record CancelImportCommand(string UserId, string ArchiveJobId);

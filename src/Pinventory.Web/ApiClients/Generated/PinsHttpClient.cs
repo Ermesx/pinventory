@@ -143,14 +143,6 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
         [JsonPropertyName("total")]
         public int Total { get; set; }
 
-        [JsonPropertyName("conflictedPlaces")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public IEnumerable<ValueTupleOfstringAndDateTimeOffset> ConflictedPlaces { get; set; } = new List<ValueTupleOfstringAndDateTimeOffset>();
-
-        [JsonPropertyName("failedPlaces")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public IEnumerable<object> FailedPlaces { get; set; } = new List<object>();
-
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -226,12 +218,6 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode.Contracts
         [JsonPropertyName("tags")]
         [System.ComponentModel.DataAnnotations.Required]
         public IEnumerable<string> Tags { get; set; } = new List<string>();
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.0.0 (NJsonSchema v11.5.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ValueTupleOfstringAndDateTimeOffset
-    {
 
     }
 

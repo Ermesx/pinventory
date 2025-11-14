@@ -47,7 +47,7 @@ public sealed class ImportCommandHandler(
                 var currentImport = await dbContext.GetCurrentImport(command.UserId, cancellationToken);
                 if (currentImport is not null)
                 {
-                    await bus.PublishAsync(new CheckJobMessage(currentImport.UserId, currentImport.ArchiveJobId!));
+                    await bus.PublishAsync(new CheckJobMessage(currentImport.Id, currentImport.UserId, currentImport.ArchiveJobId!));
                     return Result.Ok(currentImport.ArchiveJobId!).ToResultDto();
                 }
             }
@@ -69,7 +69,7 @@ public sealed class ImportCommandHandler(
         await dbContext.Imports.AddAsync(import, cancellationToken);
         await RaiseEventsAsync(import);
 
-        await bus.PublishAsync(new CheckJobMessage(import.UserId, archiveJobId));
+        await bus.PublishAsync(new CheckJobMessage(import.Id, import.UserId, archiveJobId));
 
         return Result.Ok(archiveJobId).ToResultDto();
     }
@@ -78,10 +78,10 @@ public sealed class ImportCommandHandler(
     {
         logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
 
-        var import = await dbContext.GetCurrentImport(command, cancellationToken);
+        var import = await dbContext.GetCurrentImport(command.UserId, cancellationToken);
         if (import is null)
         {
-            return Result.Fail(Errors.Import.RunningImportNotFound(command)).ToResultDto();
+            return Result.Fail(Errors.Import.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);

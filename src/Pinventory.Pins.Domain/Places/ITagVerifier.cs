@@ -2,5 +2,5 @@
 
 public interface ITagVerifier
 {
-    bool IsAllowed(string? ownerId, string tag);
+    Task<bool> IsAllowedAsync(string? ownerId, string tag, CancellationToken cancellationToken = default);
 }

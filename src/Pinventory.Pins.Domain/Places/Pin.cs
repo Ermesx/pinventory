@@ -1,6 +1,8 @@
 ﻿using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
+using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Domain.Places.Events;
 
 namespace Pinventory.Pins.Domain.Places;
 
@@ -26,10 +28,28 @@ public sealed class Pin(
     public DateTimeOffset AddedAt { get; private set; } = addedAt;
     public IReadOnlyCollection<Tag> Tags => _tags;
 
-    public Result<IEnumerable<Tag>> AssignTags(IEnumerable<string> tags, ITagVerifier tagVerifier)
+    public static Pin Create(string ownerId, GooglePlaceId placeId, StarredPlace place)
     {
-        var distinctTags = tags
-            .Where(tag => tagVerifier.IsAllowed(OwnerId, tag))
+        return new Pin(ownerId,
+            place.Name!,
+            placeId,
+            new Address(place.Address!, place.CountryCode!.Value),
+            new Location(place.Latitude!.Value, place.Longitude!.Value),
+            place.AddedDate);
+    }
+
+    public async Task<Result<IEnumerable<Tag>>> AssignTagsAsync(IEnumerable<string> tags, ITagVerifier tagVerifier,
+        CancellationToken cancellationToken = default)
+    {
+        var verificationTasks = tags.Select(async tag => new
+        {
+            Tag = tag, IsAllowed = await tagVerifier.IsAllowedAsync(OwnerId, tag, cancellationToken)
+        });
+
+        var verifiedTags = await Task.WhenAll(verificationTasks);
+        var distinctTags = verifiedTags
+            .Where(x => x.IsAllowed)
+            .Select(x => x.Tag)
             .ToList();
 
         _tags.Clear();
@@ -45,7 +65,7 @@ public sealed class Pin(
 
         if (_tags.Any())
         {
-            Raise(new Events.PinTagsAssigned(Id, _tags.Select(t => t.Value)));
+            Raise(new PinTagsAssigned(Id, _tags.Select(t => t.Value)));
         }
 
         return results.Any(r => !r.IsSuccess) ? Result.Merge(results.ToArray()) : Result.Ok();
@@ -68,7 +88,7 @@ public sealed class Pin(
                 var previousStatus = Status;
                 Status = status;
                 StatusUpdatedAt = DateTimeOffset.UtcNow;
-                Raise(new Events.PinClosed(Id, Status, previousStatus));
+                Raise(new PinClosed(Id, Status, previousStatus));
             }
 
             return Result.Ok();
@@ -89,7 +109,7 @@ public sealed class Pin(
             var previousStatus = Status;
             Status = PinStatus.Open;
             StatusUpdatedAt = DateTimeOffset.UtcNow;
-            Raise(new Events.PinOpened(Id, Status, previousStatus));
+            Raise(new PinOpened(Id, Status, previousStatus));
             return Result.Ok();
         }
     }
