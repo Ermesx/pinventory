@@ -155,7 +155,7 @@ public class ImportTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         import.Total.ShouldBe(2);
-        import.Batches.Count.ShouldBe(1);
+        import.BatchesMap.Count.ShouldBe(1);
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchRegistered>();
         evt.AggregateId.ShouldBe(import.Id);
@@ -182,7 +182,7 @@ public class ImportTests
 
         // Assert
         import.Total.ShouldBe(3);
-        import.Batches.Count.ShouldBe(2);
+        import.BatchesMap.Count.ShouldBe(2);
         import.DomainEvents.Count.ShouldBe(3); // StartAsync + 2 RegisterBatch
     }
 
@@ -223,6 +223,39 @@ public class ImportTests
     }
 
     [Test]
+    public async Task RegisterBatch_succeeds_silently_when_batch_with_same_thumbprint_already_exists()
+    {
+        // Arrange
+        var import = await Imports.CreateStartedImport();
+        var date1 = new DateTimeOffset(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
+        var date2 = new DateTimeOffset(2024, 2, 20, 14, 45, 0, TimeSpan.Zero);
+
+        var firstBatch = new List<StarredPlace>
+        {
+            new("Cafe Central", "https://maps.google.com/?cid=111", null, null, null, null, date1, null),
+            new("Restaurant", "https://maps.google.com/?cid=222", null, null, null, null, date2, null)
+        };
+
+        var duplicateBatch = new List<StarredPlace>
+        {
+            new("Restaurant", "https://maps.google.com/?cid=222", null, null, null, null, date2, null),
+            new("Cafe Central", "https://maps.google.com/?cid=111", null, null, null, null, date1, null)
+        };
+
+        var firstResult = import.RegisterBatch(firstBatch);
+        firstResult.IsSuccess.ShouldBeTrue();
+
+        // Act
+        var duplicateResult = import.RegisterBatch(duplicateBatch);
+
+        // Assert
+        duplicateResult.IsSuccess.ShouldBeTrue();
+        import.BatchesMap.Count.ShouldBe(1);
+        import.Total.ShouldBe(2);
+        import.DomainEvents.OfType<ImportBatchRegistered>().Count().ShouldBe(1);
+    }
+
+    [Test]
     public async Task ProcessBatchAsync_succeeds_and_raises_event_when_state_is_in_progress()
     {
         // Arrange
@@ -234,7 +267,7 @@ public class ImportTests
         };
         var registerResult = import.RegisterBatch(starredPlaces);
         registerResult.IsSuccess.ShouldBeTrue();
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
 
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
@@ -277,7 +310,7 @@ public class ImportTests
         };
         import.RegisterBatch(batch1);
         import.RegisterBatch(batch2);
-        var batchIds = import.Batches.Keys.ToList();
+        var batchIds = import.BatchesMap.Keys.ToList();
 
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
@@ -305,7 +338,7 @@ public class ImportTests
             new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterBatch(starredPlaces);
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
@@ -445,7 +478,7 @@ public class ImportTests
             new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterBatch(starredPlaces);
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
 
         var validatorMock = new Mock<IStaredPlaceValidator>();
         var callCount = 0;
@@ -475,7 +508,7 @@ public class ImportTests
             new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterBatch(starredPlaces);
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
 
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))

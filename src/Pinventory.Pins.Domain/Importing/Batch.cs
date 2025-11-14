@@ -6,4 +6,15 @@ public sealed class Batch(IEnumerable<StarredPlace> starredPlaces, Guid? id = nu
 {
     private Batch() : this([]) { }
     public IReadOnlyCollection<StarredPlace> StarredPlaces { get; private set; } = starredPlaces.ToList();
+
+    public string BatchThumbprint => HashExtensions.GetThumbprint(hash =>
+    {
+        foreach (var place in StarredPlaces
+                     .OrderBy(place => place.GoogleMapsUrl)
+                     .ThenBy(place => place.AddedDate))
+        {
+            hash.AddString(place.GoogleMapsUrl);
+            hash.AddString(place.AddedDate.ToString("O"));
+        }
+    });
 }

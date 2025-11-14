@@ -70,7 +70,7 @@ public class ImportProcessingHandlerTests
                 v.ValidateAsync(It.IsAny<Import>(), It.Is<StarredPlace>(p => p.Name == "Removed"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.Invalid);
 
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
         var message = new ImportBatchRegistered(import.Id, userId, archiveJobId, batchId);
 
         // Act
@@ -144,7 +144,7 @@ public class ImportProcessingHandlerTests
                 v.ValidateAsync(It.IsAny<Import>(), It.Is<StarredPlace>(p => p.Name == "Created"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
         var message = new ImportBatchRegistered(import.Id, userId, archiveJobId, batchId);
 
         // Act
@@ -192,7 +192,7 @@ public class ImportProcessingHandlerTests
         };
 
         var registerResult = import.RegisterBatch(places);
-        var batchId = import.Batches.Keys.First();
+        var batchId = import.BatchesMap.Keys.First();
         var processResult = await import.ProcessBatchAsync(batchId, validatorMock.Object);
 
         await dbContext.Imports.AddAsync(import);

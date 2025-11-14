@@ -27,7 +27,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Importing.Import", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ArchiveJobId")
@@ -96,7 +95,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("AddedAt")
@@ -166,7 +164,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Tags.TagCatalog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("OwnerId")
@@ -185,10 +182,9 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
             modelBuilder.Entity("Pinventory.Pins.Domain.Importing.Import", b =>
                 {
-                    b.OwnsMany("Pinventory.Pins.Domain.Importing.Batch", "_batches", b1 =>
+                    b.OwnsMany("Pinventory.Pins.Domain.Importing.Batch", "Batches", b1 =>
                         {
                             b1.Property<Guid>("Id")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("uuid");
 
                             b1.Property<Guid>("ImportId")
@@ -206,7 +202,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                             b1.OwnsMany("Pinventory.Pins.Domain.Importing.StarredPlace", "StarredPlaces", b2 =>
                                 {
                                     b2.Property<Guid>("Id")
-                                        .ValueGeneratedOnAdd()
                                         .HasColumnType("uuid");
 
                                     b2.Property<DateTimeOffset>("AddedDate")
@@ -259,7 +254,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
                             b1.Navigation("StarredPlaces");
                         });
 
-                    b.Navigation("_batches");
+                    b.Navigation("Batches");
                 });
 
             modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>

@@ -34,6 +34,7 @@ builder.UseWolverine(options =>
 });
 
 builder.Services.AddScoped<ITagVerifier, TagVerifier>();
+builder.Services.AddMemoryCache();
 
 var host = builder.Build();
 host.Run();

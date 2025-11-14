@@ -26,6 +26,8 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
     public int Conflicts { get; private set; }
     public int Total { get; private set; }
 
+    public IReadOnlyCollection<Batch> Batches => _batches;
+
     [NotMapped]
     public IReadOnlyCollection<StarredPlace> ConflictedPlaces =>
         _batches.SelectMany(x => x.StarredPlaces).Where(x => x.State == StarredPlaceState.Conflicted).ToList();
@@ -35,7 +37,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         _batches.SelectMany(x => x.StarredPlaces).Where(x => x.State == StarredPlaceState.Invalid).ToList();
 
     [NotMapped]
-    public IReadOnlyDictionary<Guid, IReadOnlyCollection<StarredPlace>> Batches =>
+    public IReadOnlyDictionary<Guid, IReadOnlyCollection<StarredPlace>> BatchesMap =>
         _batches.ToDictionary(x => x.Id, x => x.StarredPlaces);
 
     public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
@@ -72,8 +74,13 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         }
 
         var batch = new Batch(starredPlaces);
-        _batches.Add(batch);
 
+        if (_batches.Any(x => x.BatchThumbprint == batch.BatchThumbprint))
+        {
+            return Result.Ok();
+        }
+
+        _batches.Add(batch);
         Total += batch.StarredPlaces.Count;
 
         Raise(new ImportBatchRegistered(Id, UserId, ArchiveJobId, batch.Id));
@@ -89,7 +96,7 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
             return Result.Fail(Errors.Import.ImportNotInProgress(this));
         }
 
-        if (!Batches.TryGetValue(batchId, out var batch))
+        if (!BatchesMap.TryGetValue(batchId, out var batch))
         {
             return Result.Fail(Errors.Import.BatchNotExists(batchId, this));
         }

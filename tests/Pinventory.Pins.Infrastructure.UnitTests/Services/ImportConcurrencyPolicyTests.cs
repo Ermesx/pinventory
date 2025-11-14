@@ -43,7 +43,7 @@ public class ImportConcurrencyPolicyTests
         completedImport.RegisterBatch([
             new StarredPlace("Place", "http://maps.google.com/?cid=123", "Address", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow, null)
         ]);
-        var batchId = completedImport.Batches.Keys.First();
+        var batchId = completedImport.BatchesMap.Keys.First();
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);

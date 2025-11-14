@@ -23,6 +23,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<Pin>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.OwnerId).IsRequired();
 
             entity.Property(x => x.PlaceId)
@@ -65,6 +66,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<TagCatalog>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.OwnerId);
 
             entity.Property(x => x.Version).IsConcurrencyToken()
@@ -87,6 +89,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<Import>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.UserId).IsRequired();
             entity.Property(x => x.ArchiveJobId);
             entity.Property(x => x.State).HasConversion<string>().IsRequired();
@@ -109,17 +112,19 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 .HasDefaultValue(0)
                 .ValueGeneratedOnAddOrUpdate();
 
-            entity.OwnsMany<Batch>("_batches", batch =>
+            entity.OwnsMany(p => p.Batches, batch =>
             {
                 batch.ToTable("ImportBatches");
                 batch.WithOwner().HasForeignKey("ImportId");
-                batch.HasKey("Id");
+                batch.Property(b => b.Id).ValueGeneratedNever();
+                batch.HasKey(b => b.Id);
 
                 batch.OwnsMany(b => b.StarredPlaces, starredPlace =>
                 {
                     starredPlace.ToTable("ImportStarredPlaces");
                     starredPlace.WithOwner().HasForeignKey("BatchId");
-                    starredPlace.HasKey("Id");
+                    starredPlace.Property(p => p.Id).ValueGeneratedNever();
+                    starredPlace.HasKey(p => p.Id);
 
                     starredPlace.Property(p => p.Name);
                     starredPlace.Property(p => p.GoogleMapsUrl).IsRequired();
@@ -139,7 +144,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 batch.Navigation(b => b.StarredPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
             });
 
-            entity.Navigation("_batches").UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(p => p.Batches).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             entity.HasIndex(x => new { x.UserId, x.State })
                 .HasFilter("\"State\" = 'InProgress'")

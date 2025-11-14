@@ -41,6 +41,7 @@ builder.Services.AddGoogleAuthOptions();
 builder.Services.AddSingleton<IImportServiceFactory, ImportServiceFactory>();
 builder.Services.AddScoped<IImportConcurrencyPolicy, ImportConcurrencyPolicy>();
 builder.Services.AddTransient<IArchiveDownloader, ArchiveDownloader>();
+builder.Services.AddScoped<IStaredPlaceValidator, StarredPlacesValidator>();
 
 builder.Services.AddGrpcClient<Tokens.TokensClient>(options =>
     options.Address = new Uri("http://pinventory-identity-tokens-grpc")
