@@ -50,7 +50,7 @@ public class ImportDownloadHandlerTests
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Method.Name.ShouldBe(nameof(IMessageContext.ReScheduleCurrentAsync));
+        busMock.Invocations[0].Arguments[0].ShouldBeOfType<CheckJobMessage>();
     }
 
     [Test]

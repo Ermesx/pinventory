@@ -60,20 +60,9 @@ public static class ImportingEndpointsExtensions
         CancellationToken cancellationToken)
     {
         var userId = user.GetIdentifier();
-        var imports = await dbContext.Imports
+        var imports = await dbContext.ImportSummaries
             .Where(x => x.UserId == userId)
-            .Select(x => new ImportDto(
-                x.Id,
-                x.ArchiveJobId,
-                x.State,
-                x.StartedAt,
-                x.CompletedAt,
-                x.Processed,
-                x.Created,
-                x.Updated,
-                x.Failed,
-                x.Conflicts,
-                x.Total))
+            .Select(x => ImportDto.From(x))
             .AsNoTracking()
             .ToListAsync(cancellationToken: cancellationToken);
 
@@ -84,20 +73,9 @@ public static class ImportingEndpointsExtensions
         CancellationToken cancellationToken)
     {
         var userId = user.GetIdentifier();
-        var import = await dbContext.Imports
+        var import = await dbContext.ImportSummaries
             .Where(x => x.UserId == userId && x.ArchiveJobId == archiveJobId)
-            .Select(x => new ImportDto(
-                x.Id,
-                x.ArchiveJobId,
-                x.State,
-                x.StartedAt,
-                x.CompletedAt,
-                x.Processed,
-                x.Created,
-                x.Updated,
-                x.Failed,
-                x.Conflicts,
-                x.Total))
+            .Select(x => ImportDto.From(x))
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
 
         return import is null

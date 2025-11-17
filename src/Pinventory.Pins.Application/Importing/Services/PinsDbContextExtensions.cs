@@ -3,7 +3,7 @@
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 
-namespace Pinventory.Pins.Application.Importing;
+namespace Pinventory.Pins.Application.Importing.Services;
 
 public static class PinsDbContextExtensions
 {

@@ -10,6 +10,8 @@ namespace Pinventory.Pins.Domain.Importing;
 public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
 {
     private readonly List<Batch> _batches = [];
+
+    // ReSharper disable once UnusedMember.Local
     private Import() : this(string.Empty, Period.AllTime) { }
 
     // TODO: Add value objects for UserId and ArchiveJobId
@@ -19,22 +21,34 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
     public ImportState State { get; private set; } = ImportState.Unspecified;
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
-    public int Processed { get; private set; }
-    public int Created { get; private set; }
-    public int Updated { get; private set; }
-    public int Failed { get; private set; }
-    public int Conflicts { get; private set; }
-    public int Total { get; private set; }
+
+    [NotMapped]
+    public int Processed => _batches.Sum(x => x.StarredPlaces.Count(s => s.IsProcessed));
+
+    [NotMapped]
+    public int Created => _batches.Sum(x => x.StarredPlaces.Count(s => s.State == StarredPlaceState.New));
+
+    [NotMapped]
+    public int Updated => _batches.Sum(x => x.StarredPlaces.Count(s => s.State == StarredPlaceState.Exists));
+
+    [NotMapped]
+    public int Failed => FailedPlaces.Count;
+
+    [NotMapped]
+    public int Conflicts => ConflictedPlaces.Count;
+
+    [NotMapped]
+    public int Total => _batches.Sum(x => x.StarredPlaces.Count);
 
     public IReadOnlyCollection<Batch> Batches => _batches;
 
     [NotMapped]
     public IReadOnlyCollection<StarredPlace> ConflictedPlaces =>
-        _batches.SelectMany(x => x.StarredPlaces).Where(x => x.State == StarredPlaceState.Conflicted).ToList();
+        _batches.SelectMany(x => x.StarredPlaces.Where(s => s.State == StarredPlaceState.Conflicted)).ToList();
 
     [NotMapped]
     public IReadOnlyCollection<StarredPlace> FailedPlaces =>
-        _batches.SelectMany(x => x.StarredPlaces).Where(x => x.State == StarredPlaceState.Invalid).ToList();
+        _batches.SelectMany(x => x.StarredPlaces.Where(s => s.State == StarredPlaceState.Invalid)).ToList();
 
     [NotMapped]
     public IReadOnlyDictionary<Guid, IReadOnlyCollection<StarredPlace>> BatchesMap =>
@@ -81,7 +95,6 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         }
 
         _batches.Add(batch);
-        Total += batch.StarredPlaces.Count;
 
         Raise(new ImportBatchRegistered(Id, UserId, ArchiveJobId, batch.Id));
 
@@ -127,12 +140,6 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
                     continue;
             }
         }
-
-        Processed += processed;
-        Created += created;
-        Updated += updated;
-        Failed += failed;
-        Conflicts += conflicts;
 
         Raise(new ImportBatchProcessed(Id, UserId, ArchiveJobId!, processed, created, updated, failed, conflicts, Total));
 

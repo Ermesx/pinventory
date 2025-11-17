@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
+using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;

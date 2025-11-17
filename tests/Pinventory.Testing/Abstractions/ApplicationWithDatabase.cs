@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Pinventory.Testing.Abstractions;
 
@@ -9,7 +11,11 @@ public abstract class ApplicationWithDatabase<TDbContext> where TDbContext : DbC
     protected async Task InitializeDatabaseAsync(TDbContext dbContext)
     {
         DbContext = dbContext;
-        await DbContext.Database.EnsureCreatedAsync();
+
+        // Cannot use EnsureCreatedAsync because Wolverine creates its own tables before
+        // and EF Core thinks the database is already created
+        var dbCreator = DbContext.Database.GetService<IRelationalDatabaseCreator>();
+        await dbCreator.CreateTablesAsync();
     }
 
     public async Task ResetDatabaseAsync()

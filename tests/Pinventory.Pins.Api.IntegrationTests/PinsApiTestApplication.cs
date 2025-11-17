@@ -57,10 +57,6 @@ public class PinsApiTestApplication : ApplicationWithDatabase<PinsDbContext>, IA
 
                     // Run Wolverine in solo mode for a faster test startup
                     services.RunWolverineInSoloMode();
-
-                    // Disable Wolverine persistence to enable db context migration
-                    services.DisableAllWolverineMessagePersistence();
-                    services.DisableAllExternalWolverineTransports();
                 });
             });
 
