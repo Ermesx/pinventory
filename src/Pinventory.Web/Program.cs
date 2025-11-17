@@ -81,7 +81,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 // Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
+app.MapIdentityEndpoints();
 
 // Incremental Google consent endpoints for Data Portability scope
 app.MapGoogleDataPortabilityConsentEndpoints();

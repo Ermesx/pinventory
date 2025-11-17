@@ -41,23 +41,8 @@ public class ImportProcessingHandler(
 
         var (toCreate, toUpdate) = processResult.Value;
 
-        var newPins = toCreate.Select(x => Pin.Create(import.UserId, GooglePlaceId.Parse(x.GoogleMapsUrl), x)).ToList();
-        await dbContext.Pins.AddRangeAsync(newPins, cancellationToken);
-
-        var placesToUpdate = toUpdate.ToDictionary(x => GooglePlaceId.Parse(x.GoogleMapsUrl));
-        var pinsToUpdate = dbContext.Pins.Where(x => x.OwnerId == import.UserId && placesToUpdate.Keys.Contains(x.PlaceId))
-            .AsAsyncEnumerable().WithCancellation(cancellationToken);
-
-        List<Guid> updatedPinIds = [];
-        await foreach (var pin in pinsToUpdate)
-        {
-            updatedPinIds.Add(pin.Id);
-            var name = placesToUpdate[pin.PlaceId].Name;
-            if (name != null)
-            {
-                pin.Rename(name);
-            }
-        }
+        var newPins = await CreatePins(toCreate);
+        var updatedPins = await UpdatePins(toUpdate);
 
         await RaiseEventsAsync(import);
 
@@ -69,7 +54,38 @@ public class ImportProcessingHandler(
         return;
 
         IEnumerable<Guid> GetChangedPinIds() =>
-            updatedPinIds.Concat(newPins.Select(x => x.Id)).ToList();
+            updatedPins.Select(x => x.Id).Concat(newPins.Select(x => x.Id)).ToList();
+
+        async Task<List<Pin>> CreatePins(IEnumerable<StarredPlace> create)
+        {
+            var pinsToCreate = create.Select(x => Pin.Create(import.UserId, GooglePlaceId.Parse(x.GoogleMapsUrl), x)).ToList();
+            await dbContext.Pins.AddRangeAsync(pinsToCreate, cancellationToken);
+            return pinsToCreate;
+        }
+
+        async Task<List<Pin>> UpdatePins(IEnumerable<StarredPlace> update)
+        {
+            var placesToUpdate = update.ToDictionary(x => GooglePlaceId.Parse(x.GoogleMapsUrl));
+
+            var allUserPins = await dbContext.Pins
+                .Where(x => x.OwnerId == import.UserId)
+                .ToListAsync(cancellationToken);
+
+            var pinsToUpdate = allUserPins
+                .Where(x => placesToUpdate.ContainsKey(x.PlaceId))
+                .ToList();
+
+            foreach (var pin in pinsToUpdate)
+            {
+                var name = placesToUpdate[pin.PlaceId].Name;
+                if (name != null)
+                {
+                    pin.Rename(name);
+                }
+            }
+
+            return pinsToUpdate;
+        }
     }
 
     public async Task HandleAsync(ImportBatchProcessed processed, CancellationToken cancellationToken = default)

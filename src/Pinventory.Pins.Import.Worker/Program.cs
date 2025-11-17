@@ -33,6 +33,8 @@ builder.UseWolverine(options =>
         .AutoProvision();
 
     options.AddDefaultWolverineOptions();
+
+    options.Policies.DisableConventionalLocalRouting();
 });
 
 builder.Services.AddMemoryCache();

@@ -47,7 +47,8 @@ public sealed class ImportCommandHandler(
                 var currentImport = await dbContext.GetCurrentImport(command.UserId, cancellationToken);
                 if (currentImport is not null)
                 {
-                    await bus.PublishAsync(new CheckJobMessage(currentImport.Id, currentImport.UserId, currentImport.ArchiveJobId!));
+                    await bus.ScheduleAsync(new CheckJobMessage(currentImport.Id, currentImport.UserId, currentImport.ArchiveJobId!),
+                        CheckJobMessage.CheckInterval);
                     return Result.Ok(currentImport.ArchiveJobId!).ToResultDto();
                 }
             }
@@ -69,7 +70,7 @@ public sealed class ImportCommandHandler(
         await dbContext.Imports.AddAsync(import, cancellationToken);
         await RaiseEventsAsync(import);
 
-        await bus.PublishAsync(new CheckJobMessage(import.Id, import.UserId, archiveJobId));
+        await bus.ScheduleAsync(new CheckJobMessage(import.Id, import.UserId, archiveJobId), CheckJobMessage.CheckInterval);
 
         return Result.Ok(archiveJobId).ToResultDto();
     }

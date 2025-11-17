@@ -26,7 +26,6 @@ public static class WolverineExtensions
         options.Policies.UseDurableOutboxOnAllSendingEndpoints();
         options.Policies.UseDurableInboxOnAllListeners();
         options.Policies.UseDurableLocalQueues();
-        options.Policies.ConventionalLocalRoutingIsAdditive();
         options.Policies.AutoApplyTransactions();
 
         return options;

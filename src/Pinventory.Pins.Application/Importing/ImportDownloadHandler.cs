@@ -54,7 +54,7 @@ public sealed class ImportDownloadHandler(
         {
             case ImportState.InProgress:
                 logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.ImportId);
-                await bus.ReScheduleCurrentAsync(DateTimeOffset.UtcNow.Add(CheckJobMessage.CheckInterval));
+                await bus.ScheduleAsync(check with { }, CheckJobMessage.CheckInterval);
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);

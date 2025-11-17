@@ -46,9 +46,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 cb.Property(p => p.Longitude).HasColumnName("Longitude").IsRequired();
             });
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
-                .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+            entity.Property(x => x.Version).IsRowVersion();
 
             entity.OwnsMany(x => x.Tags, b =>
             {
@@ -69,9 +67,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.OwnerId);
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
-                .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+            entity.Property(x => x.Version).IsRowVersion();
 
             entity.OwnsMany(x => x.Tags, e =>
             {
@@ -108,9 +104,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 cb.Property(p => p.End).HasColumnName("PeriodEnd").IsRequired();
             });
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
-                .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+            entity.Property(x => x.Version).IsRowVersion();
 
             entity.OwnsMany(p => p.Batches, batch =>
             {
