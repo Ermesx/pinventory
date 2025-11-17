@@ -222,12 +222,12 @@
 
     private void RegisterHandlers()
     {
-        hub!.On<ImportProgressDto>("ProgressUpdated", dto =>
+        hub!.On<ImportProgressDto>("ProgressUpdated", async dto =>
         {
             if (importId is null || importId == dto.ImportId)
             {
                 importId ??= dto.ImportId;
-                archiveJobId = dto.ArchiveJobId;
+                archiveJobId ??= dto.ArchiveJobId;
                 processed += dto.Processed;
                 created += dto.Created;
                 updated += dto.Updated;
@@ -235,19 +235,17 @@
                 conflicts += dto.Conflicts;
                 total = dto.Total;
                 statusMessage = "Import in progress...";
-                isImportRunning = true;
-                InvokeAsync(StateHasChanged);
+                await InvokeAsync(StateHasChanged);
             }
         });
 
-        hub!.On<ImportCompletedDto>("ImportCompleted", dto =>
+        hub!.On<ImportCompletedDto>("ImportCompleted", async dto =>
         {
             if (importId == dto.ImportId)
             {
-                archiveJobId = dto.ArchiveJobId;
                 statusMessage = "Import completed";
                 isImportRunning = false;
-                _ = InvokeAsync(async () =>
+                await InvokeAsync(async () =>
                 {
                     await LoadJobsAsync();
                     StateHasChanged();
@@ -255,14 +253,17 @@
             }
         });
 
-        hub!.On<ImportFailedDto>("ImportFailed", dto =>
+        hub!.On<ImportFailedDto>("ImportFailed", async dto =>
         {
             if (importId is null || importId == dto.ImportId)
             {
-                archiveJobId = dto.ArchiveJobId;
                 statusMessage = $"Import failed: {dto.Error}";
                 isImportRunning = false;
-                InvokeAsync(StateHasChanged);
+                await InvokeAsync(async () =>
+                {
+                    await LoadJobsAsync();
+                    StateHasChanged();
+                });
             }
         });
     }

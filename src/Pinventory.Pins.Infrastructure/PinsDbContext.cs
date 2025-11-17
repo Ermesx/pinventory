@@ -52,7 +52,9 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
             entity.Property(x => x.Version)
                 .IsRowVersion()
-                .ValueGeneratedNever();
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, b =>
             {
@@ -75,7 +77,9 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
 
             entity.Property(x => x.Version)
                 .IsRowVersion()
-                .ValueGeneratedNever();
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate();
 
             entity.OwnsMany(x => x.Tags, e =>
             {

@@ -49,9 +49,11 @@ namespace Pinventory.MigrationService.Migrations.Pins
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.ComplexProperty<Dictionary<string, object>>("Period", "Pinventory.Pins.Domain.Importing.Import.Period#Period", b1 =>
                         {
@@ -106,9 +108,11 @@ namespace Pinventory.MigrationService.Migrations.Pins
                     b.Property<DateTimeOffset>("StatusUpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.ComplexProperty<Dictionary<string, object>>("Address", "Pinventory.Pins.Domain.Places.Pin.Address#Address", b1 =>
                         {
@@ -157,9 +161,11 @@ namespace Pinventory.MigrationService.Migrations.Pins
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

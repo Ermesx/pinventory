@@ -10,23 +10,8 @@ namespace Pinventory.MigrationService.Migrations.Pins
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "xmin",
-                schema: "pins",
-                table: "TagCatalogs",
-                newName: "Version");
-
-            migrationBuilder.RenameColumn(
-                name: "xmin",
-                schema: "pins",
-                table: "Pins",
-                newName: "Version");
-
-            migrationBuilder.RenameColumn(
-                name: "xmin",
-                schema: "pins",
-                table: "Imports",
-                newName: "Version");
+            // Drop the ImportSummaries view before altering columns
+            migrationBuilder.Sql(@"DROP VIEW IF EXISTS pins.""ImportSummaries"";");
 
             migrationBuilder.AlterColumn<string>(
                 name: "OwnerId",
@@ -38,16 +23,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldClrType: typeof(string),
                 oldType: "text",
                 oldNullable: true);
-
-            migrationBuilder.AlterColumn<long>(
-                name: "Version",
-                schema: "pins",
-                table: "TagCatalogs",
-                type: "bigint",
-                nullable: false,
-                oldClrType: typeof(uint),
-                oldType: "xid",
-                oldRowVersion: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Value",
@@ -118,16 +93,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "text");
-
-            migrationBuilder.AlterColumn<long>(
-                name: "Version",
-                schema: "pins",
-                table: "Pins",
-                type: "bigint",
-                nullable: false,
-                oldClrType: typeof(uint),
-                oldType: "xid",
-                oldRowVersion: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "State",
@@ -224,16 +189,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldType: "text",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<long>(
-                name: "Version",
-                schema: "pins",
-                table: "Imports",
-                type: "bigint",
-                nullable: false,
-                oldClrType: typeof(uint),
-                oldType: "xid",
-                oldRowVersion: true);
-
             migrationBuilder.AlterColumn<string>(
                 name: "Value",
                 schema: "pins",
@@ -243,28 +198,39 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "text");
+
+            // Recreate the ImportSummaries view after altering columns
+            migrationBuilder.Sql(
+                """
+                CREATE VIEW pins."ImportSummaries" AS
+                SELECT
+                    i."Id",
+                    i."UserId",
+                    i."ArchiveJobId",
+                    i."State",
+                    i."StartedAt",
+                    i."CompletedAt",
+                    i."PeriodStart",
+                    i."PeriodEnd",
+                    COALESCE(COUNT(sp."Id"), 0) AS "Total",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."IsProcessed" = true), 0) AS "Processed",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'New'), 0) AS "Created",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Exists'), 0) AS "Updated",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Invalid'), 0) AS "Failed",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Conflicted'), 0) AS "Conflicts"
+                FROM pins."Imports" i
+                LEFT JOIN pins."ImportBatches" b ON b."ImportId" = i."Id"
+                LEFT JOIN pins."ImportStarredPlaces" sp ON sp."BatchId" = b."Id"
+                GROUP BY i."Id", i."UserId", i."ArchiveJobId", i."State",
+                         i."StartedAt", i."CompletedAt", i."PeriodStart", i."PeriodEnd";
+                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                schema: "pins",
-                table: "TagCatalogs",
-                newName: "xmin");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                schema: "pins",
-                table: "Pins",
-                newName: "xmin");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                schema: "pins",
-                table: "Imports",
-                newName: "xmin");
+            // Drop the ImportSummaries view before reverting column changes
+            migrationBuilder.Sql(@"DROP VIEW IF EXISTS pins.""ImportSummaries"";");
 
             migrationBuilder.AlterColumn<string>(
                 name: "OwnerId",
@@ -276,16 +242,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldType: "character varying(100)",
                 oldMaxLength: 100,
                 oldNullable: true);
-
-            migrationBuilder.AlterColumn<uint>(
-                name: "xmin",
-                schema: "pins",
-                table: "TagCatalogs",
-                type: "xid",
-                rowVersion: true,
-                nullable: false,
-                oldClrType: typeof(long),
-                oldType: "bigint");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Value",
@@ -356,16 +312,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldClrType: typeof(string),
                 oldType: "character varying(1000)",
                 oldMaxLength: 1000);
-
-            migrationBuilder.AlterColumn<uint>(
-                name: "xmin",
-                schema: "pins",
-                table: "Pins",
-                type: "xid",
-                rowVersion: true,
-                nullable: false,
-                oldClrType: typeof(long),
-                oldType: "bigint");
 
             migrationBuilder.AlterColumn<string>(
                 name: "State",
@@ -462,16 +408,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldMaxLength: 200,
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<uint>(
-                name: "xmin",
-                schema: "pins",
-                table: "Imports",
-                type: "xid",
-                rowVersion: true,
-                nullable: false,
-                oldClrType: typeof(long),
-                oldType: "bigint");
-
             migrationBuilder.AlterColumn<string>(
                 name: "Value",
                 schema: "pins",
@@ -481,6 +417,32 @@ namespace Pinventory.MigrationService.Migrations.Pins
                 oldClrType: typeof(string),
                 oldType: "character varying(100)",
                 oldMaxLength: 100);
+
+            // Recreate the ImportSummaries view after reverting column changes
+            migrationBuilder.Sql(
+                """
+                CREATE VIEW pins."ImportSummaries" AS
+                SELECT
+                    i."Id",
+                    i."UserId",
+                    i."ArchiveJobId",
+                    i."State",
+                    i."StartedAt",
+                    i."CompletedAt",
+                    i."PeriodStart",
+                    i."PeriodEnd",
+                    COALESCE(COUNT(sp."Id"), 0) AS "Total",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."IsProcessed" = true), 0) AS "Processed",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'New'), 0) AS "Created",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Exists'), 0) AS "Updated",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Invalid'), 0) AS "Failed",
+                    COALESCE(COUNT(sp."Id") FILTER (WHERE sp."State" = 'Conflicted'), 0) AS "Conflicts"
+                FROM pins."Imports" i
+                LEFT JOIN pins."ImportBatches" b ON b."ImportId" = i."Id"
+                LEFT JOIN pins."ImportStarredPlaces" sp ON sp."BatchId" = b."Id"
+                GROUP BY i."Id", i."UserId", i."ArchiveJobId", i."State",
+                         i."StartedAt", i."CompletedAt", i."PeriodStart", i."PeriodEnd";
+                """);
         }
     }
 }
