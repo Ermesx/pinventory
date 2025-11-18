@@ -44,6 +44,10 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
         [Get("/imports/{archiveJobId}")]
         Task<ImportDto> GetImport(string archiveJobId);
 
+        [Headers("Accept: application/problem+json, application/json")]
+        [Post("/imports/{archiveJobId}/renew")]
+        Task RenewImport(string archiveJobId);
+
         [Headers("Accept: application/problem+json")]
         [Post("/imports/{archiveJobId}/cancel")]
         Task CancelImport(string archiveJobId);

@@ -48,6 +48,21 @@ public class ImportProcess : Saga
         return new ImportProcessCompleted(@event.Id, @event.ArchiveJobId, @event.UserId);
     }
 
+    public void Handle(ImportBatchesCleared @event, ILogger<ImportProcess> logger)
+    {
+        logger.LogInformation("Import process [Saga] cleared for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
+
+        TotalBatches = 0;
+        BatchesProcessed = 0;
+    }
+
+    public void Handle(ImportFailed @event, ILogger<ImportProcess> logger)
+    {
+        logger.LogInformation("Import process [Saga] failed for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
+
+        MarkCompleted();
+    }
+
     public void Handle(ImportCancelled @event, ILogger<ImportProcess> logger)
     {
         logger.LogInformation("Import process [Saga] cancelled for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);

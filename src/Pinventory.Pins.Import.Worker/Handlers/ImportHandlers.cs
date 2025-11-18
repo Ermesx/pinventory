@@ -16,6 +16,10 @@ public static class ImportHandlers
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 
+    public static async Task<ResultDto> HandleAsync(RenewImportCommand command, ImportCommandHandler app,
+        CancellationToken cancellationToken = default) =>
+        await app.HandleAsync(command, cancellationToken);
+
     public static async Task<ResultDto> HandleAsync(CancelImportCommand command, ImportCommandHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);

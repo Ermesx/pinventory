@@ -72,7 +72,7 @@
 <hr/>
 
 <div class="d-flex gap-2 mb-3">
-    <button class="btn btn-success" disabled="@(isProcessing)" @onclick="OnStartImportAsync">
+    <button class="btn btn-success" disabled="@(isProcessing)" @onclick="OnStartOrRenewImportAsync">
         @(isImportRunning ? "Renew Import" : "Start Import")
     </button>
     <button class="btn btn-outline-danger" disabled="@(!isImportRunning || isProcessing)" @onclick="OnCancelImportAsync">
@@ -305,6 +305,18 @@
         }
     }
 
+    private async Task OnStartOrRenewImportAsync()
+    {
+        if (isImportRunning)
+        {
+            await OnRenewImportAsync();
+        }
+        else
+        {
+            await OnStartImportAsync();
+        }
+    }
+
     private async Task OnStartImportAsync()
     {
         if (isProcessing)
@@ -319,6 +331,7 @@
         try
         {
             ResetCounters();
+            importId = null;
             statusMessage = "Starting import...";
             var id = await PinsClient.StartImport(new StartImportDto());
             archiveJobId = id;
@@ -336,6 +349,57 @@
         catch (Exception ex)
         {
             errorMessage = $"Failed to start import: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task OnRenewImportAsync()
+    {
+        if (isProcessing)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(archiveJobId))
+        {
+            errorMessage = "No import job is available to renew.";
+            return;
+        }
+
+        isProcessing = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            ResetCounters();
+            importId = null;
+            statusMessage = "Renewing import...";
+            await PinsClient.RenewImport(archiveJobId!);
+            isImportRunning = true;
+            successMessage = "Import renewal requested.";
+            await LoadJobsAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            errorMessage = string.IsNullOrWhiteSpace(ex.Content)
+                ? "No import job was found to renew."
+                : ex.Content;
+            isImportRunning = false;
+            archiveJobId = null;
+            await LoadJobsAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            errorMessage = "Import could not be renewed at this stage.";
+            await LoadJobsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to renew import: {ex.Message}";
         }
         finally
         {

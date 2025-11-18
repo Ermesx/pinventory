@@ -26,9 +26,7 @@ public sealed class ImportDownloadHandler(
     public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.ImportId);
-
-        var import = await dbContext.GetCurrentImport(check.ImportId, cancellationToken);
-        if (import is null)
+        if (await dbContext.GetCurrentImport(check.ImportId, cancellationToken) is not { } import)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.ImportId);
             return;
@@ -49,7 +47,6 @@ public sealed class ImportDownloadHandler(
             return;
         }
 
-        Result<Success> result;
         switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
@@ -58,20 +55,18 @@ public sealed class ImportDownloadHandler(
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);
-                result = import.Fail(new Error("Archive job failed externally"));
-                if (result.IsFailed)
+                if (import.Fail(new Error("Archive job failed externally")) is { IsFailed: true } failResult)
                 {
-                    logger.LogError("Failed to fail import job: {Errors}", result.Errors);
+                    logger.LogError("Failed to fail import job: {Errors}", failResult.Errors);
                     return;
                 }
 
                 break;
             case ImportState.Cancelled:
                 logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.ImportId);
-                result = import.Cancel();
-                if (result.IsFailed)
+                if (import.Cancel() is { IsFailed: true } cancelResult)
                 {
-                    logger.LogError("Failed to cancel import job: {Errors}", result.Errors);
+                    logger.LogError("Failed to cancel import job: {Errors}", cancelResult.Errors);
                     return;
                 }
 
@@ -88,9 +83,7 @@ public sealed class ImportDownloadHandler(
     public async Task HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
-
-        var import = await dbContext.GetCurrentImport(download.ImportId, cancellationToken);
-        if (import is null)
+        if (await dbContext.GetCurrentImport(download.ImportId, cancellationToken) is not { } import)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
             return;

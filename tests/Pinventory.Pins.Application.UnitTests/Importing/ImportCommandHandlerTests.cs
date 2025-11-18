@@ -146,6 +146,64 @@ public class ImportCommandHandlerTests
         busMock.Invocations.Count.ShouldBe(0);
     }
 
+    [Test]
+    public async Task RenewImport_clears_batches_and_reschedules_check_job_when_running_import_exists()
+    {
+        // Arrange
+        var userId = "user-1";
+        var archiveJobId = "job-123";
+        var (handler, dbContext, busMock, _, _, policyMock) = await CreateHandlerAsync();
+
+        // Seed running import with batches
+        var import = new Import(userId, Period.AllTime);
+        var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
+        startResult.IsSuccess.ShouldBeTrue();
+
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(starredPlaces);
+        import.BatchesMap.Count.ShouldBe(1);
+
+        await dbContext.Imports.AddAsync(import);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var command = new RenewImportCommand(userId, archiveJobId);
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+
+        var reloaded = await dbContext.Imports.Include(i => i.Batches).ThenInclude(b => b.StarredPlaces)
+            .SingleAsync(i => i.UserId == userId);
+        reloaded.BatchesMap.Count.ShouldBe(0);
+        reloaded.Total.ShouldBe(0);
+
+        busMock.Invocations.Any(i => i.Arguments[0] is ImportBatchesCleared).ShouldBeTrue();
+        busMock.Invocations.Any(i => i.Arguments[0] is CheckJobMessage).ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task RenewImport_fails_when_running_import_not_found()
+    {
+        // Arrange
+        var (handler, _, busMock, _, _, _) = await CreateHandlerAsync();
+        var command = new RenewImportCommand("user-1", "job-404");
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        result.IsFailed.ShouldBeTrue();
+        result.Errors.ShouldContain(e => e.Message.Contains("not found"));
+        busMock.Invocations.Count.ShouldBe(0);
+    }
+
+
     private static async Task<(ImportCommandHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,
         Mock<IImportServiceFactory>
         factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock)> CreateHandlerAsync()

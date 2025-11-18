@@ -373,7 +373,7 @@ public class ImportTests
     }
 
     [Test]
-    public async Task TryComplete_returns_false_when_not_all_items_processed()
+    public async Task Complete_fails_when_not_all_items_processed()
     {
         // Arrange
         var import = await Imports.CreateStartedImport();
@@ -383,13 +383,14 @@ public class ImportTests
             new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterBatch(starredPlaces);
-        // Don't process the batch
+        // Do not process the batch to simulate incomplete processing
 
         // Act
         var result = import.Complete();
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
+        result.IsFailed.ShouldBeTrue();
+        result.Errors.ShouldContain(e => e.Message.Contains("Not all batches processed"));
         import.State.ShouldBe(ImportState.InProgress);
         import.DomainEvents.OfType<ImportCompleted>().ShouldBeEmpty();
     }
@@ -463,6 +464,52 @@ public class ImportTests
         import.State.ShouldBe(ImportState.Unspecified);
         import.CompletedAt.ShouldBeNull();
     }
+
+    [Test]
+    public async Task ClearBatches_clears_batches_and_raises_event_when_in_progress()
+    {
+        // Arrange
+        var import = await Imports.CreateStartedImport();
+        var starredPlaces = new List<StarredPlace>
+        {
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+        };
+        import.RegisterBatch(starredPlaces);
+        import.BatchesMap.Count.ShouldBe(1);
+        import.Total.ShouldBe(2);
+
+        // Act
+        var result = import.ClearBatches();
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        import.BatchesMap.Count.ShouldBe(0);
+        import.Total.ShouldBe(0);
+
+        var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchesCleared>();
+        evt.Id.ShouldBe(import.Id);
+        evt.UserId.ShouldBe(import.UserId);
+        evt.ArchiveJobId.ShouldBe(import.ArchiveJobId);
+    }
+
+    [Test]
+    public void ClearBatches_fails_when_state_is_not_in_progress()
+    {
+        // Arrange
+        var import = new Import("user123");
+
+        // Act
+        var result = import.ClearBatches();
+
+        // Assert
+        result.IsFailed.ShouldBeTrue();
+        result.Errors.ShouldContain(e => e.Message.Contains("not in progress"));
+        import.BatchesMap.Count.ShouldBe(0);
+        import.Total.ShouldBe(0);
+        import.DomainEvents.OfType<ImportBatchesCleared>().ShouldBeEmpty();
+    }
+
 
     [Test]
     public async Task ConflictedPlaces_returns_places_with_conflicted_state()

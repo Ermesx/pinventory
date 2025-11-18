@@ -43,6 +43,13 @@ public static class ImportingEndpointsExtensions
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem();
 
+        importsEndpoint.MapPost("/{archiveJobId}/renew", RenewImport)
+            .WithName("RenewImport")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesValidationProblem();
+
         importsEndpoint.MapPost("/{archiveJobId}/cancel", CancelImport)
             .WithName("CancelImport")
             .Produces(StatusCodes.Status200OK)
@@ -97,6 +104,24 @@ public static class ImportingEndpointsExtensions
             : archiveJobIdResult.HasError<Domain.Errors.Period.IncorrectPeriodDates>()
                 ? Results.BadRequest(archiveJobIdResult.Errors)
                 : Results.Conflict(archiveJobIdResult.Errors);
+    }
+
+    private static async Task<IResult> RenewImport(string archiveJobId, ClaimsPrincipal user, [FromServices] IMessageBus bus,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(archiveJobId))
+        {
+            return Results.BadRequest();
+        }
+
+        var userId = user.GetIdentifier();
+        var result = await bus.InvokeAsync<ResultDto>(new RenewImportCommand(userId, archiveJobId), cancellationToken, CommandsTimeout);
+
+        return result.IsSuccess
+            ? Results.Ok()
+            : result.HasError<Errors.NotFoundError>()
+                ? Results.NotFound(result.Errors)
+                : Results.Conflict(result.Errors);
     }
 
     private static async Task<IResult> CancelImport(string archiveJobId, ClaimsPrincipal user, [FromServices] IMessageBus bus,

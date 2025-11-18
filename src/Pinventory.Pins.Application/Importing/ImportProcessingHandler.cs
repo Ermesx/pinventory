@@ -25,9 +25,7 @@ public class ImportProcessingHandler(
     {
         logger.LogInformation("Import {ArchiveJobId}: Processing batch {BatchId} pins for user {UserId}", batch.ArchiveJobId,
             batch.BatchId, batch.UserId);
-
-        var import = await dbContext.GetCurrentImport(batch.Id, cancellationToken);
-        if (import is null)
+        if (await dbContext.GetCurrentImport(batch.Id, cancellationToken) is not { } import)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
             return;

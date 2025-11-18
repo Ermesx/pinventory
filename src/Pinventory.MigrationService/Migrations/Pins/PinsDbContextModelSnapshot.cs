@@ -109,7 +109,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
@@ -162,7 +161,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
