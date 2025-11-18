@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Domain.Tags.Events;
 
-public record TagCatalogTagsDefined(Guid AggregateId, IEnumerable<string> Tags) : DomainEvent(AggregateId);
+public record TagCatalogTagsDefined(Guid Id, IEnumerable<string> Tags) : DomainEvent(Id);

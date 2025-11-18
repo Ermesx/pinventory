@@ -22,7 +22,7 @@ public class PinTests
         // Assert
         pin.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinTagsAssigned>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Tags.ShouldBe(["foo", "bar"], ignoreOrder: true);
     }
 
@@ -55,7 +55,7 @@ public class PinTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinClosed>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Status.ShouldBe(PinStatus.Closed);
         evt.PreviousStatus.ShouldBe(PinStatus.Open);
     }
@@ -119,7 +119,7 @@ public class PinTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinOpened>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Status.ShouldBe(PinStatus.Open);
         evt.PreviousStatus.ShouldBe(PinStatus.TemporaryClosed);
     }

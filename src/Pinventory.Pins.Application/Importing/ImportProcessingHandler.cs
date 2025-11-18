@@ -8,6 +8,7 @@ using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Wolverine;
 
@@ -25,7 +26,7 @@ public class ImportProcessingHandler(
         logger.LogInformation("Import {ArchiveJobId}: Processing batch {BatchId} pins for user {UserId}", batch.ArchiveJobId,
             batch.BatchId, batch.UserId);
 
-        var import = await dbContext.GetCurrentImport(batch.AggregateId, cancellationToken);
+        var import = await dbContext.GetCurrentImport(batch.Id, cancellationToken);
         if (import is null)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
@@ -89,33 +90,25 @@ public class ImportProcessingHandler(
         }
     }
 
-    public async Task HandleAsync(ImportBatchProcessed processed, CancellationToken cancellationToken = default)
+    public async Task HandleAsync(ImportProcessCompleted completed, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Import {ArchiveJobId}: try complete process for user {UserId}", processed.ArchiveJobId, processed.UserId);
+        logger.LogInformation("Import {ArchiveJobId}: try complete process for user {UserId}", completed.ArchiveJobId, completed.UserId);
 
-        var import = await dbContext.GetCurrentImport(processed.AggregateId, cancellationToken);
+        var import = await dbContext.GetCurrentImport(completed.ImportId, cancellationToken);
         if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", processed.ArchiveJobId, processed.UserId);
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", completed.ArchiveJobId, completed.UserId);
             return;
         }
 
-        var tryComplete = import.TryComplete();
+        var tryComplete = import.Complete();
         if (tryComplete.IsFailed)
         {
             logger.LogError("Failed to complete import job: {Errors}", tryComplete.Errors);
             return;
         }
 
-        if (tryComplete.Value)
-        {
-            logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", processed.ArchiveJobId, processed.UserId);
-        }
-        else
-        {
-            logger.LogInformation("Import {ArchiveJobId} not complete yet for {UserId}", processed.ArchiveJobId, processed.UserId);
-        }
-
+        logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", completed.ArchiveJobId, completed.UserId);
         await RaiseEventsAsync(import);
     }
 }

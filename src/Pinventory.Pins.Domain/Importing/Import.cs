@@ -146,8 +146,13 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
         return (toCreate, toUpdate);
     }
 
-    public Result<bool> TryComplete()
+    public Result<Success> Complete()
     {
+        if (State == ImportState.Complete)
+        {
+            return Result.Ok();
+        }
+
         if (State != ImportState.InProgress)
         {
             return Result.Fail(Errors.Import.ImportNotInProgress(this));
@@ -155,14 +160,14 @@ public sealed class Import(string userId, Period? period = null, Guid? id = null
 
         if (_batches.SelectMany(x => x.StarredPlaces).Any(x => !x.IsProcessed))
         {
-            return false;
+            return Result.Fail(Errors.Import.BatchesNotProcessed(this));
         }
 
         State = ImportState.Complete;
         CompletedAt = DateTimeOffset.UtcNow;
         Raise(new ImportCompleted(Id, UserId, ArchiveJobId!));
 
-        return true;
+        return Result.Ok();
     }
 
     public Result<Success> Fail(IError error)

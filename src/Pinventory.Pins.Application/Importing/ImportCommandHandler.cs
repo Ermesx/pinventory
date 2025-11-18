@@ -25,7 +25,7 @@ public sealed class ImportCommandHandler(
 {
     public async Task<ResultDto<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Starting importMessage for {UserId}", command.UserId);
+        logger.LogInformation("Starting import for {UserId}", command.UserId);
         var periodResult = Period.Create(command.Start, command.End);
         if (periodResult.IsFailed)
         {

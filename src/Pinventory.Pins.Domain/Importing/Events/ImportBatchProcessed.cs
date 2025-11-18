@@ -3,7 +3,7 @@
 namespace Pinventory.Pins.Domain.Importing.Events;
 
 public sealed record ImportBatchProcessed(
-    Guid AggregateId,
+    Guid Id,
     string UserId,
     string ArchiveJobId,
     int Processed,
@@ -12,4 +12,4 @@ public sealed record ImportBatchProcessed(
     int Failed,
     int Conflicts,
     int Total)
-    : DomainEvent(AggregateId);
+    : DomainEvent(Id);

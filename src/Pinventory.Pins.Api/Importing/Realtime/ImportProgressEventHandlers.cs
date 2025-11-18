@@ -12,16 +12,16 @@ public static class ImportProgressEventHandlers
 {
     public static Task Handle(ImportBatchProcessed @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)
         => hub.Clients.Group(ImportProgressHub.UserGroup(@event.UserId))
-            .ProgressUpdated(new ImportProgressDto(@event.AggregateId, @event.ArchiveJobId,
+            .ProgressUpdated(new ImportProgressDto(@event.Id, @event.ArchiveJobId,
                 @event.Processed, @event.Created,
                 @event.Updated, @event.Failed,
                 @event.Conflicts, @event.Total));
 
     public static Task Handle(ImportCompleted @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)
         => hub.Clients.Group(ImportProgressHub.UserGroup(@event.UserId))
-            .ImportCompleted(new ImportCompletedDto(@event.AggregateId, @event.ArchiveJobId));
+            .ImportCompleted(new ImportCompletedDto(@event.Id, @event.ArchiveJobId));
 
     public static Task Handle(ImportFailed @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)
         => hub.Clients.Group(ImportProgressHub.UserGroup(@event.UserId))
-            .ImportFailed(new ImportFailedDto(@event.AggregateId, @event.ArchiveJobId, @event.Error));
+            .ImportFailed(new ImportFailedDto(@event.Id, @event.ArchiveJobId, @event.Error));
 }

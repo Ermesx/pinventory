@@ -48,7 +48,7 @@ public class ImportConcurrencyPolicyTests
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
         await completedImport.ProcessBatchAsync(batchId, validatorMock.Object);
-        completedImport.TryComplete();
+        completedImport.Complete();
 
         await dbContext.Imports.AddAsync(completedImport);
         await dbContext.SaveChangesAsync();

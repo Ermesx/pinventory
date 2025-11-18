@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Domain.Importing.Events;
 
-public sealed record ImportCancelled(Guid AggregateId, string UserId, string ArchiveJobId) : DomainEvent(AggregateId);
+public sealed record ImportCancelled(Guid Id, string UserId, string ArchiveJobId) : DomainEvent(Id);

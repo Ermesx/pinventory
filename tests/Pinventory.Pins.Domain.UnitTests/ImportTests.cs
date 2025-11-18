@@ -33,7 +33,7 @@ public class ImportTests
         import.CompletedAt.ShouldBeNull();
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportStarted>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
         evt.UserId.ShouldBe(userId);
         evt.ArchiveJobId.ShouldBe(archiveJobId);
     }
@@ -158,7 +158,7 @@ public class ImportTests
         import.BatchesMap.Count.ShouldBe(1);
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchRegistered>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
     }
 
     [Test]
@@ -285,7 +285,7 @@ public class ImportTests
         import.Conflicts.ShouldBe(0);
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportBatchProcessed>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
         evt.Processed.ShouldBe(2);
         evt.Created.ShouldBe(2);
         evt.Updated.ShouldBe(0);
@@ -345,16 +345,15 @@ public class ImportTests
         await import.ProcessBatchAsync(batchId, validatorMock.Object);
 
         // Act
-        var result = import.TryComplete();
+        var result = import.Complete();
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBeTrue();
         import.State.ShouldBe(ImportState.Complete);
         import.CompletedAt.ShouldNotBeNull();
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportCompleted>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
     }
 
     [Test]
@@ -364,7 +363,7 @@ public class ImportTests
         var import = new Import("user123");
 
         // Act
-        var result = import.TryComplete();
+        var result = import.Complete();
 
         // Assert
         result.IsFailed.ShouldBeTrue();
@@ -387,11 +386,10 @@ public class ImportTests
         // Don't process the batch
 
         // Act
-        var result = import.TryComplete();
+        var result = import.Complete();
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBeFalse();
         import.State.ShouldBe(ImportState.InProgress);
         import.DomainEvents.OfType<ImportCompleted>().ShouldBeEmpty();
     }
@@ -412,7 +410,7 @@ public class ImportTests
         import.CompletedAt.ShouldNotBeNull();
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportFailed>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
         evt.Error.ShouldBe(error.Message);
     }
 
@@ -447,7 +445,7 @@ public class ImportTests
         import.CompletedAt.ShouldNotBeNull();
 
         var evt = import.DomainEvents.Last().ShouldBeOfType<ImportCancelled>();
-        evt.AggregateId.ShouldBe(import.Id);
+        evt.Id.ShouldBe(import.Id);
     }
 
     [Test]

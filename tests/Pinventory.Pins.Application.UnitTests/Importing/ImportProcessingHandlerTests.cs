@@ -12,6 +12,7 @@ using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Shouldly;
 
@@ -211,7 +212,7 @@ public class ImportProcessingHandlerTests
         busMock.Invocations.Clear();
 
         // Now trigger TryComplete
-        var message = new ImportBatchProcessed(import.Id, userId, archiveJobId, 1, 1, 0, 0, 0, 1);
+        var message = new ImportProcessCompleted(import.Id, userId, archiveJobId);
 
         // Act
         await handler.HandleAsync(message);

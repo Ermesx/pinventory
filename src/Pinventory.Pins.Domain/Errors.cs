@@ -38,6 +38,9 @@ public static class Errors
         public static Error BatchNotExists(Guid batchId, Importing.Import import) =>
             new($"Batch '{batchId}' does not exist in import '{import.ArchiveJobId}' for user '{import.UserId}'");
 
+        public static Error BatchesNotProcessed(Importing.Import import) =>
+            new($"Not all batches processed for import {import.ArchiveJobId} for user {import.UserId}");
+
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");
     }
