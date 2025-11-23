@@ -5,6 +5,7 @@ using Pinventory.Pins.Api.Importing;
 using Pinventory.Pins.Api.Tags;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.ServiceDefaults;
+using Pinventory.ServiceDefaults.Wolverine;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -17,7 +18,7 @@ builder.AddApiDefaults();
 // Add services to the container.
 builder.Services.AddSignalR();
 
-if (!OpenApi.IsGenerating)
+if (!CodeGeneration.IsGenerating)
 {
     var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");
     builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => options.UseNpgsql(connectionString));
@@ -47,4 +48,7 @@ app.MapImportingEndpoints();
 
 app.Run();
 
-public partial class Program;
+namespace Pinventory.Pins.Api
+{
+    public partial class Program;
+}

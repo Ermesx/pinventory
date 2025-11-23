@@ -291,7 +291,6 @@ public class ImportTests
         evt.Updated.ShouldBe(0);
         evt.Failed.ShouldBe(0);
         evt.Conflicts.ShouldBe(0);
-        evt.Total.ShouldBe(2);
     }
 
     [Test]

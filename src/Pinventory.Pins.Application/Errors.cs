@@ -25,6 +25,11 @@ public static class Errors
         public static Error RunningImportNotFound(string userId, string archiveJobId) =>
             new NotFoundError($"Import {archiveJobId} not found for user {userId}");
 
-        public class ArchiveJobExists() : Error("Archive job already exists");
+        public class ArchiveJobExists() : Error("Archive job already exists")
+        {
+            public const string ArchiveJobIdMetadataKey = "ArchiveJobId";
+
+            public string? ArchiveJobId => Metadata[ArchiveJobIdMetadataKey] as string;
+        }
     }
 }

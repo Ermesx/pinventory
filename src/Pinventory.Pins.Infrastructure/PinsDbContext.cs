@@ -53,10 +53,8 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             });
 
             entity.Property(x => x.Version)
-                .IsRowVersion()
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
-                .ValueGeneratedNever();
+                .HasDefaultValue(0)
+                .IsRowVersion();
 
             entity.OwnsMany(x => x.Tags, b =>
             {
@@ -78,9 +76,6 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.OwnerId).HasMaxLength(100);
 
             entity.Property(x => x.Version)
-                .IsRowVersion()
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
                 .ValueGeneratedNever();
 
             entity.OwnsMany(x => x.Tags, e =>
@@ -91,6 +86,10 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 e.HasKey("CatalogId", "Value");
                 e.HasIndex("Value");
             });
+
+            entity.Property(x => x.Version)
+                .HasDefaultValue(0)
+                .IsRowVersion();
 
             entity.Navigation(x => x.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
@@ -113,10 +112,8 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             });
 
             entity.Property(x => x.Version)
-                .IsRowVersion()
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
-                .ValueGeneratedNever();
+                .HasDefaultValue(0)
+                .IsRowVersion();
 
             entity.OwnsMany(p => p.Batches, batch =>
             {

@@ -7,5 +7,4 @@ public sealed record ImportProgressDto(
     int Created,
     int Updated,
     int Failed,
-    int Conflicts,
-    int Total);
+    int Conflicts);

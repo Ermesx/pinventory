@@ -141,7 +141,7 @@ namespace Pinventory.Pins.Domain.Importing
                 }
             }
 
-            Raise(new ImportBatchProcessed(Id, UserId, ArchiveJobId!, processed, created, updated, failed, conflicts, Total));
+            Raise(new ImportBatchProcessed(Id, UserId, ArchiveJobId!, processed, created, updated, failed, conflicts));
 
             return (toCreate, toUpdate);
         }

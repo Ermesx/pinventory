@@ -4,10 +4,13 @@ using Pinventory.Google;
 using Pinventory.Identity.Tokens.Grpc;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Import.Worker;
 using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.ServiceDefaults;
+using Pinventory.ServiceDefaults.Wolverine;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -25,16 +28,21 @@ builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => 
 
 builder.UseWolverine(options =>
 {
-    options.PersistMessagesWithPostgresql(connectionString!);
+    if (!CodeGeneration.IsGenerating)
+    {
+        options.PersistMessagesWithPostgresql(connectionString!);
 
-    options.UseRabbitMqUsingNamedConnection("rabbit-mq")
-        .EnableWolverineControlQueues()
-        .UseConventionalRouting()
-        .AutoProvision();
+        options.UseRabbitMqUsingNamedConnection("rabbit-mq")
+            .EnableWolverineControlQueues()
+            .UseConventionalRouting()
+            .AutoProvision();
+    }
 
     options.AddDefaultWolverineOptions();
 
-    options.Policies.DisableConventionalLocalRouting();
+    options.Discovery.IncludeType<ImportProcess>();
+
+    options.Services.AddDebugWolverineRouting();
 });
 
 builder.Services.AddMemoryCache();

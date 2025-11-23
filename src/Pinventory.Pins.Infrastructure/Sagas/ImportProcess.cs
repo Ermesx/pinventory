@@ -9,7 +9,7 @@ namespace Pinventory.Pins.Infrastructure.Sagas;
 
 public class ImportProcess : Saga
 {
-    public Guid? Id { get; init; }
+    public Guid Id { get; init; }
 
     public int TotalBatches { get; private set; }
 

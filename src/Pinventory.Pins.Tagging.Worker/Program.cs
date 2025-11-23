@@ -4,6 +4,7 @@ using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.ServiceDefaults;
+using Pinventory.ServiceDefaults.Wolverine;
 using Pinventory.Tagging.Worker;
 
 using Wolverine;

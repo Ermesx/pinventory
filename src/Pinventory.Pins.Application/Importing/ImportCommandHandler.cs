@@ -9,9 +9,12 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas;
 
 using Wolverine;
+using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.Importing;
 
@@ -39,14 +42,26 @@ public sealed class ImportCommandHandler(
         }
 
         var client = clientResult.Value;
+
+        string archiveJobId;
+
         var archiveJobIdResult = await client.InitiateAsync(cancellationToken: cancellationToken);
-        if (archiveJobIdResult.IsFailed)
+        if (archiveJobIdResult.IsSuccess)
+        {
+            archiveJobId = archiveJobIdResult.Value;
+        }
+        // If an archive job already exists and there is no running import, use the existing job
+        else if (archiveJobIdResult.HasError<Errors.Import.ArchiveJobExists>(out var errors)
+                 && await dbContext.GetCurrentImport(command.UserId, cancellationToken) is null
+                 && errors.First().ArchiveJobId is { } extractedArchiveJobId)
+        {
+            archiveJobId = extractedArchiveJobId;
+        }
+        else
         {
             logger.LogError("Failed to initiate archive job: {Errors}", archiveJobIdResult.Errors);
             return Result.Fail<string>(archiveJobIdResult.Errors).ToResultDto();
         }
-
-        var archiveJobId = archiveJobIdResult.Value;
 
         var import = new Import(command.UserId, periodResult.Value);
         if (await import.StartAsync(archiveJobId, concurrencyPolicy) is { IsFailed: true } result)
@@ -62,7 +77,8 @@ public sealed class ImportCommandHandler(
         return Result.Ok(archiveJobId).ToResultDto();
     }
 
-    public async Task<ResultDto> HandleAsync(RenewImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<ResultDto> HandleAsync(RenewImportCommand command, [Entity(Required = false)] ImportProcess? saga,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
@@ -73,6 +89,13 @@ public sealed class ImportCommandHandler(
         if (import.ClearBatches() is { IsFailed: true } result)
         {
             return Result.Fail<string>(result.Errors).ToResultDto();
+        }
+
+        // Check if saga exists, if not, create it by event
+        if (saga is null)
+        {
+            logger.LogError("Import process [Saga] not found for {ImportId}", import.Id);
+            await bus.PublishAsync(new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!));
         }
 
         await RaiseEventsAsync(import);

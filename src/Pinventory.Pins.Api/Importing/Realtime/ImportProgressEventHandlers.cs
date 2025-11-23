@@ -15,7 +15,7 @@ public static class ImportProgressEventHandlers
             .ProgressUpdated(new ImportProgressDto(@event.Id, @event.ArchiveJobId,
                 @event.Processed, @event.Created,
                 @event.Updated, @event.Failed,
-                @event.Conflicts, @event.Total));
+                @event.Conflicts));
 
     public static Task Handle(ImportCompleted @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)
         => hub.Clients.Group(ImportProgressHub.UserGroup(@event.UserId))

@@ -185,7 +185,7 @@
     private string? errorMessage;
     private string? successMessage;
 
-    private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts, int Total);
+    private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts);
     private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
     private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
 
@@ -233,7 +233,6 @@
                 updated += dto.Updated;
                 failed += dto.Failed;
                 conflicts += dto.Conflicts;
-                total = dto.Total;
                 statusMessage = "Import in progress...";
                 await InvokeAsync(StateHasChanged);
             }

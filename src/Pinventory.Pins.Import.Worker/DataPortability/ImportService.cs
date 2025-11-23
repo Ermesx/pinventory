@@ -52,10 +52,12 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
             var response = await _service.PortabilityArchive.Initiate(request).ExecuteAsync(cancellationToken);
             return response.ArchiveJobId;
         }
-        catch (GoogleApiException e) when (e.HttpStatusCode == HttpStatusCode.Conflict)
+        catch (GoogleApiException e) when (e.ToGoogleErrorResponse() is { Error.Status: "ALREADY_EXISTS" } errorResponse)
         {
             logger.LogWarning(e, "Archive job already exists");
-            return Result.Fail(Errors.ImportService.ArchiveJobAlreadyExists().CausedBy(e));
+
+            return Result.Fail(Errors.ImportService.ArchiveJobAlreadyExists().CausedBy(e)
+                .WithMetadata(Application.Errors.Import.ArchiveJobExists.ArchiveJobIdMetadataKey, errorResponse.ExtractArchiveJobId()));
         }
     }
 
