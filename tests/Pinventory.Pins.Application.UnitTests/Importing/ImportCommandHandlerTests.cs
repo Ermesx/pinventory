@@ -1,4 +1,4 @@
-﻿using FluentResults;
+using FluentResults;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -147,14 +147,14 @@ public class ImportCommandHandlerTests
     }
 
     [Test]
-    public async Task RenewImport_clears_batches_and_reschedules_check_job_when_running_import_exists()
+    public async Task RenewImport_clears_places_and_reschedules_check_job_when_running_import_exists()
     {
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
         var (handler, dbContext, busMock, _, _, policyMock) = await CreateHandlerAsync();
 
-        // Seed running import with batches
+        // Seed running import with places
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
         startResult.IsSuccess.ShouldBeTrue();
@@ -163,8 +163,8 @@ public class ImportCommandHandlerTests
         {
             new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
-        import.RegisterBatch(starredPlaces);
-        import.BatchesMap.Count.ShouldBe(1);
+        import.RegisterPlaces(starredPlaces);
+        import.StarredPlaces.Count.ShouldBe(1);
 
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
@@ -178,12 +178,12 @@ public class ImportCommandHandlerTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
 
-        var reloaded = await dbContext.Imports.Include(i => i.Batches).ThenInclude(b => b.StarredPlaces)
+        var reloaded = await dbContext.Imports.Include(i => i.StarredPlaces)
             .SingleAsync(i => i.UserId == userId);
-        reloaded.BatchesMap.Count.ShouldBe(0);
+        reloaded.StarredPlaces.Count.ShouldBe(0);
         reloaded.Total.ShouldBe(0);
 
-        busMock.Invocations.Any(i => i.Arguments[0] is ImportBatchesCleared).ShouldBeTrue();
+        busMock.Invocations.Any(i => i.Arguments[0] is ImportPlacesCleared).ShouldBeTrue();
         busMock.Invocations.Any(i => i.Arguments[0] is CheckJobMessage).ShouldBeTrue();
     }
 

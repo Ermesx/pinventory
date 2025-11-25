@@ -6,6 +6,7 @@ using Moq;
 using Nager.Country;
 
 using Pinventory.Pins.Application.Importing;
+using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
@@ -23,7 +24,7 @@ namespace Pinventory.Pins.Application.UnitTests.Importing;
 public class ImportProcessingHandlerTests
 {
     [Test]
-    public async Task ProcessBatch_creates_updates_conflicts_and_publishes_tagging()
+    public async Task ProcessPlaces_creates_updates_conflicts_and_publishes_tagging()
     {
         // Arrange
         var userId = "user-1";
@@ -52,7 +53,7 @@ public class ImportProcessingHandlerTests
                 null) // failed
         };
 
-        var registerResult = import.RegisterBatch(places);
+        var registerResult = import.RegisterPlaces(places);
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear();
@@ -71,8 +72,8 @@ public class ImportProcessingHandlerTests
                 v.ValidateAsync(It.IsAny<Import>(), It.Is<StarredPlace>(p => p.Name == "Removed"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.Invalid);
 
-        var batchId = import.BatchesMap.Keys.First();
-        var message = new ImportBatchRegistered(import.Id, userId, archiveJobId, batchId);
+        var placeIds = import.StarredPlaces.Select(x => x.Id).ToArray();
+        var message = new PlacesProcessingBatch(import.Id, userId, archiveJobId, placeIds);
 
         // Act
         await handler.HandleAsync(message);
@@ -91,12 +92,12 @@ public class ImportProcessingHandlerTests
         var publishCalls = busMock.Invocations.Where(i => i.Arguments.Count > 0 && i.Arguments[0] is AssignTagsToPinMessage).ToList();
         publishCalls.Count.ShouldBe(2);
 
-        // ImportBatchProcessed event should be published
-        busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportBatchProcessed).ShouldBeTrue();
+        // ImportPlacesProcessed event should be published
+        busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportPlaceProcessed).ShouldBeTrue();
     }
 
     [Test]
-    public async Task ProcessBatch_raises_events_adds_created_pins_and_publishes_tagging_when_job_not_yet_finished()
+    public async Task ProcessPlaces_raises_events_adds_created_pins_and_publishes_tagging_when_job_not_yet_finished()
     {
         // Arrange
         var userId = "user-1";
@@ -123,12 +124,11 @@ public class ImportProcessingHandlerTests
                 null) // create new
         };
 
-        var registerResult = import.RegisterBatch(places);
+        var registerResult = import.RegisterPlaces(places);
         // Add more places to ensure TryComplete will fail
-        import.RegisterBatch(new[]
-        {
+        import.RegisterPlaces([
             new StarredPlace("Extra", "http://maps.google.com/?cid=999", "Addr", Alpha2Code.PL, 9, 10, DateTimeOffset.UtcNow, null)
-        });
+        ]);
 
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
@@ -145,8 +145,8 @@ public class ImportProcessingHandlerTests
                 v.ValidateAsync(It.IsAny<Import>(), It.Is<StarredPlace>(p => p.Name == "Created"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
-        var batchId = import.BatchesMap.Keys.First();
-        var message = new ImportBatchRegistered(import.Id, userId, archiveJobId, batchId);
+        var placeIds = import.StarredPlaces.Select(x => x.Id).ToArray();
+        var message = new PlacesProcessingBatch(import.Id, userId, archiveJobId, placeIds);
 
         // Act
         await handler.HandleAsync(message);
@@ -156,18 +156,18 @@ public class ImportProcessingHandlerTests
         registerResult.IsSuccess.ShouldBeTrue();
         var reloadedImport = await dbContext.Imports.FirstAsync(i => i.UserId == userId);
         reloadedImport.State.ShouldBe(ImportState.InProgress);
-        busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportBatchProcessed).ShouldBeTrue();
+        busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportPlaceProcessed).ShouldBeTrue();
         dbContext.Pins.Local.Any(p => p.Name == "Created").ShouldBeTrue();
         var tagPublishCalls = busMock.Invocations.Where(i => i.Arguments.Count > 0 && i.Arguments[0] is AssignTagsToPinMessage).ToList();
-        tagPublishCalls.Count.ShouldBe(2);
+        tagPublishCalls.Count.ShouldBe(3);
     }
 
     [Test]
-    public async Task ProcessBatch_does_nothing_when_running_import_not_found()
+    public async Task ProcessPlaces_does_nothing_when_running_import_not_found()
     {
         // Arrange
         var (handler, _, busMock, _, _) = await CreateHandlerAsync();
-        var message = new ImportBatchRegistered(Guid.NewGuid(), "user-1", "job-404", Guid.NewGuid());
+        var message = new PlacesProcessingBatch(Guid.NewGuid(), "user-1", "job-404", [Guid.NewGuid()]);
 
         // Act
         await handler.HandleAsync(message);
@@ -177,7 +177,7 @@ public class ImportProcessingHandlerTests
     }
 
     [Test]
-    public async Task TryComplete_completes_import_when_all_batches_processed()
+    public async Task TryComplete_completes_import_when_all_places_processed()
     {
         // Arrange
         var userId = "user-1";
@@ -192,9 +192,11 @@ public class ImportProcessingHandlerTests
             new StarredPlace("Name", "http://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow, null)
         };
 
-        var registerResult = import.RegisterBatch(places);
-        var batchId = import.BatchesMap.Keys.First();
-        var processResult = await import.ProcessBatchAsync(batchId, validatorMock.Object);
+        var registerResult = import.RegisterPlaces(places);
+
+        var placeId = import.StarredPlaces.Single().Id;
+        var placesToProcess = new HashSet<Guid> { placeId };
+        var processResult = await import.ProcessPlacesAsync(placesToProcess, validatorMock.Object);
 
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
@@ -204,9 +206,9 @@ public class ImportProcessingHandlerTests
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
-        // First process the batch to set Processed count
-        var batchMessage = new ImportBatchRegistered(import.Id, userId, archiveJobId, batchId);
-        await handler.HandleAsync(batchMessage);
+        // First process the place to set Processed count
+        var processingMessage = new PlacesProcessingBatch(import.Id, userId, archiveJobId, [placeId]);
+        await handler.HandleAsync(processingMessage);
 
         dbContext.ChangeTracker.Clear();
         busMock.Invocations.Clear();

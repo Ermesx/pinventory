@@ -5,7 +5,6 @@ using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
-using Pinventory.Tagging.Worker;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -15,8 +14,6 @@ using Wolverine.RabbitMQ;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
-
-builder.Services.AddHostedService<Worker>();
 
 // Add services to the container.
 

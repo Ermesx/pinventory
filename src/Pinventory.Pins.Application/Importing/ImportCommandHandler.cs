@@ -14,7 +14,6 @@ using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas;
 
 using Wolverine;
-using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.Importing;
 
@@ -77,8 +76,7 @@ public sealed class ImportCommandHandler(
         return Result.Ok(archiveJobId).ToResultDto();
     }
 
-    public async Task<ResultDto> HandleAsync(RenewImportCommand command, [Entity(Required = false)] ImportProcess? saga,
-        CancellationToken cancellationToken = default)
+    public async Task<ResultDto> HandleAsync(RenewImportCommand command, ImportProcess? saga, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
@@ -86,7 +84,7 @@ public sealed class ImportCommandHandler(
             return Result.Fail<string>(Errors.Import.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
         }
 
-        if (import.ClearBatches() is { IsFailed: true } result)
+        if (import.ClearPlaces() is { IsFailed: true } result)
         {
             return Result.Fail<string>(result.Errors).ToResultDto();
         }

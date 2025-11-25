@@ -30,16 +30,16 @@ public static class Errors
 
         public static Error ImportNotInProgress(Importing.Import import) => new NotInProgressError(import);
 
-        public static Error CannotRegisterBatch(ImportState state) =>
-            new($"Cannot register batch because is not 'In Progress' (actual: '{state}')");
+        public static Error CannotRegisterPlaces(ImportState state) =>
+            new($"Cannot register places because is not 'In Progress' (actual: '{state}')");
 
-        public static Error BatchCannotBeEmpty() => new("Batch cannot be empty");
+        public static Error PlacesCannotBeEmpty() => new("Places cannot be empty");
 
-        public static Error BatchNotExists(Guid batchId, Importing.Import import) =>
-            new($"Batch '{batchId}' does not exist in import '{import.ArchiveJobId}' for user '{import.UserId}'");
+        public static Error ThereIsNoPlacesToProcess(Importing.Import import) =>
+            new($"There is no places to process for import '{import.ArchiveJobId}' for user '{import.UserId}'");
 
-        public static Error BatchesNotProcessed(Importing.Import import) =>
-            new($"Not all batches processed for import {import.ArchiveJobId} for user {import.UserId}");
+        public static Error PlacesNotProcessed(Importing.Import import) =>
+            new($"Not all places processed for import {import.ArchiveJobId} for user {import.UserId}");
 
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");

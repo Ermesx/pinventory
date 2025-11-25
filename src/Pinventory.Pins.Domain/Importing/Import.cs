@@ -9,27 +9,29 @@ namespace Pinventory.Pins.Domain.Importing
 {
     public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
     {
-        private readonly List<Batch> _batches = [];
+        private readonly HashSet<StarredPlace> _starredPlaces = new(new ImportStarredPlaceComparer());
 
         // ReSharper disable once UnusedMember.Local
         private Import() : this(string.Empty, Period.AllTime) { }
 
-        // TODO: Add value objects for UserId and ArchiveJobId
+        // TODO: Add value objects for UserId and ArchiveJobId and use init instead of constructor
         public string UserId { get; } = userId;
-        public Period Period { get; private set; } = period ?? Period.AllTime;
+        public Period Period { get; } = period ?? Period.AllTime;
         public string? ArchiveJobId { get; private set; }
         public ImportState State { get; private set; } = ImportState.Unspecified;
         public DateTimeOffset? StartedAt { get; private set; }
         public DateTimeOffset? CompletedAt { get; private set; }
 
-        [NotMapped]
-        public int Processed => _batches.Sum(x => x.StarredPlaces.Count(s => s.IsProcessed));
+        public IReadOnlyCollection<StarredPlace> StarredPlaces => _starredPlaces;
 
         [NotMapped]
-        public int Created => _batches.Sum(x => x.StarredPlaces.Count(s => s.State == StarredPlaceState.New));
+        public int Processed => _starredPlaces.Count(s => s.IsProcessed);
 
         [NotMapped]
-        public int Updated => _batches.Sum(x => x.StarredPlaces.Count(s => s.State == StarredPlaceState.Exists));
+        public int Created => _starredPlaces.Count(s => s.State == StarredPlaceState.New);
+
+        [NotMapped]
+        public int Updated => _starredPlaces.Count(s => s.State == StarredPlaceState.Exists);
 
         [NotMapped]
         public int Failed => FailedPlaces.Count;
@@ -38,21 +40,15 @@ namespace Pinventory.Pins.Domain.Importing
         public int Conflicts => ConflictedPlaces.Count;
 
         [NotMapped]
-        public int Total => _batches.Sum(x => x.StarredPlaces.Count);
-
-        public IReadOnlyCollection<Batch> Batches => _batches;
+        public int Total => _starredPlaces.Count;
 
         [NotMapped]
         public IReadOnlyCollection<StarredPlace> ConflictedPlaces =>
-            _batches.SelectMany(x => x.StarredPlaces.Where(s => s.State == StarredPlaceState.Conflicted)).ToList();
+            _starredPlaces.Where(s => s.State == StarredPlaceState.Conflicted).ToList();
 
         [NotMapped]
         public IReadOnlyCollection<StarredPlace> FailedPlaces =>
-            _batches.SelectMany(x => x.StarredPlaces.Where(s => s.State == StarredPlaceState.Invalid)).ToList();
-
-        [NotMapped]
-        public IReadOnlyDictionary<Guid, IReadOnlyCollection<StarredPlace>> BatchesMap =>
-            _batches.ToDictionary(x => x.Id, x => x.StarredPlaces);
+            _starredPlaces.Where(s => s.State == StarredPlaceState.Invalid).ToList();
 
         public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
         {
@@ -75,33 +71,31 @@ namespace Pinventory.Pins.Domain.Importing
             return Result.Ok();
         }
 
-        public Result<Success> RegisterBatch(IReadOnlyList<StarredPlace> starredPlaces)
+        public Result<Success> RegisterPlaces(IReadOnlyList<StarredPlace> places)
         {
             if (State != ImportState.InProgress)
             {
-                return Result.Fail(Errors.Import.CannotRegisterBatch(State));
+                return Result.Fail(Errors.Import.CannotRegisterPlaces(State));
             }
 
-            if (!starredPlaces.Any())
+            if (!places.Any())
             {
-                return Result.Fail(Errors.Import.BatchCannotBeEmpty());
+                return Result.Fail(Errors.Import.PlacesCannotBeEmpty());
             }
 
-            var batch = new Batch(starredPlaces);
-
-            if (_batches.Any(x => x.BatchThumbprint == batch.BatchThumbprint))
+            foreach (var place in places)
             {
-                return Result.Ok();
+                if (_starredPlaces.Add(place))
+                {
+                    Raise(new ImportPlaceRegistered(Id, UserId, ArchiveJobId!, place.Id));
+                }
             }
-
-            _batches.Add(batch);
-
-            Raise(new ImportBatchRegistered(Id, UserId, ArchiveJobId, batch.Id));
 
             return Result.Ok();
         }
 
-        public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessBatchAsync(Guid batchId,
+        public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessPlacesAsync(
+            IReadOnlySet<Guid> placeIds,
             IStaredPlaceValidator validator, CancellationToken cancellationToken = default)
         {
             if (State != ImportState.InProgress)
@@ -109,39 +103,29 @@ namespace Pinventory.Pins.Domain.Importing
                 return Result.Fail(Errors.Import.ImportNotInProgress(this));
             }
 
-            if (!BatchesMap.TryGetValue(batchId, out var batch))
+            var placesToProcess = _starredPlaces.Where(x => !x.IsProcessed && placeIds.Contains(x.Id)).ToList();
+            if (placesToProcess.Count == 0)
             {
-                return Result.Fail(Errors.Import.BatchNotExists(batchId, this));
+                return Result.Fail(Errors.Import.ThereIsNoPlacesToProcess(this));
             }
 
-            int processed = 0, created = 0, updated = 0, failed = 0, conflicts = 0;
             var toCreate = new List<StarredPlace>();
             var toUpdate = new List<StarredPlace>();
-            foreach (var place in batch.Where(x => !x.IsProcessed))
+            foreach (var place in placesToProcess)
             {
                 place.State = await validator.ValidateAsync(this, place, cancellationToken);
                 place.IsProcessed = true;
-                processed++;
-                switch (place.State)
+                if (place.State == StarredPlaceState.New)
                 {
-                    case StarredPlaceState.Invalid:
-                        failed++;
-                        continue;
-                    case StarredPlaceState.Conflicted:
-                        conflicts++;
-                        continue;
-                    case StarredPlaceState.New:
-                        toCreate.Add(place);
-                        created++;
-                        continue;
-                    case StarredPlaceState.Exists:
-                        toUpdate.Add(place);
-                        updated++;
-                        continue;
+                    toCreate.Add(place);
                 }
-            }
+                else if (place.State == StarredPlaceState.Exists)
+                {
+                    toUpdate.Add(place);
+                }
 
-            Raise(new ImportBatchProcessed(Id, UserId, ArchiveJobId!, processed, created, updated, failed, conflicts));
+                Raise(new ImportPlaceProcessed(Id, UserId, ArchiveJobId!, place.Id, place.State));
+            }
 
             return (toCreate, toUpdate);
         }
@@ -158,9 +142,9 @@ namespace Pinventory.Pins.Domain.Importing
                 return Result.Fail(Errors.Import.ImportNotInProgress(this));
             }
 
-            if (_batches.SelectMany(x => x.StarredPlaces).Any(x => !x.IsProcessed))
+            if (_starredPlaces.Any(x => !x.IsProcessed))
             {
-                return Result.Fail(Errors.Import.BatchesNotProcessed(this));
+                return Result.Fail(Errors.Import.PlacesNotProcessed(this));
             }
 
             State = ImportState.Complete;
@@ -170,15 +154,15 @@ namespace Pinventory.Pins.Domain.Importing
             return Result.Ok();
         }
 
-        public Result<Success> ClearBatches()
+        public Result<Success> ClearPlaces()
         {
             if (State != ImportState.InProgress)
             {
                 return Result.Fail(Errors.Import.ImportNotInProgress(this));
             }
 
-            _batches.Clear();
-            Raise(new ImportBatchesCleared(Id, UserId, ArchiveJobId!));
+            _starredPlaces.Clear();
+            Raise(new ImportPlacesCleared(Id, UserId, ArchiveJobId!));
 
             return Result.Ok();
         }

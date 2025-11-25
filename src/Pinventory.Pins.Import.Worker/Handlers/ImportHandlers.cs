@@ -2,10 +2,11 @@
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
-using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.ServiceDefaults.Wolverine;
 
+using Wolverine;
 using Wolverine.Attributes;
 using Wolverine.Persistence;
 
@@ -35,11 +36,20 @@ public static class ImportHandlers
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(download, cancellationToken);
 
-    public static async Task HandleAsync(ImportBatchRegistered batch, ImportProcessingHandler app,
+    public static async Task HandleAsync(PlacesProcessingBatch batch, ImportProcessingHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(batch, cancellationToken);
 
     public static async Task HandleAsync(ImportProcessCompleted completed, ImportProcessingHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(completed, cancellationToken);
+
+    public static void RouteImportProcessingLocally(this WolverineOptions options)
+    {
+        options.PublishMessage<CheckJobMessage>().LocalMessage<CheckJobMessage>();
+        options.PublishMessage<DownloadArchiveMessage>().LocalMessage<DownloadArchiveMessage>();
+        options.PublishMessage<PlacesProcessingBatch>().LocalMessage<PlacesProcessingBatch>();
+        options.PublishMessage<ImportProcessCompleted>().LocalMessage<ImportProcessCompleted>();
+        options.PublishMessage<ImportProcessTimeout>().LocalMessage<ImportProcessTimeout>();
+    }
 }

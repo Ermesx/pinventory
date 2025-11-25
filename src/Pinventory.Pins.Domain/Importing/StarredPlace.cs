@@ -26,4 +26,10 @@ public sealed class StarredPlace(
     public string? Comment { get; } = comment;
     public StarredPlaceState State { get; internal set; } = StarredPlaceState.New;
     public bool IsProcessed { get; internal set; }
+
+    public string Thumbprint => HashExtensions.GetThumbprint(hash =>
+    {
+        hash.AddString(GoogleMapsUrl);
+        hash.AddString(AddedDate.ToString("O"));
+    });
 }

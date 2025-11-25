@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
+using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
@@ -21,21 +21,22 @@ public class ImportProcessingHandler(
     IMessageContext bus,
     IStaredPlaceValidator validator) : ApplicationHandler(bus)
 {
-    public async Task HandleAsync(ImportBatchRegistered batch, CancellationToken cancellationToken = default)
+    public const int MaxBatchSize = 300;
+
+    public async Task HandleAsync(PlacesProcessingBatch batch, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Import {ArchiveJobId}: Processing batch {BatchId} pins for user {UserId}", batch.ArchiveJobId,
-            batch.BatchId, batch.UserId);
-        if (await dbContext.GetCurrentImport(batch.Id, cancellationToken) is not { } import)
+        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batch.ArchiveJobId, batch.UserId);
+        if (await dbContext.GetCurrentImport(batch.ImportId, cancellationToken) is not { } import)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
             return;
         }
 
-        var processResult = await import.ProcessBatchAsync(batch.BatchId, validator, cancellationToken);
+        var placesIds = batch.PlaceIds.ToHashSet();
+        var processResult = await import.ProcessPlacesAsync(placesIds, validator, cancellationToken);
         if (processResult.IsFailed)
         {
-            logger.LogError("Processing batch with id {BatchId} in job {ArchiveJobId} failed for user {UserId}", batch.BatchId,
-                import.ArchiveJobId, import.UserId);
+            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batch.ArchiveJobId, batch.UserId);
             return;
         }
 
@@ -46,15 +47,14 @@ public class ImportProcessingHandler(
 
         await RaiseEventsAsync(import);
 
-        foreach (Guid pinId in GetChangedPinIds())
+        foreach (Guid pinId in GetIdsForChangedPins())
         {
             await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
         }
 
         return;
 
-        IEnumerable<Guid> GetChangedPinIds() =>
-            updatedPins.Select(x => x.Id).Concat(newPins.Select(x => x.Id)).ToList();
+        IEnumerable<Guid> GetIdsForChangedPins() => updatedPins.Select(x => x.Id).Concat(newPins.Select(x => x.Id)).ToList();
 
         async Task<List<Pin>> CreatePins(IEnumerable<StarredPlace> create)
         {

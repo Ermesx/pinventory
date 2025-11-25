@@ -40,14 +40,17 @@ public class ImportConcurrencyPolicyTests
         var policyMock = new Mock<IImportConcurrencyPolicy>();
         policyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await completedImport.StartAsync("job-1", policyMock.Object);
-        completedImport.RegisterBatch([
+        completedImport.RegisterPlaces([
             new StarredPlace("Place", "http://maps.google.com/?cid=123", "Address", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow, null)
         ]);
-        var batchId = completedImport.BatchesMap.Keys.First();
+
+        var placeId = completedImport.StarredPlaces.Single().Id;
+        var placesToProcess = new HashSet<Guid> { placeId };
+
         var validatorMock = new Mock<IStaredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
-        await completedImport.ProcessBatchAsync(batchId, validatorMock.Object);
+        await completedImport.ProcessPlacesAsync(placesToProcess, validatorMock.Object);
         completedImport.Complete();
 
         await dbContext.Imports.AddAsync(completedImport);

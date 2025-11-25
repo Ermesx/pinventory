@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Domain.Importing.Events;
 
-public record ImportBatchesCleared(Guid Id, string UserId, string ArchiveJobId) : DomainEvent(Id);
+public abstract record ImportEvent(Guid Id, string UserId, string ArchiveJobId) : DomainEvent(Id);

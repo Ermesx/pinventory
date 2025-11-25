@@ -1,11 +1,16 @@
+using JasperFx.Core;
+
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Google;
 using Pinventory.Identity.Tokens.Grpc;
+using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
+using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Import.Worker;
 using Pinventory.Pins.Import.Worker.DataPortability;
+using Pinventory.Pins.Import.Worker.Handlers;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Services;
@@ -28,19 +33,30 @@ builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => 
 
 builder.UseWolverine(options =>
 {
+    options.AddDefaultWolverineOptions();
+
     if (!CodeGeneration.IsGenerating)
     {
         options.PersistMessagesWithPostgresql(connectionString!);
-
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
             .UseConventionalRouting()
             .AutoProvision();
     }
 
-    options.AddDefaultWolverineOptions();
+    options.RouteImportProcessingLocally();
+
+    options.Policies.ConventionalLocalRoutingIsAdditive();
+    options.MultipleHandlerBehavior = MultipleHandlerBehavior.Separated;
 
     options.Discovery.IncludeType<ImportProcess>();
+
+    options.BatchMessagesOf<ImportPlaceRegistered>(batching =>
+    {
+        batching.Batcher = new ImportProcessingBatcher();
+        batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
+        batching.TriggerTime = 1.Seconds();
+    }).Sequential();
 
     options.Services.AddDebugWolverineRouting();
 });

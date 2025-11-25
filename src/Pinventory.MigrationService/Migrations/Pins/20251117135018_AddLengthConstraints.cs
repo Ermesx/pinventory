@@ -11,7 +11,7 @@ namespace Pinventory.MigrationService.Migrations.Pins
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Drop the ImportSummaries view before altering columns
-            migrationBuilder.Sql(@"DROP VIEW IF EXISTS pins.""ImportSummaries"";");
+            migrationBuilder.Sql("""DROP VIEW IF EXISTS pins."ImportSummaries";""");
 
             migrationBuilder.AlterColumn<string>(
                 name: "OwnerId",

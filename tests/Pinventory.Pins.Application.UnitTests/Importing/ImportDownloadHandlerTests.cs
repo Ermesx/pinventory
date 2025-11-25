@@ -181,7 +181,7 @@ public class ImportDownloadHandlerTests
     }
 
     [Test]
-    public async Task DownloadArchive_publishes_batches_for_returned_features()
+    public async Task DownloadArchive_publishes_places_for_returned_features()
     {
         // Arrange
         var userId = "user-1";
@@ -217,8 +217,8 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportBatchRegistered>();
+        busMock.Invocations.Count.ShouldBe(3);
+        var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
         published.UserId.ShouldBe(userId);
         published.ArchiveJobId.ShouldBe(archiveJobId);
     }

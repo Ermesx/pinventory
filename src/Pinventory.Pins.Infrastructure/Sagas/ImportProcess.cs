@@ -11,9 +11,9 @@ public class ImportProcess : Saga
 {
     public Guid Id { get; init; }
 
-    public int TotalBatches { get; private set; }
+    public int TotalPlaces { get; private set; }
 
-    public int BatchesProcessed { get; private set; }
+    public int PlacesProcessed { get; private set; }
 
     public static (ImportProcess, ImportProcessTimeout) Start(ImportStarted @event, ILogger<ImportProcess> logger)
     {
@@ -22,23 +22,23 @@ public class ImportProcess : Saga
         return (new ImportProcess { Id = @event.Id }, new ImportProcessTimeout(@event.Id));
     }
 
-    public void Handle(ImportBatchRegistered @event, ILogger<ImportProcess> logger)
+    public void Handle(ImportPlaceRegistered @event, ILogger<ImportProcess> logger)
     {
-        logger.LogInformation("Batch added to Import process [Saga] for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
+        logger.LogInformation("Places added to Import process [Saga] for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
 
-        TotalBatches++;
+        TotalPlaces++;
     }
 
-    public ImportProcessCompleted? Handle(ImportBatchProcessed @event, ILogger<ImportProcess> logger)
+    public ImportProcessCompleted Handle(ImportPlaceProcessed @event, ILogger<ImportProcess> logger)
     {
-        logger.LogInformation("Batch processed added to Import process [Saga] for {ArchiveJobId} for {UserId}", @event.ArchiveJobId,
+        logger.LogInformation("Places processed added to Import process [Saga] for {ArchiveJobId} for {UserId}", @event.ArchiveJobId,
             @event.UserId);
 
-        BatchesProcessed++;
+        PlacesProcessed++;
 
-        if (BatchesProcessed < TotalBatches)
+        if (PlacesProcessed < TotalPlaces)
         {
-            return null;
+            return null!;
         }
 
         logger.LogInformation("Import process [Saga] completed for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
@@ -48,12 +48,12 @@ public class ImportProcess : Saga
         return new ImportProcessCompleted(@event.Id, @event.ArchiveJobId, @event.UserId);
     }
 
-    public void Handle(ImportBatchesCleared @event, ILogger<ImportProcess> logger)
+    public void Handle(ImportPlacesCleared @event, ILogger<ImportProcess> logger)
     {
         logger.LogInformation("Import process [Saga] cleared for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
 
-        TotalBatches = 0;
-        BatchesProcessed = 0;
+        TotalPlaces = 0;
+        PlacesProcessed = 0;
     }
 
     public void Handle(ImportFailed @event, ILogger<ImportProcess> logger)

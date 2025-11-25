@@ -4,6 +4,7 @@ using JasperFx.CodeGeneration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Wolverine;
+using Wolverine.Configuration;
 using Wolverine.EntityFrameworkCore;
 
 namespace Pinventory.ServiceDefaults.Wolverine;
@@ -42,4 +43,7 @@ public static class WolverineExtensions
         services.AddTransient<WolverineDebugger>();
         services.AddHostedService<WolverineHostedDebugger>();
     }
+
+    public static void LocalMessage<TMessage>(this PublishingExpression expression) =>
+        expression.Message<TMessage>().ToLocalQueue(typeof(TMessage).FullName!.ToLower());
 }

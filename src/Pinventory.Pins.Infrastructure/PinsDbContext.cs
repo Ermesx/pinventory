@@ -115,39 +115,29 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 .HasDefaultValue(0)
                 .IsRowVersion();
 
-            entity.OwnsMany(p => p.Batches, batch =>
+            entity.OwnsMany(b => b.StarredPlaces, starredPlace =>
             {
-                batch.ToTable("ImportBatches");
-                batch.WithOwner().HasForeignKey("ImportId");
-                batch.Property(b => b.Id).ValueGeneratedNever();
-                batch.HasKey(b => b.Id);
+                starredPlace.ToTable("ImportStarredPlaces");
+                starredPlace.WithOwner().HasForeignKey("ImportId");
+                starredPlace.Property(p => p.Id).ValueGeneratedNever();
+                starredPlace.HasKey(p => p.Id);
 
-                batch.OwnsMany(b => b.StarredPlaces, starredPlace =>
-                {
-                    starredPlace.ToTable("ImportStarredPlaces");
-                    starredPlace.WithOwner().HasForeignKey("BatchId");
-                    starredPlace.Property(p => p.Id).ValueGeneratedNever();
-                    starredPlace.HasKey(p => p.Id);
+                starredPlace.Property(p => p.Name).HasMaxLength(500);
+                starredPlace.Property(p => p.GoogleMapsUrl).IsRequired().HasMaxLength(2048);
+                starredPlace.Property(p => p.Address).HasMaxLength(1000);
+                starredPlace.Property(p => p.CountryCode).HasConversion<string>().HasMaxLength(2);
+                starredPlace.Property(p => p.Latitude);
+                starredPlace.Property(p => p.Longitude);
+                starredPlace.Property(p => p.AddedDate).IsRequired();
+                starredPlace.Property(p => p.Comment).HasMaxLength(2000);
+                starredPlace.Property(p => p.State).HasConversion<string>().IsRequired().HasMaxLength(20);
+                starredPlace.Property(p => p.IsProcessed).IsRequired();
 
-                    starredPlace.Property(p => p.Name).HasMaxLength(500);
-                    starredPlace.Property(p => p.GoogleMapsUrl).IsRequired().HasMaxLength(2048);
-                    starredPlace.Property(p => p.Address).HasMaxLength(1000);
-                    starredPlace.Property(p => p.CountryCode).HasConversion<string>().HasMaxLength(2);
-                    starredPlace.Property(p => p.Latitude);
-                    starredPlace.Property(p => p.Longitude);
-                    starredPlace.Property(p => p.AddedDate).IsRequired();
-                    starredPlace.Property(p => p.Comment).HasMaxLength(2000);
-                    starredPlace.Property(p => p.State).HasConversion<string>().IsRequired().HasMaxLength(20);
-                    starredPlace.Property(p => p.IsProcessed).IsRequired();
-
-                    starredPlace.HasIndex("BatchId");
-                    starredPlace.HasIndex("State");
-                });
-
-                batch.Navigation(b => b.StarredPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
+                starredPlace.HasIndex("ImportId");
+                starredPlace.HasIndex("State");
             });
 
-            entity.Navigation(p => p.Batches).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(p => p.StarredPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             entity.HasIndex(x => new { x.UserId, x.State })
                 .HasFilter("\"State\" = 'InProgress'")
@@ -166,8 +156,8 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedNever();
-            entity.Property(x => x.TotalBatches).IsRequired();
-            entity.Property(x => x.BatchesProcessed).IsRequired();
+            entity.Property(x => x.TotalPlaces).IsRequired();
+            entity.Property(x => x.PlacesProcessed).IsRequired();
         });
 
         // // TaggingJob

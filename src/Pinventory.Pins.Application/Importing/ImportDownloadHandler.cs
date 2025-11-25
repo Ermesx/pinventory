@@ -21,8 +21,6 @@ public sealed class ImportDownloadHandler(
     IMessageContext bus,
     IArchiveDownloader downloader) : ApplicationHandler(bus)
 {
-    private const int BatchSize = 50;
-
     public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.ImportId);
@@ -108,16 +106,12 @@ public sealed class ImportDownloadHandler(
 
         var records = dataResult.Value.Data.Features;
 
-        List<Result<Success>> results = [];
-        foreach (var batch in records.Chunk(BatchSize))
-        {
-            var starredPlaces = batch.Select(MapStarredPlace).ToList();
-            results.Add(import.RegisterBatch(starredPlaces));
-        }
+        var starredPlaces = records.Select(MapStarredPlace).ToList();
+        var result = import.RegisterPlaces(starredPlaces);
 
-        if (results.Any(x => x.IsFailed))
+        if (result.IsFailed)
         {
-            logger.LogError("Failed to download archive: {Errors}", results.SelectMany(x => x.Errors));
+            logger.LogError("Failed to download archive: {Errors}", result.Errors);
         }
 
         await RaiseEventsAsync(import);

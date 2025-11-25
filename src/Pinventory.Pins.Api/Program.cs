@@ -1,8 +1,13 @@
+using JasperFx.Core;
+
 using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults;
+using Pinventory.Pins.Api;
 using Pinventory.Pins.Api.Importing;
 using Pinventory.Pins.Api.Tags;
+using Pinventory.Pins.Application.Importing;
+using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
@@ -25,14 +30,25 @@ if (!CodeGeneration.IsGenerating)
 
     builder.Host.UseWolverine(options =>
     {
-        options.PersistMessagesWithPostgresql(connectionString!);
+        options.AddDefaultWolverineOptions();
 
+        options.PersistMessagesWithPostgresql(connectionString!);
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
             .UseConventionalRouting()
             .AutoProvision();
 
-        options.AddDefaultWolverineOptions();
+        options.RouteTagCatalogCommandsLocally();
+
+        options.Policies.ConventionalLocalRoutingIsAdditive();
+
+        options.BatchMessagesOf<ImportPlaceProcessed>(batching =>
+        {
+            batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
+            batching.TriggerTime = 1.Seconds();
+        }).Sequential();
+
+        options.Services.AddDebugWolverineRouting();
     });
 }
 
