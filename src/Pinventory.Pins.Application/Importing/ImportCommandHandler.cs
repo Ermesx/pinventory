@@ -50,7 +50,7 @@ public sealed class ImportCommandHandler(
             archiveJobId = archiveJobIdResult.Value;
         }
         // If an archive job already exists and there is no running import, use the existing job
-        else if (archiveJobIdResult.HasError<Errors.Import.ArchiveJobExists>(out var errors)
+        else if (archiveJobIdResult.HasError<Errors.ImportHandler.ArchiveJobExists>(out var errors)
                  && await dbContext.GetCurrentImport(command.UserId, cancellationToken) is null
                  && errors.First().ArchiveJobId is { } extractedArchiveJobId)
         {
@@ -81,7 +81,7 @@ public sealed class ImportCommandHandler(
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
-            return Result.Fail<string>(Errors.Import.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
+            return Result.Fail<string>(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
         }
 
         if (import.ClearPlaces() is { IsFailed: true } result)
@@ -109,7 +109,7 @@ public sealed class ImportCommandHandler(
         logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
-            return Result.Fail(Errors.Import.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
+            return Result.Fail(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);

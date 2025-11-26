@@ -32,6 +32,8 @@ public static class Errors
 
         public static Error CannotCancelJob(string archiveJobId) => new($"Cannot cancel job: {archiveJobId}");
 
-        public static Error ArchiveJobAlreadyExists() => new Application.Errors.Import.ArchiveJobExists();
+        public static Error ArchiveJobAlreadyExists() => new Application.Errors.ImportHandler.ArchiveJobExists();
+
+        public static Error UnexpectedError() => new("Unexpected error");
     }
 }

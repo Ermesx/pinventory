@@ -20,10 +20,14 @@ public static class Errors
         private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerId;
     }
 
-    public static class Import
+    public static class ImportHandler
     {
         public static Error RunningImportNotFound(string userId, string archiveJobId) =>
             new NotFoundError($"Import {archiveJobId} not found for user {userId}");
+
+        public static Error NotEnoughUrls() => new("Not enough URLs to download archive");
+
+        public static Error ExternalJobFailed() => new("Archive job failed externally");
 
         public class ArchiveJobExists() : Error("Archive job already exists")
         {

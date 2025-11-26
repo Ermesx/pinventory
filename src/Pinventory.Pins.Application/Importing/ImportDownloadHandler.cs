@@ -1,6 +1,4 @@
-﻿using FluentResults;
-
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
@@ -34,6 +32,7 @@ public sealed class ImportDownloadHandler(
         if (clientResult.IsFailed)
         {
             logger.LogError("Failed to create import service: {Errors}", clientResult.Errors);
+            await ReSchedule();
             return;
         }
 
@@ -42,6 +41,7 @@ public sealed class ImportDownloadHandler(
         if (archiveResult.IsFailed)
         {
             logger.LogError("Failed to check archive job: {Errors}", archiveResult.Errors);
+            await ReSchedule();
             return;
         }
 
@@ -49,25 +49,15 @@ public sealed class ImportDownloadHandler(
         {
             case ImportState.InProgress:
                 logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.ImportId);
-                await bus.ScheduleAsync(check with { }, CheckJobMessage.CheckInterval);
+                await ReSchedule();
                 return;
             case ImportState.Failed:
                 logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);
-                if (import.Fail(new Error("Archive job failed externally")) is { IsFailed: true } failResult)
-                {
-                    logger.LogError("Failed to fail import job: {Errors}", failResult.Errors);
-                    return;
-                }
-
+                import.Fail(Errors.ImportHandler.ExternalJobFailed());
                 break;
             case ImportState.Cancelled:
                 logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.ImportId);
-                if (import.Cancel() is { IsFailed: true } cancelResult)
-                {
-                    logger.LogError("Failed to cancel import job: {Errors}", cancelResult.Errors);
-                    return;
-                }
-
+                import.Cancel();
                 break;
             default:
                 var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
@@ -76,6 +66,10 @@ public sealed class ImportDownloadHandler(
         }
 
         await RaiseEventsAsync(import);
+
+        return;
+
+        async Task ReSchedule() => await bus.ScheduleAsync(check with { }, CheckJobMessage.CheckInterval);
     }
 
     public async Task HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
@@ -90,6 +84,8 @@ public sealed class ImportDownloadHandler(
         if (download.Urls.Count < 2)
         {
             logger.LogError("Not enough URLs to download archive");
+            import.Fail(Errors.ImportHandler.NotEnoughUrls());
+            await RaiseEventsAsync(import);
             return;
         }
 
@@ -101,6 +97,8 @@ public sealed class ImportDownloadHandler(
         if (dataResult.IsFailed)
         {
             logger.LogError("Failed to download archive: {Errors}", dataResult.Errors);
+            import.Fail(dataResult.Errors[0]);
+            await RaiseEventsAsync(import);
             return;
         }
 
@@ -111,7 +109,8 @@ public sealed class ImportDownloadHandler(
 
         if (result.IsFailed)
         {
-            logger.LogError("Failed to download archive: {Errors}", result.Errors);
+            logger.LogError("Failed to register places: {Errors}", result.Errors);
+            import.Fail(result.Errors[0]);
         }
 
         await RaiseEventsAsync(import);

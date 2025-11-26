@@ -57,7 +57,13 @@ public sealed class ImportService(IOptions<GoogleAuthOptions> options, GoogleAcc
             logger.LogWarning(e, "Archive job already exists");
 
             return Result.Fail(Errors.ImportService.ArchiveJobAlreadyExists().CausedBy(e)
-                .WithMetadata(Application.Errors.Import.ArchiveJobExists.ArchiveJobIdMetadataKey, errorResponse.ExtractArchiveJobId()));
+                .WithMetadata(Application.Errors.ImportHandler.ArchiveJobExists.ArchiveJobIdMetadataKey,
+                    errorResponse.ExtractArchiveJobId()));
+        }
+        catch (GoogleApiException e)
+        {
+            logger.LogError(e, "Failed to initiate archive job");
+            return Result.Fail(Errors.ImportService.UnexpectedError().CausedBy(e));
         }
     }
 
