@@ -15,6 +15,7 @@ using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Shouldly;
 
@@ -169,6 +170,7 @@ public class ImportDownloadHandlerTests
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
         await dbContext.Imports.AddAsync(import);
         await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
 
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://only-one"]);
 
@@ -177,7 +179,8 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(0);
+        busMock.Invocations.Count.ShouldBe(1);
+        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
     }
 
     [Test]
@@ -217,10 +220,13 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(3);
+        busMock.Invocations.Count.ShouldBe(4);
         var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
         published.UserId.ShouldBe(userId);
         published.ArchiveJobId.ShouldBe(archiveJobId);
+        busMock.Invocations[1].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
+        busMock.Invocations[2].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
+        busMock.Invocations[3].Arguments[0].ShouldBeOfType<ExpectedBatchesMessage>();
     }
 
     [Test]
@@ -261,7 +267,8 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(0);
+        busMock.Invocations.Count.ShouldBe(1);
+        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
     }
 
     private static async Task<(ImportDownloadHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,

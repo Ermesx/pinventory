@@ -1,13 +1,10 @@
-﻿using System.Text.Json;
-
-using JasperFx;
+﻿using JasperFx;
 using JasperFx.CodeGeneration;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
-using Wolverine.Runtime.Serialization;
 
 namespace Pinventory.ServiceDefaults.Wolverine;
 
@@ -41,8 +38,6 @@ public static class WolverineExtensions
         options.Policies.UseDurableInboxOnAllListeners();
         options.Policies.UseDurableLocalQueues();
         options.Policies.AutoApplyTransactions();
-
-        options.DefaultSerializer = new SystemTextJsonSerializer(new JsonSerializerOptions());
 
         return options;
     }

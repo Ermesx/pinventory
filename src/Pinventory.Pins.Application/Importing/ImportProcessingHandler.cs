@@ -22,22 +22,22 @@ public class ImportProcessingHandler(
 {
     public const int MaxBatchSize = 300;
 
-    public async Task HandleAsync(PlacesProcessingBatchMessage batchMessage, CancellationToken cancellationToken = default)
+    public async Task HandleAsync(PlacesProcessingBatchMessage batch, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batchMessage.ArchiveJobId,
-            batchMessage.UserId);
-        if (await dbContext.GetCurrentImport(batchMessage.ImportId, cancellationToken) is not { } import)
+        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batch.ArchiveJobId,
+            batch.UserId);
+        if (await dbContext.GetCurrentImport(batch.ImportId, cancellationToken) is not { } import)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batchMessage.ArchiveJobId, batchMessage.UserId);
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
             return;
         }
 
-        var placesIds = batchMessage.PlaceIds.ToHashSet();
+        var placesIds = batch.PlaceIds.ToHashSet();
         var processResult = await import.ProcessPlacesAsync(placesIds, validator, cancellationToken);
         if (processResult.IsFailed)
         {
-            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batchMessage.ArchiveJobId,
-                batchMessage.UserId);
+            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batch.ArchiveJobId,
+                batch.UserId);
             return;
         }
 
@@ -53,7 +53,7 @@ public class ImportProcessingHandler(
             await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
         }
 
-        await bus.SendAsync(new BatchCompletedMessage(batchMessage.ImportId, batchMessage.UserId, batchMessage.ArchiveJobId));
+        await bus.SendAsync(new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId));
 
         return;
 
