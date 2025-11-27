@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Google;
 using Pinventory.Identity.Tokens.Grpc;
+using Pinventory.Pins.Application;
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Services;
+using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Import.Worker;
@@ -18,6 +20,7 @@ using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 
 using Wolverine;
+using Wolverine.Configuration;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
 using Wolverine.RabbitMQ;
@@ -27,39 +30,48 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.AddServiceDefaults();
 
 // Add services to the container.
-
-var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");
-builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => options.UseNpgsql(connectionString));
-
-builder.UseWolverine(options =>
+if (!CodeGeneration.IsGenerating)
 {
-    options.AddDefaultWolverineOptions();
+    var connectionString = builder.Configuration.GetConnectionString("pinventory-pins-db");
+    builder.Services.AddDbContextWithWolverineIntegration<PinsDbContext>(options => options.UseNpgsql(connectionString));
 
-    if (!CodeGeneration.IsGenerating)
+    builder.UseWolverine(options =>
     {
+        options.AddDefaultWolverineOptions("pins_import_worker");
+
         options.PersistMessagesWithPostgresql(connectionString!);
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
-            .UseConventionalRouting()
             .AutoProvision();
-    }
 
-    options.RouteImportProcessingLocally();
+        options.RouteImportProcessing();
 
-    options.Policies.ConventionalLocalRoutingIsAdditive();
-    options.MultipleHandlerBehavior = MultipleHandlerBehavior.Separated;
+        options.ListenToRabbitQueue("pins.import.worker.events")
+            .ConfigureQueue(q => q.BindExchange(PinsMessaging.ExchangeNames.DomainEvents))
+            .PartitionProcessingByGroupId(PartitionSlots.Five);
 
-    options.Discovery.IncludeType<ImportProcess>();
+        options.Publish(rule =>
+        {
+            rule.MessagesImplementing<DomainEvent>();
+            rule.ToRabbitExchange(PinsMessaging.ExchangeNames.DomainEvents);
+        });
 
-    options.BatchMessagesOf<ImportPlaceRegistered>(batching =>
-    {
-        batching.Batcher = new ImportProcessingBatcher();
-        batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
-        batching.TriggerTime = 1.Seconds();
-    }).Sequential();
+        options.MessagePartitioning.UseInferredMessageGrouping();
 
-    options.Services.AddDebugWolverineRouting();
-});
+        options.MultipleHandlerBehavior = MultipleHandlerBehavior.Separated;
+
+        options.Discovery.IncludeType<ImportProcess>();
+
+        options.BatchMessagesOf<ImportPlaceRegistered>(batching =>
+        {
+            batching.Batcher = new ImportProcessingBatcher();
+            batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
+            batching.TriggerTime = 1.Seconds();
+        }).UseDurableInbox();
+
+        options.Services.AddDebugWolverineRouting();
+    });
+}
 
 builder.Services.AddMemoryCache();
 

@@ -6,7 +6,8 @@ using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api;
 using Pinventory.Pins.Api.Importing;
 using Pinventory.Pins.Api.Tags;
-using Pinventory.Pins.Application.Importing;
+using Pinventory.Pins.Application;
+using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.ServiceDefaults;
@@ -30,23 +31,31 @@ if (!CodeGeneration.IsGenerating)
 
     builder.Host.UseWolverine(options =>
     {
-        options.AddDefaultWolverineOptions();
+        options.AddDefaultWolverineOptions("pins_api");
 
         options.PersistMessagesWithPostgresql(connectionString!);
         options.UseRabbitMqUsingNamedConnection("rabbit-mq")
             .EnableWolverineControlQueues()
-            .UseConventionalRouting()
             .AutoProvision();
 
-        options.RouteTagCatalogCommandsLocally();
+        options.RouteImportCommands();
+        options.RouteTagCatalogCommands();
 
-        options.Policies.ConventionalLocalRoutingIsAdditive();
+        options.ListenToRabbitQueue("pins.api.events")
+            .ConfigureQueue(q => q.BindExchange(PinsMessaging.ExchangeNames.DomainEvents));
+
+        options.Publish(rule =>
+        {
+            rule.MessagesImplementing<DomainEvent>();
+            rule.ToRabbitExchange(PinsMessaging.ExchangeNames.DomainEvents);
+        });
+
 
         options.BatchMessagesOf<ImportPlaceProcessed>(batching =>
         {
-            batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
+            batching.BatchSize = 25;
             batching.TriggerTime = 1.Seconds();
-        }).Sequential();
+        }).BufferedInMemory();
 
         options.Services.AddDebugWolverineRouting();
     });

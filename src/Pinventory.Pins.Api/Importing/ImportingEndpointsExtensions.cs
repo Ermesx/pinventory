@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Api.Importing.Realtime;
+using Pinventory.Pins.Application;
 using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
+using Wolverine.RabbitMQ;
 
 using Errors = Pinventory.Pins.Application.Errors;
 
@@ -140,5 +142,12 @@ public static class ImportingEndpointsExtensions
             : result.HasError<Errors.NotFoundError>()
                 ? Results.NotFound(result.Errors)
                 : Results.Conflict(result.Errors);
+    }
+
+    public static void RouteImportCommands(this WolverineOptions options)
+    {
+        options.PublishMessage<StartImportCommand>().ToRabbitQueue(PinsMessaging.QueueNames.ImportCommands);
+        options.PublishMessage<RenewImportCommand>().ToRabbitQueue(PinsMessaging.QueueNames.ImportCommands);
+        options.PublishMessage<CancelImportCommand>().ToRabbitQueue(PinsMessaging.QueueNames.ImportCommands);
     }
 }

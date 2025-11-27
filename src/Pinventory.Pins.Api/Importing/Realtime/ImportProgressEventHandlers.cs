@@ -15,13 +15,17 @@ public static class ImportProgressEventHandlers
     {
         var (importId, userId, archiveJobId) = events.GetIdentifiers();
         var counters = events.CountBy(e => e.PlaceState).ToDictionary();
+
         return hub.Clients.Group(ImportProgressHub.UserGroup(userId))
             .ProgressUpdated(new ImportProgressDto(importId, archiveJobId,
                 events.Length,
-                counters[StarredPlaceState.New],
-                counters[StarredPlaceState.Exists],
-                counters[StarredPlaceState.Invalid],
-                counters[StarredPlaceState.Conflicted]));
+                GetCount(counters, StarredPlaceState.New),
+                GetCount(counters, StarredPlaceState.Exists),
+                GetCount(counters, StarredPlaceState.Invalid),
+                GetCount(counters, StarredPlaceState.Conflicted)));
+
+        static int GetCount(IReadOnlyDictionary<StarredPlaceState, int> placeStateCounters, StarredPlaceState starredPlaceState)
+            => placeStateCounters.TryGetValue(starredPlaceState, out var count) ? count : 0;
     }
 
     public static Task Handle(ImportCompleted @event, IHubContext<ImportProgressHub, IImportProgressClient> hub)

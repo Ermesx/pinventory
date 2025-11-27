@@ -1,17 +1,19 @@
-﻿using JasperFx;
+﻿using System.Text.Json;
+
+using JasperFx;
 using JasperFx.CodeGeneration;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Wolverine;
-using Wolverine.Configuration;
 using Wolverine.EntityFrameworkCore;
+using Wolverine.Runtime.Serialization;
 
 namespace Pinventory.ServiceDefaults.Wolverine;
 
 public static class WolverineExtensions
 {
-    public static WolverineOptions AddDefaultWolverineOptions(this WolverineOptions options)
+    public static WolverineOptions AddDefaultWolverineOptions(this WolverineOptions options, string? messageStorageSchema = null)
     {
         if (CodeGeneration.IsGenerating)
         {
@@ -30,10 +32,17 @@ public static class WolverineExtensions
 
         options.UseEntityFrameworkCoreTransactions();
 
+        if (!string.IsNullOrEmpty(messageStorageSchema))
+        {
+            options.Durability.MessageStorageSchemaName = $"{messageStorageSchema}_wolverine";
+        }
+
         options.Policies.UseDurableOutboxOnAllSendingEndpoints();
         options.Policies.UseDurableInboxOnAllListeners();
         options.Policies.UseDurableLocalQueues();
         options.Policies.AutoApplyTransactions();
+
+        options.DefaultSerializer = new SystemTextJsonSerializer(new JsonSerializerOptions());
 
         return options;
     }
@@ -43,7 +52,4 @@ public static class WolverineExtensions
         services.AddTransient<WolverineDebugger>();
         services.AddHostedService<WolverineHostedDebugger>();
     }
-
-    public static void LocalMessage<TMessage>(this PublishingExpression expression) =>
-        expression.Message<TMessage>().ToLocalQueue(typeof(TMessage).FullName!.ToLower());
 }

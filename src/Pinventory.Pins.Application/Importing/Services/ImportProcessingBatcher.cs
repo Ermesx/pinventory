@@ -25,11 +25,11 @@ public class ImportProcessingBatcher : IMessageBatcher
             var placesIds = places.Select(x => x.PlaceId).ToArray();
             var (_, userId, archiveJobId) = places.GetIdentifiers();
 
-            var message = new PlacesProcessingBatch(group.Key, userId, archiveJobId, placesIds);
+            var message = new PlacesProcessingBatchMessage(group.Key, userId, archiveJobId, placesIds);
 
             yield return new Envelope(message, group);
         }
     }
 
-    public Type BatchMessageType => typeof(PlacesProcessingBatch);
+    public Type BatchMessageType => typeof(PlacesProcessingBatchMessage);
 }

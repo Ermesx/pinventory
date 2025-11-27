@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
@@ -11,7 +12,6 @@ using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Sagas;
 
 using Wolverine;
 
@@ -76,7 +76,8 @@ public sealed class ImportCommandHandler(
         return Result.Ok(archiveJobId).ToResultDto();
     }
 
-    public async Task<ResultDto> HandleAsync(RenewImportCommand command, ImportProcess? saga, CancellationToken cancellationToken = default)
+    // TODO: Get Import and Saga by ID as parameters
+    public async Task<ResultDto> HandleAsync(RenewImportCommand command, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
@@ -90,7 +91,7 @@ public sealed class ImportCommandHandler(
         }
 
         // Check if saga exists, if not, create it by event
-        if (saga is null)
+        if (!await dbContext.ImportProcesses.AnyAsync(x => x.Id == import.Id, cancellationToken))
         {
             logger.LogError("Import process [Saga] not found for {ImportId}", import.Id);
             await bus.PublishAsync(new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!));
@@ -102,7 +103,6 @@ public sealed class ImportCommandHandler(
 
         return ResultDto.Ok();
     }
-
 
     public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
     {

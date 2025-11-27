@@ -1,0 +1,3 @@
+﻿namespace Pinventory.Pins.Application.Importing.Messages;
+
+public record PlacesProcessingBatchMessage(Guid ImportId, string UserId, string ArchiveJobId, Guid[] PlaceIds);

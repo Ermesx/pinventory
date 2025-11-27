@@ -173,7 +173,7 @@ public class ImportCommandHandlerTests
         var command = new RenewImportCommand(userId, archiveJobId);
 
         // Act
-        var result = await handler.HandleAsync(command, null);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -195,7 +195,7 @@ public class ImportCommandHandlerTests
         var command = new RenewImportCommand("user-1", "job-404");
 
         // Act
-        var result = await handler.HandleAsync(command, null);
+        var result = await handler.HandleAsync(command);
 
         // Assert
         result.IsFailed.ShouldBeTrue();

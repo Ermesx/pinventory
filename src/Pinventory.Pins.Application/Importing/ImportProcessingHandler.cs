@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
-using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
@@ -23,20 +22,22 @@ public class ImportProcessingHandler(
 {
     public const int MaxBatchSize = 300;
 
-    public async Task HandleAsync(PlacesProcessingBatch batch, CancellationToken cancellationToken = default)
+    public async Task HandleAsync(PlacesProcessingBatchMessage batchMessage, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batch.ArchiveJobId, batch.UserId);
-        if (await dbContext.GetCurrentImport(batch.ImportId, cancellationToken) is not { } import)
+        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batchMessage.ArchiveJobId,
+            batchMessage.UserId);
+        if (await dbContext.GetCurrentImport(batchMessage.ImportId, cancellationToken) is not { } import)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
+            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batchMessage.ArchiveJobId, batchMessage.UserId);
             return;
         }
 
-        var placesIds = batch.PlaceIds.ToHashSet();
+        var placesIds = batchMessage.PlaceIds.ToHashSet();
         var processResult = await import.ProcessPlacesAsync(placesIds, validator, cancellationToken);
         if (processResult.IsFailed)
         {
-            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batch.ArchiveJobId, batch.UserId);
+            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batchMessage.ArchiveJobId,
+                batchMessage.UserId);
             return;
         }
 
@@ -51,6 +52,8 @@ public class ImportProcessingHandler(
         {
             await bus.PublishAsync(new AssignTagsToPinMessage(pinId));
         }
+
+        await bus.SendAsync(new BatchCompletedMessage(batchMessage.ImportId, batchMessage.UserId, batchMessage.ArchiveJobId));
 
         return;
 

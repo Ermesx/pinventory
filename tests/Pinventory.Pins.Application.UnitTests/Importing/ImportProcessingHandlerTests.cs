@@ -73,7 +73,7 @@ public class ImportProcessingHandlerTests
             .ReturnsAsync(StarredPlaceState.Invalid);
 
         var placeIds = import.StarredPlaces.Select(x => x.Id).ToArray();
-        var message = new PlacesProcessingBatch(import.Id, userId, archiveJobId, placeIds);
+        var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
         await handler.HandleAsync(message);
@@ -146,7 +146,7 @@ public class ImportProcessingHandlerTests
             .ReturnsAsync(StarredPlaceState.New);
 
         var placeIds = import.StarredPlaces.Select(x => x.Id).ToArray();
-        var message = new PlacesProcessingBatch(import.Id, userId, archiveJobId, placeIds);
+        var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
         await handler.HandleAsync(message);
@@ -167,7 +167,7 @@ public class ImportProcessingHandlerTests
     {
         // Arrange
         var (handler, _, busMock, _, _) = await CreateHandlerAsync();
-        var message = new PlacesProcessingBatch(Guid.NewGuid(), "user-1", "job-404", [Guid.NewGuid()]);
+        var message = new PlacesProcessingBatchMessage(Guid.NewGuid(), "user-1", "job-404", [Guid.NewGuid()]);
 
         // Act
         await handler.HandleAsync(message);
@@ -207,7 +207,7 @@ public class ImportProcessingHandlerTests
             .ReturnsAsync(StarredPlaceState.New);
 
         // First process the place to set Processed count
-        var processingMessage = new PlacesProcessingBatch(import.Id, userId, archiveJobId, [placeId]);
+        var processingMessage = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, [placeId]);
         await handler.HandleAsync(processingMessage);
 
         dbContext.ChangeTracker.Clear();

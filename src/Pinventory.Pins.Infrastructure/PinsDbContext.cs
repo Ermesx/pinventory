@@ -156,8 +156,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedNever();
-            entity.Property(x => x.TotalPlaces).IsRequired();
-            entity.Property(x => x.PlacesProcessed).IsRequired();
+            entity.Property(x => x.BatchesToProceed).IsRequired();
         });
 
         // // TaggingJob

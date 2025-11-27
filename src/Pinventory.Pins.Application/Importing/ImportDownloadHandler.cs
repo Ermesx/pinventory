@@ -6,6 +6,7 @@ using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Wolverine;
 
@@ -61,7 +62,7 @@ public sealed class ImportDownloadHandler(
                 break;
             default:
                 var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
-                await bus.PublishAsync(DownloadArchiveMessage.Create(check, urls));
+                await bus.SendAsync(DownloadArchiveMessage.Create(check, urls));
                 break;
         }
 
@@ -114,6 +115,9 @@ public sealed class ImportDownloadHandler(
         }
 
         await RaiseEventsAsync(import);
+
+        var batchesCount = (import.Total + ImportProcessingHandler.MaxBatchSize - 1) / ImportProcessingHandler.MaxBatchSize;
+        await bus.SendAsync(new ExpectedBatchesMessage(import.Id, import.UserId, import.ArchiveJobId!, batchesCount));
 
         return;
 
