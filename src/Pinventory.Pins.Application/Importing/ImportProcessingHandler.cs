@@ -102,10 +102,11 @@ public class ImportProcessingHandler(
             return;
         }
 
-        var tryComplete = import.Complete();
-        if (tryComplete.IsFailed)
+        var complete = import.Complete();
+        if (complete.IsFailed)
         {
-            logger.LogError("Failed to complete import job: {Errors}", tryComplete.Errors);
+            logger.LogError("Failed to complete import job: {Errors}", complete.Errors);
+            import.Fail(complete.Errors[0]);
             return;
         }
 
