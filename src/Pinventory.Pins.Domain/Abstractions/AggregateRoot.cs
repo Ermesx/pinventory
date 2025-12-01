@@ -1,4 +1,6 @@
-﻿namespace Pinventory.Pins.Domain.Abstractions;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Pinventory.Pins.Domain.Abstractions;
 
 public abstract class AggregateRoot(Guid? id) : Entity(id)
 {
@@ -6,7 +8,8 @@ public abstract class AggregateRoot(Guid? id) : Entity(id)
 
     public IReadOnlyCollection<object> DomainEvents => _domainEvents;
 
-    public long Version { get; private set; }
+    [Timestamp]
+    public uint Version { get; protected set; }
 
     protected void Raise(DomainEvent @event) => _domainEvents.Add(@event);
 }

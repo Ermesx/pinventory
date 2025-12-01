@@ -1,5 +1,3 @@
-﻿using Pinventory.Pins.Domain.Abstractions;
+﻿namespace Pinventory.Pins.Domain.Importing.Events;
 
-namespace Pinventory.Pins.Domain.Importing.Events;
-
-public record ImportFailed(Guid AggregateId, string Error) : DomainEvent(AggregateId);
+public sealed record ImportFailed(Guid Id, string UserId, string ArchiveJobId, string Error) : ImportEvent(Id, UserId, ArchiveJobId);

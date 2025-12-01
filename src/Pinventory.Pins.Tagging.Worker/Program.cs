@@ -4,7 +4,7 @@ using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.ServiceDefaults;
-using Pinventory.Tagging.Worker;
+using Pinventory.ServiceDefaults.Wolverine;
 
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -14,8 +14,6 @@ using Wolverine.RabbitMQ;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
-
-builder.Services.AddHostedService<Worker>();
 
 // Add services to the container.
 
@@ -34,6 +32,7 @@ builder.UseWolverine(options =>
 });
 
 builder.Services.AddScoped<ITagVerifier, TagVerifier>();
+builder.Services.AddMemoryCache();
 
 var host = builder.Build();
 host.Run();

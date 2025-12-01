@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google"/>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client"/>
     <PackageReference Include="Refit" />
     <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="Refitter.SourceGenerator">

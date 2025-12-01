@@ -18,11 +18,11 @@ public sealed class ImportServiceFactory(
     IOptions<GoogleAuthOptions> options,
     Tokens.TokensClient client,
     IMemoryCache cache,
-    ILogger<ImportServiceFactory> logger)
+    ILogger<ImportServiceFactory> logger,
+    ILoggerFactory loggerFactory)
     : IImportServiceFactory, IDisposable
 {
     private const int MaxAgeMinutes = 10;
-    private const int MaxAgeSecondsWhenFailed = 10;
 
     public void Dispose()
     {
@@ -40,7 +40,7 @@ public sealed class ImportServiceFactory(
 
             entry.SetSlidingExpiration(result.IsSuccess
                 ? TimeSpan.FromMinutes(MaxAgeMinutes)
-                : TimeSpan.FromSeconds(MaxAgeSecondsWhenFailed));
+                : TimeSpan.FromTicks(1));
 
             return result;
         }) ?? throw new InvalidOperationException("Failed to create import service");
@@ -61,7 +61,7 @@ public sealed class ImportServiceFactory(
 
         var tokens = CreateGoogleAccessToken(response.DataPortabilityAccessToken);
 
-        return new ImportService(options, tokens);
+        return new ImportService(options, tokens, loggerFactory.CreateLogger<ImportService>());
 
         static GoogleAccessToken CreateGoogleAccessToken(PairToken token) =>
             GoogleAccessToken.Create(token.Token, token.TokenType, token.RefreshToken, token.ExpiresAt.ToDateTimeOffset());

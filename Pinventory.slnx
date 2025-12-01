@@ -3,6 +3,7 @@
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
+    <File Path="global.json"/>
     <File Path="README.md" />
     <File Path="Directory.Packages.props" />
     <File Path="Directory.Build.props" />
@@ -19,11 +20,11 @@
   </Folder>
   <Folder Name="/src/identity/">
     <Project Path="src\Pinventory.Identity.Tokens.Grpc\Pinventory.Identity.Tokens.Grpc.csproj" />
-    <Project Path="src\Pinventory.Identity\Pinventory.Identity.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Identity\Pinventory.Identity.csproj" Type="C#"/>
   </Folder>
   <Folder Name="/src/notifications/">
     <Project Path="src\Pinventory.Notifications.Api\Pinventory.Notifications.Api.csproj" />
-    <Project Path="src\Pinventory.Notifications\Pinventory.Notifications.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Notifications\Pinventory.Notifications.csproj" Type="C#"/>
   </Folder>
   <Folder Name="/src/pins/">
     <Project Path="src\Pinventory.Pins.Api\Pinventory.Pins.Api.csproj" />
@@ -31,14 +32,14 @@
     <Project Path="src\Pinventory.Pins.Tagging.Worker\Pinventory.Pins.Tagging.Worker.csproj" />
   </Folder>
   <Folder Name="/src/pins/libs/">
-    <Project Path="src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Pins.Application\Pinventory.Pins.Application.csproj" Type="C#"/>
     <Project Path="src\Pinventory.Pins.Domain\Pinventory.Pins.Domain.csproj" />
-    <Project Path="src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.Pins.Infrastructure\Pinventory.Pins.Infrastructure.csproj" Type="C#"/>
   </Folder>
   <Folder Name="/src/shared/">
-    <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj" Type="C#" />
-    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj" Type="C#" />
-    <Project Path="src\Pinventory.MigrationService\Pinventory.MigrationService.csproj" Type="Classic C#" />
+    <Project Path="src\Pinventory.ApiDefaults\Pinventory.ApiDefaults.csproj"/>
+    <Project Path="src\Pinventory.Google\Pinventory.Google.csproj"/>
+    <Project Path="src\Pinventory.MigrationService\Pinventory.MigrationService.csproj" Type="C#"/>
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pinventory.Testing/Pinventory.Testing.csproj" />
@@ -51,6 +52,7 @@
     <Project Path="tests/Pinventory.Identity.UnitTests/Pinventory.Identity.UnitTests.csproj" />
     <Project Path="tests/Pinventory.Pins.Application.UnitTests/Pinventory.Pins.Application.UnitTests.csproj"/>
     <Project Path="tests/Pinventory.Pins.Domain.UnitTests/Pinventory.Pins.Domain.UnitTests.csproj"/>
+    <Project Path="tests/Pinventory.Pins.Infrastructure.UnitTests/Pinventory.Pins.Infrastructure.UnitTests.csproj"/>
   </Folder>
   <Project Path="src/Pinventory.AppHost/Pinventory.AppHost.csproj" />
   <Project Path="src/Pinventory.ServiceDefaults/Pinventory.ServiceDefaults.csproj" />

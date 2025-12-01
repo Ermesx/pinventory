@@ -3,14 +3,18 @@
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Tags;
+using Pinventory.Pins.Infrastructure.ReadModels;
+using Pinventory.Pins.Infrastructure.Sagas;
 
 namespace Pinventory.Pins.Infrastructure;
 
 public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbContext(options)
 {
+    public DbSet<TagCatalog> TagCatalogs => Set<TagCatalog>();
     public DbSet<Pin> Pins => Set<Pin>();
     public DbSet<Import> Imports => Set<Import>();
-    public DbSet<TagCatalog> TagCatalogs => Set<TagCatalog>();
+    public DbSet<ImportSummary> ImportSummaries => Set<ImportSummary>();
+    public DbSet<ImportProcess> ImportProcesses => Set<ImportProcess>();
 
     /*public DbSet<TaggingJob> TaggingJobs => Set<TaggingJob>();
     public DbSet<VerificationJob> VerificationJobs => Set<VerificationJob>();*/
@@ -23,21 +27,24 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<Pin>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.OwnerId).IsRequired();
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.OwnerId).IsRequired().HasMaxLength(100);
+            entity.Property(x => x.Name).IsRequired().HasMaxLength(500);
 
             entity.Property(x => x.PlaceId)
                 .HasConversion(id => id.Id, id => new GooglePlaceId(id))
-                .IsRequired();
+                .IsRequired()
+                .HasMaxLength(100);
             entity.HasIndex(x => x.PlaceId).IsUnique();
 
-            entity.Property(x => x.Status).HasConversion<string>().IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().IsRequired().HasMaxLength(20);
             entity.Property(x => x.StatusUpdatedAt).IsRequired();
             entity.Property(x => x.AddedAt).IsRequired();
 
             entity.ComplexProperty(x => x.Address, cb =>
             {
-                cb.Property(p => p.Line).HasColumnName("Address").IsRequired();
-                cb.Property(p => p.CountryCode).HasColumnName("CountryCode").HasConversion<string>().IsRequired();
+                cb.Property(p => p.Line).HasColumnName("Address").IsRequired().HasMaxLength(1000);
+                cb.Property(p => p.CountryCode).HasColumnName("CountryCode").HasConversion<string>().IsRequired().HasMaxLength(2);
             });
             entity.ComplexProperty(x => x.Location, cb =>
             {
@@ -45,15 +52,15 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 cb.Property(p => p.Longitude).HasColumnName("Longitude").IsRequired();
             });
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
+            entity.Property(x => x.Version)
                 .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+                .IsRowVersion();
 
             entity.OwnsMany(x => x.Tags, b =>
             {
                 b.ToTable("PinTags");
                 b.WithOwner().HasForeignKey("PinId");
-                b.Property(t => t.Value).IsRequired();
+                b.Property(t => t.Value).IsRequired().HasMaxLength(100);
                 b.HasKey("PinId", "Value");
                 b.HasIndex("Value");
             });
@@ -65,40 +72,38 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
         builder.Entity<TagCatalog>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.OwnerId);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.OwnerId).HasMaxLength(100);
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
-                .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+            entity.Property(x => x.Version)
+                .ValueGeneratedNever();
 
             entity.OwnsMany(x => x.Tags, e =>
             {
                 e.ToTable("CatalogTags");
                 e.WithOwner().HasForeignKey("CatalogId");
-                e.Property(i => i.Value).IsRequired();
+                e.Property(i => i.Value).IsRequired().HasMaxLength(100);
                 e.HasKey("CatalogId", "Value");
                 e.HasIndex("Value");
             });
 
+            entity.Property(x => x.Version)
+                .HasDefaultValue(0)
+                .IsRowVersion();
+
             entity.Navigation(x => x.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // ImportJob
+        // Import
         builder.Entity<Import>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.UserId).IsRequired();
-            entity.Property(x => x.ArchiveJobId);
-            entity.Property(x => x.State).HasConversion<string>().IsRequired();
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.UserId).IsRequired().HasMaxLength(100);
+            entity.Property(x => x.ArchiveJobId).HasMaxLength(200);
+            entity.Property(x => x.State).HasConversion<string>().IsRequired().HasMaxLength(20);
             entity.Property(x => x.StartedAt);
             entity.Property(x => x.CompletedAt);
-            entity.Property(x => x.Processed).IsRequired();
-            entity.Property(x => x.Created).IsRequired();
-            entity.Property(x => x.Updated).IsRequired();
-            entity.Property(x => x.Failed).IsRequired();
-            entity.Property(x => x.Conflicts).IsRequired();
-            entity.Property(x => x.Total).IsRequired();
-
 
             entity.ComplexProperty(x => x.Period, cb =>
             {
@@ -106,34 +111,52 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
                 cb.Property(p => p.End).HasColumnName("PeriodEnd").IsRequired();
             });
 
-            entity.Property(x => x.Version).IsConcurrencyToken()
+            entity.Property(x => x.Version)
                 .HasDefaultValue(0)
-                .ValueGeneratedOnAddOrUpdate();
+                .IsRowVersion();
 
-            entity.OwnsMany(x => x.ConflictedPlaces, e =>
+            entity.OwnsMany(b => b.StarredPlaces, starredPlace =>
             {
-                e.ToTable("ImportConflictedPlaces");
-                e.WithOwner().HasForeignKey("ImportId");
-                e.Property(p => p.MapsUrl).IsRequired();
-                e.Property(p => p.AddedDate).IsRequired();
-                e.HasKey("ImportId", "MapsUrl", "AddedDate");
+                starredPlace.ToTable("ImportStarredPlaces");
+                starredPlace.WithOwner().HasForeignKey("ImportId");
+                starredPlace.Property(p => p.Id).ValueGeneratedNever();
+                starredPlace.HasKey(p => p.Id);
+
+                starredPlace.Property(p => p.Name).HasMaxLength(500);
+                starredPlace.Property(p => p.GoogleMapsUrl).IsRequired().HasMaxLength(2048);
+                starredPlace.Property(p => p.Address).HasMaxLength(1000);
+                starredPlace.Property(p => p.CountryCode).HasConversion<string>().HasMaxLength(2);
+                starredPlace.Property(p => p.Latitude);
+                starredPlace.Property(p => p.Longitude);
+                starredPlace.Property(p => p.AddedDate).IsRequired();
+                starredPlace.Property(p => p.Comment).HasMaxLength(2000);
+                starredPlace.Property(p => p.State).HasConversion<string>().IsRequired().HasMaxLength(20);
+                starredPlace.Property(p => p.IsProcessed).IsRequired();
+
+                starredPlace.HasIndex("ImportId");
+                starredPlace.HasIndex("State");
             });
 
-            entity.OwnsMany(x => x.FailedPlaces, e =>
-            {
-                e.ToTable("ImportFailedPlaces");
-                e.WithOwner().HasForeignKey("ImportId");
-                e.Property(p => p.MapsUrl).IsRequired();
-                e.Property(p => p.AddedDate).IsRequired();
-                e.HasKey("ImportId", "MapsUrl", "AddedDate");
-            });
-
-            entity.Navigation(x => x.ConflictedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
-            entity.Navigation(x => x.FailedPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(p => p.StarredPlaces).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             entity.HasIndex(x => new { x.UserId, x.State })
                 .HasFilter("\"State\" = 'InProgress'")
                 .IsUnique();
+        });
+
+        // ImportSummary (View)
+        builder.Entity<ImportSummary>(entity =>
+        {
+            entity.ToView("ImportSummaries");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.State).HasConversion<string>();
+        });
+
+        builder.Entity<ImportProcess>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.BatchesToProceed).IsRequired();
         });
 
         // // TaggingJob

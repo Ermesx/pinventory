@@ -19,6 +19,17 @@ public sealed class TokenService(UserManager<User> userManager)
 
     private const string DataPortabilityProvider = "Google.DataPortability";
 
+    public async Task<GoogleTokens?> GetGoogleTokensAsync(string googleUserId)
+    {
+        User? user = await userManager.FindByLoginAsync(GoogleDefaults.AuthenticationScheme, googleUserId);
+        if (user is null)
+        {
+            return null;
+        }
+
+        return await GetGoogleTokensAsync(user);
+    }
+
     public async Task<GoogleTokens?> GetGoogleTokensAsync(ClaimsPrincipal principal)
     {
         User? user = await userManager.GetUserAsync(principal);
@@ -27,6 +38,11 @@ public sealed class TokenService(UserManager<User> userManager)
             return null;
         }
 
+        return await GetGoogleTokensAsync(user);
+    }
+
+    public async Task<GoogleTokens?> GetGoogleTokensAsync(User user)
+    {
         // pulls from AuthenticationProperties created during external login
         var tokenType = await GetTokenAsync(TokenType, GoogleDefaults.AuthenticationScheme);
         var idToken = await GetTokenAsync(IdToken, GoogleDefaults.AuthenticationScheme);

@@ -1,140 +1,208 @@
-﻿using FluentResults;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing.Events;
 
-namespace Pinventory.Pins.Domain.Importing;
-
-public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
+namespace Pinventory.Pins.Domain.Importing
 {
-    private readonly List<ReportedPlace> _conflictedPlaces = [];
-    private readonly List<ReportedPlace> _failedPlaces = [];
-    private Import() : this(string.Empty, Period.AllTime) { }
-
-    // TODO: Add value objects for UserId and ArchiveJobId
-    public string UserId { get; } = userId;
-    public Period Period { get; private set; } = period ?? Period.AllTime;
-    public string? ArchiveJobId { get; private set; }
-    public ImportState State { get; private set; } = ImportState.Unspecified;
-    public DateTimeOffset? StartedAt { get; private set; }
-    public DateTimeOffset? CompletedAt { get; private set; }
-    public int Processed { get; private set; }
-    public int Created { get; private set; }
-    public int Updated { get; private set; }
-    public int Failed { get; private set; }
-    public int Conflicts { get; private set; }
-    public uint Total { get; private set; }
-    public IReadOnlyCollection<ReportedPlace> ConflictedPlaces => _conflictedPlaces;
-    public IReadOnlyCollection<ReportedPlace> FailedPlaces => _failedPlaces;
-
-    public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
+    public sealed class Import(string userId, Period? period = null, Guid? id = null) : AggregateRoot(id)
     {
-        if (string.IsNullOrWhiteSpace(archiveJobId))
+        private readonly HashSet<StarredPlace> _starredPlaces = new(new ImportStarredPlaceComparer());
+
+        // ReSharper disable once UnusedMember.Local
+        private Import() : this(string.Empty, Period.AllTime) { }
+
+        // TODO: Add value objects for UserId and ArchiveJobId and use init instead of constructor
+        public string UserId { get; } = userId;
+        public Period Period { get; } = period ?? Period.AllTime;
+        public string? ArchiveJobId { get; private set; }
+        public ImportState State { get; private set; } = ImportState.Unspecified;
+        public DateTimeOffset? StartedAt { get; private set; }
+        public DateTimeOffset? CompletedAt { get; private set; }
+
+        public IReadOnlyCollection<StarredPlace> StarredPlaces => _starredPlaces;
+
+        [NotMapped]
+        public int Processed => _starredPlaces.Count(s => s.IsProcessed);
+
+        [NotMapped]
+        public int Created => _starredPlaces.Count(s => s.State == StarredPlaceState.New);
+
+        [NotMapped]
+        public int Updated => _starredPlaces.Count(s => s.State == StarredPlaceState.Exists);
+
+        [NotMapped]
+        public int Failed => FailedPlaces.Count;
+
+        [NotMapped]
+        public int Conflicts => ConflictedPlaces.Count;
+
+        [NotMapped]
+        public int Total => _starredPlaces.Count;
+
+        [NotMapped]
+        public IReadOnlyCollection<StarredPlace> ConflictedPlaces =>
+            _starredPlaces.Where(s => s.State == StarredPlaceState.Conflicted).ToList();
+
+        [NotMapped]
+        public IReadOnlyCollection<StarredPlace> FailedPlaces =>
+            _starredPlaces.Where(s => s.State == StarredPlaceState.Invalid).ToList();
+
+        public async Task<Result<Success>> StartAsync(string archiveJobId, IImportConcurrencyPolicy policy)
         {
-            return Result.Fail(Errors.Import.ArchiveJobIdCannotBeEmpty());
+            if (string.IsNullOrWhiteSpace(archiveJobId))
+            {
+                return Result.Fail(Errors.Import.ArchiveJobIdCannotBeEmpty());
+            }
+
+            if (State != ImportState.Unspecified || !await policy.CanStartImportAsync(UserId))
+            {
+                return Result.Fail(Errors.Import.ImportAlreadyStartedOrFinished(this));
+            }
+
+            State = ImportState.InProgress;
+            ArchiveJobId = archiveJobId;
+            StartedAt = DateTimeOffset.UtcNow;
+
+            Raise(new ImportStarted(Id, UserId, ArchiveJobId));
+
+            return Result.Ok();
         }
 
-        if (State != ImportState.Unspecified || !await policy.CanStartImportAsync(UserId))
+        public Result<Success> RegisterPlaces(IReadOnlyList<StarredPlace> places)
         {
-            return Result.Fail(Errors.Import.ImportAlreadyStartedOrFinished(this));
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.CannotRegisterPlaces(State));
+            }
+
+            if (!places.Any())
+            {
+                return Result.Fail(Errors.Import.PlacesCannotBeEmpty());
+            }
+
+            foreach (var place in places)
+            {
+                if (_starredPlaces.Add(place))
+                {
+                    Raise(new ImportPlaceRegistered(Id, UserId, ArchiveJobId!, place.Id));
+                }
+            }
+
+            return Result.Ok();
         }
 
-        State = ImportState.InProgress;
-        ArchiveJobId = archiveJobId;
-        StartedAt = DateTimeOffset.UtcNow;
-
-        Raise(new ImportStarted(Id, UserId, ArchiveJobId));
-
-        return Result.Ok();
-    }
-
-    public Result<Success> AppendBatch(int processed, int created, int updated, int failed, int conflicts)
-    {
-        if (State != ImportState.InProgress)
+        public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessPlacesAsync(
+            IReadOnlySet<Guid> placeIds,
+            IStaredPlaceValidator validator, CancellationToken cancellationToken = default)
         {
-            return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            }
+
+            var placesToProcess = _starredPlaces.Where(x => !x.IsProcessed && placeIds.Contains(x.Id)).ToList();
+            if (placesToProcess.Count == 0)
+            {
+                return Result.Fail(Errors.Import.ThereIsNoPlacesToProcess(this));
+            }
+
+            var toCreate = new List<StarredPlace>();
+            var toUpdate = new List<StarredPlace>();
+            foreach (var place in placesToProcess)
+            {
+                place.State = await validator.ValidateAsync(this, place, cancellationToken);
+                place.IsProcessed = true;
+                if (place.State == StarredPlaceState.New)
+                {
+                    toCreate.Add(place);
+                }
+                else if (place.State == StarredPlaceState.Exists)
+                {
+                    toUpdate.Add(place);
+                }
+
+                Raise(new ImportPlaceProcessed(Id, UserId, ArchiveJobId!, place.Id, place.State));
+            }
+
+            return (toCreate, toUpdate);
         }
 
-        if (processed < 0 || created < 0 || updated < 0 || failed < 0 || conflicts < 0)
+        public Result<Success> Complete()
         {
-            return Result.Fail(Errors.Import.BatchCountersMustBeNonNegative());
+            if (State == ImportState.Complete)
+            {
+                return Result.Ok();
+            }
+
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            }
+
+            if (_starredPlaces.Any(x => !x.IsProcessed))
+            {
+                return Result.Fail(Errors.Import.PlacesNotProcessed(this));
+            }
+
+            State = ImportState.Complete;
+            CompletedAt = DateTimeOffset.UtcNow;
+            Raise(new ImportCompleted(Id, UserId, ArchiveJobId!));
+
+            return Result.Ok();
         }
 
-        Processed += processed;
-        Created += created;
-        Updated += updated;
-        Failed += failed;
-        Conflicts += conflicts;
-        Raise(new ImportBatchProcessed(Id, processed, created, updated, failed, conflicts));
-
-        return Result.Ok();
-    }
-
-    public Result<bool> TryComplete()
-    {
-        if (Processed < Total)
+        public Result<Success> ClearPlaces()
         {
-            return false;
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            }
+
+            _starredPlaces.Clear();
+            Raise(new ImportPlacesCleared(Id, UserId, ArchiveJobId!));
+
+            return Result.Ok();
         }
 
-        if (State != ImportState.InProgress)
+        public Result<Success> Fail(IError error)
         {
-            return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            if (State == ImportState.Failed)
+            {
+                return Result.Ok();
+            }
+
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            }
+
+            State = ImportState.Failed;
+            CompletedAt = DateTimeOffset.UtcNow;
+            Raise(new ImportFailed(Id, UserId, ArchiveJobId!, error.Message));
+
+            return Result.Ok();
         }
 
-        State = ImportState.Complete;
-        CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCompleted(Id));
-
-        return true;
-    }
-
-    public Result<Success> Fail(string error)
-    {
-        if (State != ImportState.InProgress)
+        public Result<Success> Cancel()
         {
-            return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            if (State == ImportState.Cancelled)
+            {
+                return Result.Ok();
+            }
+
+            if (State != ImportState.InProgress)
+            {
+                return Result.Fail(Errors.Import.ImportNotInProgress(this));
+            }
+
+            State = ImportState.Cancelled;
+            CompletedAt = DateTimeOffset.UtcNow;
+            Raise(new ImportCancelled(Id, UserId, ArchiveJobId!));
+
+            return Result.Ok();
         }
-
-        if (string.IsNullOrWhiteSpace(error))
-        {
-            return Result.Fail(Errors.Import.ErrorMessageCannotBeEmpty());
-        }
-
-        State = ImportState.Failed;
-        CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportFailed(Id, error));
-
-        return Result.Ok();
-    }
-
-    public Result<Success> Cancel()
-    {
-        if (State != ImportState.InProgress)
-        {
-            return Result.Fail(Errors.Import.ImportNotInProgress(this));
-        }
-
-        State = ImportState.Cancelled;
-        CompletedAt = DateTimeOffset.UtcNow;
-        Raise(new ImportCancelled(Id));
-
-        return Result.Ok();
-    }
-
-    public void UpdateTotal(uint count)
-    {
-        if (State != ImportState.InProgress)
-        {
-            return;
-        }
-
-        Total += count;
-    }
-
-    public void ReportConflictsAndFailures(IEnumerable<ReportedPlace> conflictingPlaces, IEnumerable<ReportedPlace> failedPlaces)
-    {
-        _conflictedPlaces.AddRange(conflictingPlaces);
-        _failedPlaces.AddRange(failedPlaces);
     }
 }

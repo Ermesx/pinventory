@@ -17,7 +17,6 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime"/>
     <PackageReference Include="WolverineFx"/>
     <PackageReference Include="WolverineFx.EntityFrameworkCore"/>
-    <PackageReference Include="WolverineFx.MemoryPack"/>
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

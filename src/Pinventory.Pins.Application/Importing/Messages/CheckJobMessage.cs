@@ -1,9 +1,9 @@
-﻿using Wolverine;
+﻿using JasperFx.Core;
 
 namespace Pinventory.Pins.Application.Importing.Messages;
 
 // Check every minute
-public record CheckJobMessage(string UserId, string ArchiveJobId) : TimeoutMessage(TimeSpan.FromMinutes(1)), ICorrelatedMessage
+public sealed record CheckJobMessage(Guid ImportId, string UserId, string ArchiveJobId)
 {
-    public static CheckJobMessage Create(ICorrelatedMessage message) => new(message.UserId, message.ArchiveJobId);
+    public static readonly TimeSpan CheckInterval = 15.Seconds();
 }

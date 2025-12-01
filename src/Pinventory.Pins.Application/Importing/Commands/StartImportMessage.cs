@@ -1,5 +1,3 @@
-﻿using Pinventory.Pins.Domain;
+﻿namespace Pinventory.Pins.Application.Importing.Commands;
 
-namespace Pinventory.Pins.Application.Importing.Commands;
-
-public record StartImportCommand(string UserId, Period? Period);
+public record StartImportCommand(string UserId, DateTimeOffset? Start, DateTimeOffset? End);

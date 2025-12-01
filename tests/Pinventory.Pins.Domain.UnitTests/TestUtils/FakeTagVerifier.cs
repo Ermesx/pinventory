@@ -6,5 +6,6 @@ public sealed class FakeTagVerifier(IEnumerable<string> allowed) : ITagVerifier
 {
     private readonly HashSet<string> _allowed = [.. allowed];
 
-    public bool IsAllowed(string? ownerId, string tag) => !string.IsNullOrWhiteSpace(tag) && _allowed.Contains(tag.Trim().ToLower());
+    public Task<bool> IsAllowedAsync(string? ownerId, string tag, CancellationToken cancellationToken = default) =>
+        Task.FromResult(!string.IsNullOrWhiteSpace(tag) && _allowed.Contains(tag.Trim().ToLower()));
 }

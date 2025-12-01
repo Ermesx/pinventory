@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Domain;
@@ -29,15 +30,27 @@ public static class Errors
 
         public static Error ImportNotInProgress(Importing.Import import) => new NotInProgressError(import);
 
-        public static Error ErrorMessageCannotBeEmpty() => new("Error message cannot be empty");
+        public static Error CannotRegisterPlaces(ImportState state) =>
+            new($"Cannot register places because is not 'In Progress' (actual: '{state}')");
 
-        public static Error BatchCountersMustBeNonNegative() => new("Batch counters must be non-negative");
+        public static Error PlacesCannotBeEmpty() => new("Places cannot be empty");
 
-        public static Error ImportNotCompleteYet(Importing.Import import) =>
-            new(
-                $"Import {import.ArchiveJobId} is not complete ({import.Processed} of {import.Total} processed) yet for user {import.UserId}");
+        public static Error ThereIsNoPlacesToProcess(Importing.Import import) =>
+            new($"There is no places to process for import '{import.ArchiveJobId}' for user '{import.UserId}'");
+
+        public static Error PlacesNotProcessed(Importing.Import import) =>
+            new($"Not all places processed for import {import.ArchiveJobId} for user {import.UserId}");
 
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");
+    }
+
+    public static class Period
+    {
+        public static Error PeriodStartMustBeBeforeEnd(DateTimeOffset? start, DateTimeOffset? end) =>
+            new IncorrectPeriodDates(start, end);
+
+        public class IncorrectPeriodDates(DateTimeOffset? start, DateTimeOffset? end)
+            : Error($"Period start ({start}) must be before end ({end})");
     }
 }

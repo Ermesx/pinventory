@@ -2,4 +2,4 @@
 
 namespace Pinventory.Pins.Domain.Places.Events;
 
-public record PinClosed(Guid AggregateId, PinStatus Status, PinStatus PreviousStatus) : DomainEvent(AggregateId);
+public record PinClosed(Guid Id, PinStatus Status, PinStatus PreviousStatus) : DomainEvent(Id);

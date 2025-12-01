@@ -3,6 +3,7 @@
 using Pinventory.Pins.Application.Tags;
 using Pinventory.Pins.Application.Tags.Commands;
 
+using Wolverine;
 using Wolverine.Attributes;
 
 namespace Pinventory.Pins.Api.Tags;
@@ -21,4 +22,11 @@ public static class TagCatalogHandlers
     public static async Task<Result<Success>> HandleAsync(RemoveTagCommand command, TagCatalogHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
+
+    public static void RouteTagCatalogCommands(this WolverineOptions options)
+    {
+        options.PublishMessage<DefineTagCatalogCommand>().Locally();
+        options.PublishMessage<AddTagCommand>().Locally();
+        options.PublishMessage<RemoveTagCommand>().Locally();
+    }
 }

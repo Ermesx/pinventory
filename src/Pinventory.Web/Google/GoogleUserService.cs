@@ -29,8 +29,13 @@ public class GoogleUserService(
         var principal = context.User;
         return await cache.GetOrCreateAsync(key, async entry =>
         {
-            entry.SlidingExpiration = TimeSpan.FromMinutes(CacheDurationMinutes);
-            return await GetGoogleUserIdAsyncInternal(principal);
+            var googleUserId = await GetGoogleUserIdAsyncInternal(principal);
+
+            entry.SetSlidingExpiration(googleUserId is not null
+                ? TimeSpan.FromMinutes(CacheDurationMinutes)
+                : TimeSpan.FromTicks(1));
+
+            return googleUserId;
         });
     }
 

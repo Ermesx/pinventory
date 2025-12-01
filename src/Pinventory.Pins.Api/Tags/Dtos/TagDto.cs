@@ -1,3 +1,3 @@
 ﻿namespace Pinventory.Pins.Api.Tags.Dtos;
 
-public record TagDto(string Tag);
+public sealed record TagDto(string Tag);

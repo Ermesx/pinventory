@@ -27,49 +27,34 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Importing.Import", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ArchiveJobId")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Conflicts")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Created")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Failed")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Processed")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("State")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("Total")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Updated")
-                        .HasColumnType("integer");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(0L);
+                        .HasColumnType("xid")
+                        .HasDefaultValue(0u)
+                        .HasColumnName("xmin");
 
                     b.ComplexProperty<Dictionary<string, object>>("Period", "Pinventory.Pins.Domain.Importing.Import.Period#Period", b1 =>
                         {
@@ -96,7 +81,6 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("AddedAt")
@@ -104,28 +88,33 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("OwnerId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("PlaceId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTimeOffset>("StatusUpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(0L);
+                        .HasColumnType("xid")
+                        .HasDefaultValue(0u)
+                        .HasColumnName("xmin");
 
                     b.ComplexProperty<Dictionary<string, object>>("Address", "Pinventory.Pins.Domain.Places.Pin.Address#Address", b1 =>
                         {
@@ -133,12 +122,14 @@ namespace Pinventory.MigrationService.Migrations.Pins
 
                             b1.Property<string>("CountryCode")
                                 .IsRequired()
-                                .HasColumnType("text")
+                                .HasMaxLength(2)
+                                .HasColumnType("character varying(2)")
                                 .HasColumnName("CountryCode");
 
                             b1.Property<string>("Line")
                                 .IsRequired()
-                                .HasColumnType("text")
+                                .HasMaxLength(1000)
+                                .HasColumnType("character varying(1000)")
                                 .HasColumnName("Address");
                         });
 
@@ -166,66 +157,154 @@ namespace Pinventory.MigrationService.Migrations.Pins
             modelBuilder.Entity("Pinventory.Pins.Domain.Tags.TagCatalog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("OwnerId")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<long>("Version")
+                    b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(0L);
+                        .HasColumnType("xid")
+                        .HasDefaultValue(0u)
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
                     b.ToTable("TagCatalogs", "pins");
                 });
 
+            modelBuilder.Entity("Pinventory.Pins.Infrastructure.ReadModels.ImportSummary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ArchiveJobId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Conflicts")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Created")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Failed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Processed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Total")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Updated")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("ImportSummaries", "pins");
+                });
+
+            modelBuilder.Entity("Pinventory.Pins.Infrastructure.Sagas.ImportProcess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BatchesToProceed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ImportProcesses", "pins");
+                });
+
             modelBuilder.Entity("Pinventory.Pins.Domain.Importing.Import", b =>
                 {
-                    b.OwnsMany("Pinventory.Pins.Domain.Importing.ReportedPlace", "ConflictedPlaces", b1 =>
+                    b.OwnsMany("Pinventory.Pins.Domain.Importing.StarredPlace", "StarredPlaces", b1 =>
                         {
-                            b1.Property<Guid>("ImportId")
+                            b1.Property<Guid>("Id")
                                 .HasColumnType("uuid");
-
-                            b1.Property<string>("MapsUrl")
-                                .HasColumnType("text");
 
                             b1.Property<DateTimeOffset>("AddedDate")
                                 .HasColumnType("timestamp with time zone");
 
-                            b1.HasKey("ImportId", "MapsUrl", "AddedDate");
+                            b1.Property<string>("Address")
+                                .HasMaxLength(1000)
+                                .HasColumnType("character varying(1000)");
 
-                            b1.ToTable("ImportConflictedPlaces", "pins");
+                            b1.Property<string>("Comment")
+                                .HasMaxLength(2000)
+                                .HasColumnType("character varying(2000)");
+
+                            b1.Property<string>("CountryCode")
+                                .HasMaxLength(2)
+                                .HasColumnType("character varying(2)");
+
+                            b1.Property<string>("GoogleMapsUrl")
+                                .IsRequired()
+                                .HasMaxLength(2048)
+                                .HasColumnType("character varying(2048)");
+
+                            b1.Property<Guid>("ImportId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<bool>("IsProcessed")
+                                .HasColumnType("boolean");
+
+                            b1.Property<double?>("Latitude")
+                                .HasColumnType("double precision");
+
+                            b1.Property<double?>("Longitude")
+                                .HasColumnType("double precision");
+
+                            b1.Property<string>("Name")
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ImportId");
+
+                            b1.HasIndex("State");
+
+                            b1.ToTable("ImportStarredPlaces", "pins");
 
                             b1.WithOwner()
                                 .HasForeignKey("ImportId");
                         });
 
-                    b.OwnsMany("Pinventory.Pins.Domain.Importing.ReportedPlace", "FailedPlaces", b1 =>
-                        {
-                            b1.Property<Guid>("ImportId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("MapsUrl")
-                                .HasColumnType("text");
-
-                            b1.Property<DateTimeOffset>("AddedDate")
-                                .HasColumnType("timestamp with time zone");
-
-                            b1.HasKey("ImportId", "MapsUrl", "AddedDate");
-
-                            b1.ToTable("ImportFailedPlaces", "pins");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ImportId");
-                        });
-
-                    b.Navigation("ConflictedPlaces");
-
-                    b.Navigation("FailedPlaces");
+                    b.Navigation("StarredPlaces");
                 });
 
             modelBuilder.Entity("Pinventory.Pins.Domain.Places.Pin", b =>
@@ -236,7 +315,8 @@ namespace Pinventory.MigrationService.Migrations.Pins
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Value")
-                                .HasColumnType("text");
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
 
                             b1.HasKey("PinId", "Value");
 
@@ -259,7 +339,8 @@ namespace Pinventory.MigrationService.Migrations.Pins
                                 .HasColumnType("uuid");
 
                             b1.Property<string>("Value")
-                                .HasColumnType("text");
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)");
 
                             b1.HasKey("CatalogId", "Value");
 

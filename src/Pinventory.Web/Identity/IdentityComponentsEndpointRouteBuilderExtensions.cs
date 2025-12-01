@@ -16,7 +16,7 @@ namespace Pinventory.Web.Identity;
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
-    public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointConventionBuilder MapIdentityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
@@ -28,9 +28,11 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             [FromForm] string provider,
             [FromForm] string returnUrl) =>
         {
-            IEnumerable<KeyValuePair<string, StringValues>> query = [
+            IEnumerable<KeyValuePair<string, StringValues>> query =
+            [
                 new("ReturnUrl", returnUrl),
-                new("Action", ExternalLogin.LoginCallbackAction)];
+                new("Action", ExternalLogin.LoginCallbackAction)
+            ];
 
             var redirectUrl = UriHelper.BuildRelative(
                 context.Request.PathBase,
@@ -64,7 +66,9 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
                 "/Account/Manage/ExternalLogins",
                 QueryString.Create("Action", ExternalLogins.LinkLoginCallbackAction));
 
-            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, signInManager.UserManager.GetUserId(context.User));
+            var properties =
+                signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl,
+                    signInManager.UserManager.GetUserId(context.User));
             return TypedResults.Challenge(properties, [provider]);
         });
 
@@ -87,8 +91,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
             // Only include personal data for download
             var personalData = new Dictionary<string, string>();
-            var personalDataProps = typeof(User).GetProperties().Where(
-                prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
+            var personalDataProps = typeof(User).GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
             foreach (var p in personalDataProps)
             {
                 personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");

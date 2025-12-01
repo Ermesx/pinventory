@@ -11,7 +11,7 @@ public static class Errors
         public static Error MissingDataPortabilityToken() => new("Data portability token is missing");
     }
 
-    public static class ArchiveDownload
+    public static class ArchiveDownloader
     {
         public static Error MissingService() => new("Missing service in archive browser");
 
@@ -24,5 +24,16 @@ public static class Errors
         public static Error HttpRequestFailed(HttpResponseMessage response) =>
             new(
                 $"HTTP request to '{response.RequestMessage?.RequestUri}' failed with status code {response.StatusCode}: {response.ReasonPhrase}");
+    }
+
+    public static class ImportService
+    {
+        public static Error ArchiveJobNotFound(string archiveJobId) => new($"Archive job not found: {archiveJobId}");
+
+        public static Error CannotCancelJob(string archiveJobId) => new($"Cannot cancel job: {archiveJobId}");
+
+        public static Error ArchiveJobAlreadyExists() => new Application.Errors.ImportHandler.ArchiveJobExists();
+
+        public static Error UnexpectedError() => new("Unexpected error");
     }
 }

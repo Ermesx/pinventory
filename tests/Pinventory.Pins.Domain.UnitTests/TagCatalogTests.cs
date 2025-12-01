@@ -20,9 +20,9 @@ public class TagCatalogTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         catalog.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
-        var evt = catalog.DomainEvents.Last().ShouldBeOfType<TagCatalogTagsDefined>();
-        evt.AggregateId.ShouldBe(catalog.Id);
-        evt.Tags.ShouldBe(["foo", "bar"], ignoreOrder: true);
+        var e = catalog.DomainEvents.Last().ShouldBeOfType<TagCatalogTagsDefined>();
+        e.Id.ShouldBe(catalog.Id);
+        e.Tags.ShouldBe(["foo", "bar"], ignoreOrder: true);
     }
 
     [Test]

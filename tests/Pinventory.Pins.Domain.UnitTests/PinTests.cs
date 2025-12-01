@@ -17,25 +17,25 @@ public class PinTests
         var verifier = Tagging.CreateTagVerifier();
 
         // Act
-        pin.AssignTags(tags!, verifier);
+        pin.AssignTagsAsync(tags!, verifier);
 
         // Assert
         pin.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinTagsAssigned>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Tags.ShouldBe(["foo", "bar"], ignoreOrder: true);
     }
 
     [Test]
-    public void AssignTags_replaces_previous_tags()
+    public async Task AssignTags_replaces_previous_tags()
     {
         // Arrange
         var pin = TestUtils.Pins.CreatePin();
         var verifier = Tagging.CreateTagVerifier(["a", "b", "c"]);
 
         // Act
-        pin.AssignTags(["a"], verifier);
-        pin.AssignTags(["b", "c"], verifier);
+        await pin.AssignTagsAsync(["a"], verifier);
+        await pin.AssignTagsAsync(["b", "c"], verifier);
 
         // Assert
         pin.Tags.Select(t => t.Value).ShouldBe(["b", "c"], ignoreOrder: true);
@@ -55,7 +55,7 @@ public class PinTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinClosed>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Status.ShouldBe(PinStatus.Closed);
         evt.PreviousStatus.ShouldBe(PinStatus.Open);
     }
@@ -119,7 +119,7 @@ public class PinTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         var evt = pin.DomainEvents.Last().ShouldBeOfType<PinOpened>();
-        evt.AggregateId.ShouldBe(pin.Id);
+        evt.Id.ShouldBe(pin.Id);
         evt.Status.ShouldBe(PinStatus.Open);
         evt.PreviousStatus.ShouldBe(PinStatus.TemporaryClosed);
     }
@@ -222,7 +222,7 @@ public class PinTests
     }
 
     [Test]
-    public void AssignTags_is_case_insensitive_in_filtering_and_distinct()
+    public async Task AssignTags_is_case_insensitive_in_filtering_and_distinct()
     {
         // Arrange
         var pin = TestUtils.Pins.CreatePin();
@@ -230,7 +230,7 @@ public class PinTests
         var verifier = Tagging.CreateTagVerifier();
 
         // Act
-        pin.AssignTags(tags, verifier);
+        await pin.AssignTagsAsync(tags, verifier);
 
         // Assert
         pin.Tags.Select(t => t.Value).ShouldBe(["foo", "bar"], ignoreOrder: true);
@@ -239,16 +239,16 @@ public class PinTests
     }
 
     [Test]
-    public void AssignTags_with_no_allowed_tags_clears_and_emits_no_event()
+    public async Task AssignTags_with_no_allowed_tags_clears_and_emits_no_event()
     {
         // Arrange
         var pin = TestUtils.Pins.CreatePin();
         var verifier = Tagging.CreateTagVerifier(); // allowed: foo, bar
-        pin.AssignTags(["foo"], verifier);
+        await pin.AssignTagsAsync(["foo"], verifier);
         var before = pin.DomainEvents.Count;
 
         // Act
-        pin.AssignTags(["bad", "   ", null!]!, verifier);
+        await pin.AssignTagsAsync(["bad", "   ", null!]!, verifier);
 
         // Assert
         pin.Tags.ShouldBeEmpty();

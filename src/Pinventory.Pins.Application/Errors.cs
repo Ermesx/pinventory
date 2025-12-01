@@ -1,6 +1,5 @@
 ﻿using FluentResults;
 
-using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Tags.Commands;
 
 namespace Pinventory.Pins.Application;
@@ -21,9 +20,20 @@ public static class Errors
         private static string? GetOwner(OwnerCommand command) => command.IsGlobal ? GlobalUser : command.OwnerId;
     }
 
-    public static class Import
+    public static class ImportHandler
     {
-        public static Error RunningImportNotFound(CancelImportCommand command) =>
-            new NotFoundError($"Import {command.ArchiveJobId} not found for user {command.UserId}");
+        public static Error RunningImportNotFound(string userId, string archiveJobId) =>
+            new NotFoundError($"Import {archiveJobId} not found for user {userId}");
+
+        public static Error NotEnoughUrls() => new("Not enough URLs to download archive");
+
+        public static Error ExternalJobFailed() => new("Archive job failed externally");
+
+        public class ArchiveJobExists() : Error("Archive job already exists")
+        {
+            public const string ArchiveJobIdMetadataKey = "ArchiveJobId";
+
+            public string? ArchiveJobId => Metadata[ArchiveJobIdMetadataKey] as string;
+        }
     }
 }
