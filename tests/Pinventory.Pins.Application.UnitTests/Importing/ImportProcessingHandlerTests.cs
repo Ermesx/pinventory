@@ -229,7 +229,7 @@ public class ImportProcessingHandlerTests
     }
 
     private static async Task<(ImportProcessingHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,
-        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStaredPlaceValidator> validatorMock)> CreateHandlerAsync()
+        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStarredPlaceValidator> validatorMock)> CreateHandlerAsync()
     {
         var options = new DbContextOptionsBuilder<PinsDbContext>()
             .UseSqlite(connectionString: "Data Source=:memory:")
@@ -242,7 +242,7 @@ public class ImportProcessingHandlerTests
         var logger = Mock.Of<ILogger<ImportProcessingHandler>>();
         var busMock = new Mock<IMessageContext>();
         var concurrencyPolicyMock = new Mock<IImportConcurrencyPolicy>();
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
 
         // sensible defaults
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

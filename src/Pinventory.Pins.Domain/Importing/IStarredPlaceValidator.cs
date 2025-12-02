@@ -1,6 +1,6 @@
 ﻿namespace Pinventory.Pins.Domain.Importing;
 
-public interface IStaredPlaceValidator
+public interface IStarredPlaceValidator
 {
     Task<StarredPlaceState> ValidateAsync(Import import, StarredPlace place, CancellationToken cancellationToken = default);
 }

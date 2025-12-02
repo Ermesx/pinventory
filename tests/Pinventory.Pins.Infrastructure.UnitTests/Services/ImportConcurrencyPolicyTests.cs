@@ -47,7 +47,7 @@ public class ImportConcurrencyPolicyTests
         var placeId = completedImport.StarredPlaces.Single().Id;
         var placesToProcess = new HashSet<Guid> { placeId };
 
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
         await completedImport.ProcessPlacesAsync(placesToProcess, validatorMock.Object);

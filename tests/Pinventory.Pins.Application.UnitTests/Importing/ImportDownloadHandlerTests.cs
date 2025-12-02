@@ -10,7 +10,6 @@ using Nager.Country;
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
-using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
@@ -159,32 +158,7 @@ public class ImportDownloadHandlerTests
     }
 
     [Test]
-    public async Task DownloadArchive_does_nothing_when_urls_missing()
-    {
-        // Arrange
-        var userId = "user-1";
-        var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock, _) = await CreateHandlerAsync();
-
-        var import = new Import(userId, Period.AllTime);
-        var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
-
-        var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://only-one"]);
-
-        // Act
-        await handler.HandleAsync(message);
-
-        // Assert
-        startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
-    }
-
-    [Test]
-    public async Task DownloadArchive_publishes_places_for_returned_features()
+    public async Task DownloadArchive_fails_when_urls_missing()
     {
         // Arrange
         var userId = "user-1";
@@ -197,21 +171,44 @@ public class ImportDownloadHandlerTests
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear();
 
-        var features = new[]
+        var urls = new List<string> { "https://only-one" };
+        downloaderMock.Setup(p => p.ProvideAsync(It.Is<IReadOnlyList<Uri>>(u => u.Count == urls.Count), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Fail("not enough urls"));
+
+        var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, urls);
+
+        // Act
+        await handler.HandleAsync(message);
+
+        // Assert
+        startResult.IsSuccess.ShouldBeTrue();
+        busMock.Invocations.Count.ShouldBe(1);
+        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
+    }
+
+    [Test]
+    public async Task DownloadArchive_publishes_places_for_returned_places()
+    {
+        // Arrange
+        var userId = "user-1";
+        var archiveJobId = "job-123";
+        var (handler, dbContext, busMock, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+
+        var import = new Import(userId, Period.AllTime);
+        var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
+        await dbContext.Imports.AddAsync(import);
+        await dbContext.SaveChangesAsync();
+        dbContext.ChangeTracker.Clear();
+
+        var places = new List<StarredPlace>
         {
-            new Feature(new Geometry([1.0, 2.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=111",
-                    new LocationAndName("Addr 1", Alpha2Code.PL, "Name 1"), null), "Feature"),
-            new Feature(new Geometry([3.0, 4.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=222",
-                    new LocationAndName("Addr 2", Alpha2Code.PL, "Name 2"), null), "Feature"),
-            new Feature(new Geometry([5.0, 6.0], "Point"),
-                new Properties(DateTimeOffset.UtcNow, "http://maps.google.com/?cid=333",
-                    new LocationAndName("Addr 3", Alpha2Code.PL, "Name 3"), null), "Feature")
+            new("Name 1", "http://maps.google.com/?cid=111", "Addr 1", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow, null),
+            new("Name 2", "http://maps.google.com/?cid=222", "Addr 2", Alpha2Code.PL, 3.0, 4.0, DateTimeOffset.UtcNow, null),
+            new("Name 3", "http://maps.google.com/?cid=333", "Addr 3", Alpha2Code.PL, 5.0, 6.0, DateTimeOffset.UtcNow, null)
         };
-        var data = new SavedPlacesCollection("FeatureCollection", features);
-        downloaderMock.Setup(d => d.DownloadAsync(It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Ok(((new ArchiveBrowser("now", "0", [])), data)));
+
+        downloaderMock.Setup(p => p.ProvideAsync(It.IsAny<IReadOnlyList<Uri>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Ok<IReadOnlyList<StarredPlace>>(places));
 
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://a", "https://b"]);
 
@@ -244,7 +241,7 @@ public class ImportDownloadHandlerTests
     }
 
     [Test]
-    public async Task DownloadArchive_does_nothing_when_downloader_fails()
+    public async Task DownloadArchive_does_nothing_when_provider_fails()
     {
         // Arrange
         var userId = "user-1";
@@ -257,7 +254,7 @@ public class ImportDownloadHandlerTests
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear();
 
-        downloaderMock.Setup(d => d.DownloadAsync(It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+        downloaderMock.Setup(p => p.ProvideAsync(It.IsAny<IReadOnlyList<Uri>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail("download failed"));
 
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, new List<string> { "https://a", "https://b" });
@@ -273,7 +270,7 @@ public class ImportDownloadHandlerTests
 
     private static async Task<(ImportDownloadHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,
         Mock<IImportServiceFactory>
-        factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IArchiveDownloader>
+        factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStarredPlacesProvider>
         downloaderMock)> CreateHandlerAsync()
     {
         var options = new DbContextOptionsBuilder<PinsDbContext>()
@@ -289,7 +286,7 @@ public class ImportDownloadHandlerTests
         var factoryMock = new Mock<IImportServiceFactory>();
         var serviceMock = new Mock<IImportService>();
         var concurrencyPolicyMock = new Mock<IImportConcurrencyPolicy>();
-        var downloaderMock = new Mock<IArchiveDownloader>();
+        var downloaderMock = new Mock<IStarredPlacesProvider>();
 
         // sensible defaults
         factoryMock.Setup(f => f.CreateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

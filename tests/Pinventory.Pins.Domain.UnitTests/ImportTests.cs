@@ -267,7 +267,7 @@ public class ImportTests
         var registerResult = import.RegisterPlaces(starredPlaces);
         registerResult.IsSuccess.ShouldBeTrue();
 
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
@@ -304,7 +304,7 @@ public class ImportTests
         import.RegisterPlaces(place1);
         import.RegisterPlaces(place2);
 
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
@@ -333,7 +333,7 @@ public class ImportTests
             new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterPlaces(starredPlaces);
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
@@ -379,7 +379,7 @@ public class ImportTests
             new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
         };
         import.RegisterPlaces(starredPlaces);
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
@@ -526,7 +526,7 @@ public class ImportTests
         };
         import.RegisterPlaces(starredPlaces);
 
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         var callCount = 0;
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
@@ -556,7 +556,7 @@ public class ImportTests
         };
         import.RegisterPlaces(starredPlaces);
 
-        var validatorMock = new Mock<IStaredPlaceValidator>();
+        var validatorMock = new Mock<IStarredPlaceValidator>();
         validatorMock.Setup(v => v.ValidateAsync(import, It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.Invalid);
 

@@ -3,7 +3,6 @@
 using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
-using Pinventory.Pins.Application.Importing.Services.Archive;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
@@ -18,7 +17,7 @@ public sealed class ImportDownloadHandler(
     IImportServiceFactory factory,
     PinsDbContext dbContext,
     IMessageContext bus,
-    IArchiveDownloader downloader) : ApplicationHandler(bus)
+    IStarredPlacesProvider placesProvider) : ApplicationHandler(bus)
 {
     public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
     {
@@ -82,19 +81,8 @@ public sealed class ImportDownloadHandler(
             return;
         }
 
-        if (download.Urls.Count < 2)
-        {
-            logger.LogError("Not enough URLs to download archive");
-            import.Fail(Errors.ImportHandler.NotEnoughUrls());
-            await RaiseEventsAsync(import);
-            return;
-        }
-
-        // Relay on Google behavior that the first URL is the data files and the second is the archive browser
-        var dataFilesUri = new Uri(download.Urls[0]);
-        var archiveBrowserUri = new Uri(download.Urls[1]);
-
-        var dataResult = await downloader.DownloadAsync(archiveBrowserUri, dataFilesUri, cancellationToken);
+        var uris = download.Urls.Select(x => new Uri(x)).ToList();
+        var dataResult = await placesProvider.ProvideAsync(uris, cancellationToken);
         if (dataResult.IsFailed)
         {
             logger.LogError("Failed to download archive: {Errors}", dataResult.Errors);
@@ -103,9 +91,7 @@ public sealed class ImportDownloadHandler(
             return;
         }
 
-        var records = dataResult.Value.Data.Features;
-
-        var starredPlaces = records.Select(MapStarredPlace).ToList();
+        var starredPlaces = dataResult.Value;
         var result = import.RegisterPlaces(starredPlaces);
 
         if (result.IsFailed)
@@ -118,20 +104,5 @@ public sealed class ImportDownloadHandler(
 
         var batchesCount = (import.Total + ImportProcessingHandler.MaxBatchSize - 1) / ImportProcessingHandler.MaxBatchSize;
         await bus.SendAsync(new ExpectedBatchesMessage(import.Id, import.UserId, import.ArchiveJobId!, batchesCount));
-
-        return;
-
-        static StarredPlace MapStarredPlace(Feature place)
-        {
-            return new StarredPlace(
-                place.Properties.Location?.Name,
-                place.Properties.GoogleMapsUrl,
-                place.Properties.Location?.Address,
-                place.Properties.Location?.CountryCode,
-                place.Geometry.Coordinates[1],
-                place.Geometry.Coordinates[0],
-                place.Properties.Date,
-                place.Properties.Comment);
-        }
     }
 }
