@@ -3,7 +3,7 @@
 namespace Pinventory.Pins.Domain;
 
 // TODO: Maybe replace with NodaTime 
-public partial record Period
+public sealed record Period
 {
     private Period(DateTimeOffset start, DateTimeOffset end)
     {
@@ -20,6 +20,11 @@ public partial record Period
     {
         start ??= DateTimeOffset.UnixEpoch;
         end ??= DateTimeOffset.UtcNow;
+
+        if (start < DateTimeOffset.UnixEpoch)
+        {
+            start = DateTimeOffset.UnixEpoch;
+        }
 
         return start >= end
             ? Result.Fail<Period>(Errors.Period.PeriodStartMustBeBeforeEnd(start, end))

@@ -43,13 +43,14 @@ public class ImportProcessingHandlerTests
 
         var places = new[]
         {
-            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
+            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2,
+                DateTimeOffset.UtcNow.AddDays(-1),
                 null), // conflict by name
-            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
+            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow.AddDays(-1),
                 null), // update by placeId
-            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
+            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow.AddDays(-1),
                 null), // create new
-            new StarredPlace("Removed", "http://maps.google.com/?cid=555", "Addr 4", Alpha2Code.PL, 7, 8, DateTimeOffset.UtcNow,
+            new StarredPlace("Removed", "http://maps.google.com/?cid=555", "Addr 4", Alpha2Code.PL, 7, 8, DateTimeOffset.UtcNow.AddDays(-1),
                 null) // failed
         };
 
@@ -110,24 +111,26 @@ public class ImportProcessingHandlerTests
         // existing pins: one for conflict by name, one to update by place id
         var address = new Address("Addr X", Alpha2Code.PL);
         var location = new Location(10, 20);
-        var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow);
-        var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow);
+        var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
+        var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
         await dbContext.Pins.AddRangeAsync(conflictPin, updatePin);
 
         var places = new[]
         {
-            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow,
+            new StarredPlace("SameName", "http://maps.google.com/?cid=222", "Addr 1", Alpha2Code.PL, 1, 2,
+                DateTimeOffset.UtcNow.AddDays(-1),
                 null), // conflict by name
-            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow,
+            new StarredPlace("NewName", "http://maps.google.com/?cid=333", "Addr 2", Alpha2Code.PL, 3, 4, DateTimeOffset.UtcNow.AddDays(-1),
                 null), // update by placeId
-            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow,
+            new StarredPlace("Created", "http://maps.google.com/?cid=444", "Addr 3", Alpha2Code.PL, 5, 6, DateTimeOffset.UtcNow.AddDays(-1),
                 null) // create new
         };
 
         var registerResult = import.RegisterPlaces(places);
         // Add more places to ensure TryComplete will fail
         import.RegisterPlaces([
-            new StarredPlace("Extra", "http://maps.google.com/?cid=999", "Addr", Alpha2Code.PL, 9, 10, DateTimeOffset.UtcNow, null)
+            new StarredPlace("Extra", "http://maps.google.com/?cid=999", "Addr", Alpha2Code.PL, 9, 10, DateTimeOffset.UtcNow.AddDays(-1),
+                null)
         ]);
 
         await dbContext.Imports.AddAsync(import);
@@ -189,7 +192,8 @@ public class ImportProcessingHandlerTests
 
         var places = new[]
         {
-            new StarredPlace("Name", "http://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow, null)
+            new StarredPlace("Name", "http://maps.google.com/?cid=111", "Addr", Alpha2Code.PL, 1, 2, DateTimeOffset.UtcNow.AddDays(-1),
+                null)
         };
 
         var registerResult = import.RegisterPlaces(places);
