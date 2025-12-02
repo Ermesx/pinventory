@@ -7,7 +7,7 @@ public class PeriodTests
     private static readonly DateTimeOffset FixedEndDate = new(2024, 6, 15, 12, 0, 0, TimeSpan.Zero);
 
     [Test]
-    public void Create_ClampsStartToUnixEpoch_WhenStartIsBeforeUnixEpoch()
+    public void create_clamps_start_to_unix_epoch_when_start_is_before_unix_epoch()
     {
         // Arrange
         var startBeforeEpoch = DateTimeOffset.UnixEpoch.AddDays(-1);
@@ -23,7 +23,7 @@ public class PeriodTests
     }
 
     [Test]
-    public void Create_ClampsStartToUnixEpoch_WhenStartIsVeryEarly()
+    public void Create_clamps_start_to_unix_epoch_when_start_is_very_early()
     {
         // Arrange
         var veryEarlyStart = DateTimeOffset.MinValue;
@@ -39,7 +39,7 @@ public class PeriodTests
     }
 
     [Test]
-    public void Create_ReturnsPeriodStartMustBeBeforeEndError_WhenClampedStartEqualsEnd()
+    public void Create_returns_period_start_must_be_before_end_error_when_clamped_start_equals_end()
     {
         // Arrange
         var startBeforeEpoch = DateTimeOffset.UnixEpoch.AddDays(-1);
@@ -54,7 +54,7 @@ public class PeriodTests
     }
 
     [Test]
-    public void Create_ReturnsPeriodStartMustBeBeforeEndError_WhenClampedStartIsAfterEnd()
+    public void create_returns_period_start_must_be_before_end_error_when_clamped_start_is_after_end()
     {
         // Arrange
         var veryEarlyStart = DateTimeOffset.MinValue;
@@ -69,7 +69,7 @@ public class PeriodTests
     }
 
     [Test]
-    public void Create_ReturnsValidPeriod_WhenStartIsExactlyUnixEpoch()
+    public void create_returns_valid_period_when_start_is_exactly_unix_epoch()
     {
         // Arrange
         var startAtEpoch = DateTimeOffset.UnixEpoch;
@@ -85,7 +85,7 @@ public class PeriodTests
     }
 
     [Test]
-    public void Create_ReturnsValidPeriod_WhenStartIsAfterUnixEpoch()
+    public void create_returns_valid_period_when_start_is_after_unix_epoch()
     {
         // Arrange
         var startAfterEpoch = DateTimeOffset.UnixEpoch.AddDays(1);
