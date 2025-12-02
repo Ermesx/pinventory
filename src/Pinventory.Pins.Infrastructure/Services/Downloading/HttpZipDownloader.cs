@@ -7,7 +7,7 @@ public class HttpZipDownloader(IHttpClientFactory httpClientFactory) : IZipDownl
     public async Task<Stream> DownloadAsync(Uri sourceUri, string filePath, CancellationToken cancellationToken = default)
     {
         var (stream, contentType) = await DownloadAsync(sourceUri, cancellationToken);
-        if (!contentType.StartsWith("application/zip"))
+        if (!CanBeZip(contentType))
         {
             throw new InvalidDataException($"Invalid content type {contentType} for {sourceUri}");
         }
@@ -24,6 +24,13 @@ public class HttpZipDownloader(IHttpClientFactory httpClientFactory) : IZipDownl
             memoryStream.Position = 0;
             return memoryStream;
         }
+
+        static bool CanBeZip(string ct) =>
+            ct is "application/zip"
+                or "application/zip-compressed"
+                or "application/x-zip"
+                or "application/x-zip-compressed"
+                or "application/octet-stream";
     }
 
     private async Task<(Stream file, string contentType)> DownloadAsync(Uri uri, CancellationToken cancellationToken)
