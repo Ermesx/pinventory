@@ -4,12 +4,14 @@ namespace Pinventory.Pins.Domain.UnitTests;
 
 public class PeriodTests
 {
+    private static readonly DateTimeOffset FixedEndDate = new(2024, 6, 15, 12, 0, 0, TimeSpan.Zero);
+
     [Test]
     public void Create_ClampsStartToUnixEpoch_WhenStartIsBeforeUnixEpoch()
     {
         // Arrange
         var startBeforeEpoch = DateTimeOffset.UnixEpoch.AddDays(-1);
-        var validEnd = DateTimeOffset.UtcNow;
+        var validEnd = FixedEndDate;
 
         // Act
         var result = Period.Create(startBeforeEpoch, validEnd);
@@ -25,7 +27,7 @@ public class PeriodTests
     {
         // Arrange
         var veryEarlyStart = DateTimeOffset.MinValue;
-        var validEnd = DateTimeOffset.UtcNow;
+        var validEnd = FixedEndDate;
 
         // Act
         var result = Period.Create(veryEarlyStart, validEnd);
@@ -71,7 +73,7 @@ public class PeriodTests
     {
         // Arrange
         var startAtEpoch = DateTimeOffset.UnixEpoch;
-        var validEnd = DateTimeOffset.UtcNow;
+        var validEnd = FixedEndDate;
 
         // Act
         var result = Period.Create(startAtEpoch, validEnd);
@@ -87,7 +89,7 @@ public class PeriodTests
     {
         // Arrange
         var startAfterEpoch = DateTimeOffset.UnixEpoch.AddDays(1);
-        var validEnd = DateTimeOffset.UtcNow;
+        var validEnd = FixedEndDate;
 
         // Act
         var result = Period.Create(startAfterEpoch, validEnd);
