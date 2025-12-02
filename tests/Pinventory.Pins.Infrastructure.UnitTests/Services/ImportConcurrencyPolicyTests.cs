@@ -41,7 +41,8 @@ public class ImportConcurrencyPolicyTests
         policyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         await completedImport.StartAsync("job-1", policyMock.Object);
         completedImport.RegisterPlaces([
-            new StarredPlace("Place", "http://maps.google.com/?cid=123", "Address", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow, null)
+            new StarredPlace("Place", "http://maps.google.com/?cid=123", "Address", Alpha2Code.PL, 1.0, 2.0,
+                DateTimeOffset.UtcNow.AddDays(-1), null)
         ]);
 
         var placeId = completedImport.StarredPlaces.Single().Id;

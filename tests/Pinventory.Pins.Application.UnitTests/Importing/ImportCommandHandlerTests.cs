@@ -161,7 +161,7 @@ public class ImportCommandHandlerTests
 
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
         import.StarredPlaces.Count.ShouldBe(1);

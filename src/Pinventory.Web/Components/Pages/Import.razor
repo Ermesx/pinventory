@@ -332,8 +332,8 @@
             ResetCounters();
             importId = null;
             statusMessage = "Starting import...";
-            var id = await PinsClient.StartImport(new StartImportDto());
-            archiveJobId = id;
+            var request = new StartImportDto { Start = importJobs.Max(j => j.CompletedAt ?? DateTimeOffset.UnixEpoch) };
+            archiveJobId = await PinsClient.StartImport(request);
             isImportRunning = true;
             statusMessage = "Preparing data...";
             successMessage = "Import started.";

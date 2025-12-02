@@ -202,9 +202,11 @@ public class ImportDownloadHandlerTests
 
         var places = new List<StarredPlace>
         {
-            new("Name 1", "http://maps.google.com/?cid=111", "Addr 1", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow, null),
-            new("Name 2", "http://maps.google.com/?cid=222", "Addr 2", Alpha2Code.PL, 3.0, 4.0, DateTimeOffset.UtcNow, null),
-            new("Name 3", "http://maps.google.com/?cid=333", "Addr 3", Alpha2Code.PL, 5.0, 6.0, DateTimeOffset.UtcNow, null)
+            new("Name 1", "http://maps.google.com/?cid=111", "Addr 1", Alpha2Code.PL, 1.0, 2.0, DateTimeOffset.UtcNow.AddDays(-1),
+                null),
+            new("Name 2", "http://maps.google.com/?cid=222", "Addr 2", Alpha2Code.PL, 3.0, 4.0, DateTimeOffset.UtcNow.AddDays(-1),
+                null),
+            new("Name 3", "http://maps.google.com/?cid=333", "Addr 3", Alpha2Code.PL, 5.0, 6.0, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
 
         downloaderMock.Setup(p => p.ProvideAsync(It.IsAny<IReadOnlyList<Uri>>(), It.IsAny<CancellationToken>()))

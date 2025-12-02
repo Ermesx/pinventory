@@ -83,7 +83,7 @@ namespace Pinventory.Pins.Domain.Importing
                 return Result.Fail(Errors.Import.PlacesCannotBeEmpty());
             }
 
-            foreach (var place in places)
+            foreach (var place in places.Where(IsInPeriod))
             {
                 if (_starredPlaces.Add(place))
                 {
@@ -92,6 +92,8 @@ namespace Pinventory.Pins.Domain.Importing
             }
 
             return Result.Ok();
+
+            bool IsInPeriod(StarredPlace place) => place.AddedDate >= Period.Start && place.AddedDate <= Period.End;
         }
 
         public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessPlacesAsync(

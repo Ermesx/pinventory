@@ -145,8 +145,8 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
 
         // Act
@@ -166,12 +166,12 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var place1 = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         var place2 = new List<StarredPlace>
         {
-            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
 
         // Act
@@ -191,7 +191,7 @@ public class ImportTests
         var import = new Import("user123");
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
 
         // Act
@@ -261,8 +261,8 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         var registerResult = import.RegisterPlaces(starredPlaces);
         registerResult.IsSuccess.ShouldBeTrue();
@@ -294,12 +294,12 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var place1 = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         var place2 = new List<StarredPlace>
         {
-            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(place1);
         import.RegisterPlaces(place2);
@@ -330,7 +330,7 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
         var validatorMock = new Mock<IStarredPlaceValidator>();
@@ -375,8 +375,8 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
         var validatorMock = new Mock<IStarredPlaceValidator>();
@@ -474,8 +474,8 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
         import.StarredPlaces.Count.ShouldBe(2);
@@ -520,9 +520,9 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 3", "https://maps.google.com/3", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
 
@@ -551,8 +551,8 @@ public class ImportTests
         var import = await Imports.CreateStartedImport();
         var starredPlaces = new List<StarredPlace>
         {
-            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow, null),
-            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow, null)
+            new("Place 1", "https://maps.google.com/1", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null),
+            new("Place 2", "https://maps.google.com/2", null, null, null, null, DateTimeOffset.UtcNow.AddDays(-1), null)
         };
         import.RegisterPlaces(starredPlaces);
 
@@ -574,7 +574,7 @@ public class ImportTests
     public void Period_defaults_to_AllTime_when_not_provided()
     {
         // Arrange & Act
-        var before = DateTimeOffset.UtcNow;
+        var before = DateTimeOffset.UtcNow.AddDays(-2);
         var import = new Import("user123");
         var after = DateTimeOffset.UtcNow;
 
