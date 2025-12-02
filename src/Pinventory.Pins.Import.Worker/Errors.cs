@@ -1,4 +1,6 @@
-﻿using FluentResults;
+﻿using System.Net;
+
+using FluentResults;
 
 namespace Pinventory.Pins.Import.Worker;
 
@@ -11,7 +13,7 @@ public static class Errors
         public static Error MissingDataPortabilityToken() => new("Data portability token is missing");
     }
 
-    public static class ArchiveDownloader
+    public static class GoogleArchiveProcessor
     {
         public static Error MissingService() => new("Missing service in archive browser");
 
@@ -21,9 +23,10 @@ public static class Errors
 
         public static Error FileDeserializationFailed(string filePath) => new($"Failed to deserialize {Path.GetFileName(filePath)}");
 
-        public static Error HttpRequestFailed(HttpResponseMessage response) =>
-            new(
-                $"HTTP request to '{response.RequestMessage?.RequestUri}' failed with status code {response.StatusCode}: {response.ReasonPhrase}");
+        public static Error HttpRequestFailed(Uri uri, HttpStatusCode? statusCode) =>
+            new($"HTTP request to '{uri}' failed with status code {statusCode}");
+
+        public static Error InvalidContentType(Uri sourceUri) => new($"Content type is not application/zip for '{sourceUri}'");
     }
 
     public static class ImportService
@@ -35,5 +38,10 @@ public static class Errors
         public static Error ArchiveJobAlreadyExists() => new Application.Errors.ImportHandler.ArchiveJobExists();
 
         public static Error UnexpectedError() => new("Unexpected error");
+    }
+
+    public static class GoogleStarredPlacesProvider
+    {
+        public static Error NotEnoughUrls() => new("Not enough URLs to download archive");
     }
 }

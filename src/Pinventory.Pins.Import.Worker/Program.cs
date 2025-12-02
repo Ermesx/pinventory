@@ -12,10 +12,12 @@ using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Import.Worker;
 using Pinventory.Pins.Import.Worker.DataPortability;
+using Pinventory.Pins.Import.Worker.DataPortability.Archive;
 using Pinventory.Pins.Import.Worker.Handlers;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Services;
+using Pinventory.Pins.Infrastructure.Services.Downloading;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 
@@ -78,8 +80,11 @@ builder.Services.AddMemoryCache();
 builder.Services.AddGoogleAuthOptions();
 builder.Services.AddSingleton<IImportServiceFactory, ImportServiceFactory>();
 builder.Services.AddScoped<IImportConcurrencyPolicy, ImportConcurrencyPolicy>();
-builder.Services.AddTransient<IArchiveDownloader, ArchiveDownloader>();
 builder.Services.AddScoped<IStaredPlaceValidator, StarredPlacesValidator>();
+
+builder.Services.AddTransient<IZipDownloader, HttpZipDownloader>();
+builder.Services.AddTransient<GoogleArchiveProcessor>();
+builder.Services.AddTransient<IStarredPlacesProvider, GoogleStarredPlacesProvider>();
 
 builder.Services.AddGrpcClient<Tokens.TokensClient>(options =>
     options.Address = new Uri("http://pinventory-identity-tokens-grpc")

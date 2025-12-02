@@ -25,8 +25,6 @@ public static class Errors
         public static Error RunningImportNotFound(string userId, string archiveJobId) =>
             new NotFoundError($"Import {archiveJobId} not found for user {userId}");
 
-        public static Error NotEnoughUrls() => new("Not enough URLs to download archive");
-
         public static Error ExternalJobFailed() => new("Archive job failed externally");
 
         public class ArchiveJobExists() : Error("Archive job already exists")

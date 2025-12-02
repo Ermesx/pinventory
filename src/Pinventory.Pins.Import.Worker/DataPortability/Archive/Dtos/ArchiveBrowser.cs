@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Application.Importing.Services.Archive;
+﻿namespace Pinventory.Pins.Import.Worker.DataPortability.Archive.Dtos;
 
 public record ArchiveBrowser(string CreationTime, string TotalSize, ServiceStatus[] ServiceStatus);
 

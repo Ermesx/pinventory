@@ -2,7 +2,7 @@
 
 using Nager.Country;
 
-namespace Pinventory.Pins.Application.Importing.Services.Archive;
+namespace Pinventory.Pins.Import.Worker.DataPortability.Archive.Dtos;
 
 public record SavedPlacesCollection(string Type, Feature[] Features);
 
