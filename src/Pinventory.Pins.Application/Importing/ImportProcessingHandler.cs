@@ -18,7 +18,7 @@ public class ImportProcessingHandler(
     ILogger<ImportProcessingHandler> logger,
     PinsDbContext dbContext,
     IMessageContext bus,
-    IStaredPlaceValidator validator) : ApplicationHandler(bus)
+    IStarredPlaceValidator validator) : ApplicationHandler(bus)
 {
     public const int MaxBatchSize = 300;
 

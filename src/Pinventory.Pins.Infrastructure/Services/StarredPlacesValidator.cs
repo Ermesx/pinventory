@@ -8,7 +8,7 @@ using Pinventory.Pins.Domain.Places;
 
 namespace Pinventory.Pins.Infrastructure.Services;
 
-public class StarredPlacesValidator(PinsDbContext dbContext, IMemoryCache cache) : IStaredPlaceValidator
+public class StarredPlacesValidator(PinsDbContext dbContext, IMemoryCache cache) : IStarredPlaceValidator
 {
     private const string RemovedPlaceComment = "No location information is available for this saved place";
 

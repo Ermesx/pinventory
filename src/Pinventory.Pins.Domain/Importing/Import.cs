@@ -96,7 +96,7 @@ namespace Pinventory.Pins.Domain.Importing
 
         public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessPlacesAsync(
             IReadOnlySet<Guid> placeIds,
-            IStaredPlaceValidator validator, CancellationToken cancellationToken = default)
+            IStarredPlaceValidator validator, CancellationToken cancellationToken = default)
         {
             if (State != ImportState.InProgress)
             {

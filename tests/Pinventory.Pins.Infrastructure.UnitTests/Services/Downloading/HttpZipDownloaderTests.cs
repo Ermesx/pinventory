@@ -27,10 +27,11 @@ public class HttpZipDownloaderTests
         });
 
         // Act
-        var stream = await downloader.DownloadAsync(new Uri("https://example.com/archive.zip"), filePath);
+        await using var stream = await downloader.DownloadAsync(new Uri("https://example.com/archive.zip"), filePath);
 
         // Assert
         stream.ShouldNotBeNull();
+        stream.CanRead.ShouldBeTrue();
     }
 
     [Test]

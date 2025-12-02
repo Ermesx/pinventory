@@ -16,7 +16,13 @@ public class HttpZipDownloader(IHttpClientFactory httpClientFactory) : IZipDownl
         {
             using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
             var entry = archive.GetEntry(filePath) ?? throw new FileNotFoundException($"Could not find '{filePath}' in the ZIP file");
-            return entry.Open();
+            await using var entryStream = entry.Open();
+
+            // Copy entry stream to memory stream
+            var memoryStream = new MemoryStream();
+            await entryStream.CopyToAsync(memoryStream, cancellationToken);
+            memoryStream.Position = 0;
+            return memoryStream;
         }
     }
 

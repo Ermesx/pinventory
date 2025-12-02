@@ -16,7 +16,7 @@ public class GoogleStarredPlacesProvider(GoogleArchiveProcessor archiveProcessor
             return Result.Fail(Errors.GoogleStarredPlacesProvider.NotEnoughUrls());
         }
 
-        // Relay on Google behavior that the first URL is the data files and the second is the archive browser
+        // Rely on Google behavior that the first URL is the data files and the second is the archive browser
         var dataFilesUri = urls[0];
         var archiveBrowserUri = urls[1];
 

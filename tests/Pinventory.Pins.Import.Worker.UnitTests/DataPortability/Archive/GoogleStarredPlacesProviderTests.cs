@@ -97,8 +97,8 @@ public class GoogleStarredPlacesProviderTests
                     "1KB")
             ]);
 
-        using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
-        using var savedPlacesStream = CreateJsonStream(collection);
+        await using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
+        await using var savedPlacesStream = CreateJsonStream(collection);
 
         downloaderMock
             .Setup(d => d.DownloadAsync(urls[1], "Portability/archive_browser.json", It.IsAny<CancellationToken>()))

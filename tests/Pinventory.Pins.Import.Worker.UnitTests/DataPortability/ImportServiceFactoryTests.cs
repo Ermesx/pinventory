@@ -22,7 +22,7 @@ public class ImportServiceFactoryTests
     public async Task CreateAsync_returns_cached_instance_on_subsequent_calls()
     {
         // Arrange
-        var (factory, clientMock, cache) = CreateFactory();
+        var (factory, clientMock) = CreateFactory();
 
         var token = new PairToken
         {
@@ -55,7 +55,7 @@ public class ImportServiceFactoryTests
     public async Task CreateAsync_returns_failure_when_no_tokens_found()
     {
         // Arrange
-        var (factory, clientMock, _) = CreateFactory();
+        var (factory, clientMock) = CreateFactory();
 
         clientMock
             .Setup(c => c.GetAccessTokenAsync(It.IsAny<UserRequest>(), null, null, It.IsAny<CancellationToken>()))
@@ -78,7 +78,7 @@ public class ImportServiceFactoryTests
     public async Task CreateAsync_returns_failure_when_data_portability_token_missing()
     {
         // Arrange
-        var (factory, clientMock, _) = CreateFactory();
+        var (factory, clientMock) = CreateFactory();
 
         clientMock
             .Setup(c => c.GetAccessTokenAsync(It.IsAny<UserRequest>(), null, null, It.IsAny<CancellationToken>()))
@@ -97,7 +97,7 @@ public class ImportServiceFactoryTests
         result.Errors.ShouldContain(e => e.Message.Contains("Data portability token is missing"));
     }
 
-    private static (ImportServiceFactory factory, Mock<Tokens.TokensClient> clientMock, IMemoryCache cache) CreateFactory()
+    private static (ImportServiceFactory factory, Mock<Tokens.TokensClient> clientMock) CreateFactory()
     {
         var options = Options.Create(new GoogleAuthOptions { ClientId = "client-id", ClientSecret = "client-secret" });
 
@@ -108,6 +108,6 @@ public class ImportServiceFactoryTests
 
         var factory = new ImportServiceFactory(options, clientMock.Object, cache, logger, loggerFactory);
 
-        return (factory, clientMock, cache);
+        return (factory, clientMock);
     }
 }

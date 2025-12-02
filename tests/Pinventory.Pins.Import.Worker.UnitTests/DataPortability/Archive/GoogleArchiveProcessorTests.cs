@@ -47,8 +47,8 @@ public class GoogleArchiveProcessorTests
 
         var savedPlaces = new SavedPlacesCollection("FeatureCollection", []);
 
-        using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
-        using var savedPlacesStream = CreateJsonStream(savedPlaces);
+        await using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
+        await using var savedPlacesStream = CreateJsonStream(savedPlaces);
 
         var downloaderMock = new Mock<IZipDownloader>();
         downloaderMock
@@ -82,7 +82,7 @@ public class GoogleArchiveProcessorTests
             "100MB",
             []);
 
-        using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
+        await using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
 
         var downloaderMock = new Mock<IZipDownloader>();
         downloaderMock
@@ -128,7 +128,7 @@ public class GoogleArchiveProcessorTests
                     "0")
             ]);
 
-        using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
+        await using var archiveBrowserStream = CreateJsonStream(archiveBrowser);
 
         var downloaderMock = new Mock<IZipDownloader>();
         downloaderMock
@@ -152,7 +152,7 @@ public class GoogleArchiveProcessorTests
         var archiveBrowserUri = new Uri("https://example.com/archive_browser.zip");
         var dataFilesUri = new Uri("https://example.com/data_files.zip");
 
-        var failure = Result.Fail<(ArchiveBrowser, SavedPlacesCollection)>("download failed");
+        Result.Fail<(ArchiveBrowser, SavedPlacesCollection)>("download failed");
 
         var downloaderMock = new Mock<IZipDownloader>();
         downloaderMock

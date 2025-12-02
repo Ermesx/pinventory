@@ -80,7 +80,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddGoogleAuthOptions();
 builder.Services.AddSingleton<IImportServiceFactory, ImportServiceFactory>();
 builder.Services.AddScoped<IImportConcurrencyPolicy, ImportConcurrencyPolicy>();
-builder.Services.AddScoped<IStaredPlaceValidator, StarredPlacesValidator>();
+builder.Services.AddScoped<IStarredPlaceValidator, StarredPlacesValidator>();
 
 builder.Services.AddTransient<IZipDownloader, HttpZipDownloader>();
 builder.Services.AddTransient<GoogleArchiveProcessor>();
