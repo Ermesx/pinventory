@@ -77,7 +77,7 @@ public class ImportProcessingHandlerTests
         var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
-        await handler.HandleAsync(message);
+        var outgoingMessages = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
@@ -90,8 +90,7 @@ public class ImportProcessingHandlerTests
         reloadedImport.Conflicts.ShouldBe(1);
 
         // Two pins should be tagged (created + updated)
-        var publishCalls = busMock.Invocations.Where(i => i.Arguments.Count > 0 && i.Arguments[0] is AssignTagsToPinMessage).ToList();
-        publishCalls.Count.ShouldBe(2);
+        outgoingMessages.Count(x => x is AssignTagsToPinMessage).ShouldBe(2);
 
         // ImportPlacesProcessed event should be published
         busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportPlaceProcessed).ShouldBeTrue();
@@ -152,7 +151,7 @@ public class ImportProcessingHandlerTests
         var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
-        await handler.HandleAsync(message);
+        var outgoingMessages = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
@@ -161,8 +160,7 @@ public class ImportProcessingHandlerTests
         reloadedImport.State.ShouldBe(ImportState.InProgress);
         busMock.Invocations.Any(i => i.Arguments.Count > 0 && i.Arguments[0] is ImportPlaceProcessed).ShouldBeTrue();
         dbContext.Pins.Local.Any(p => p.Name == "Created").ShouldBeTrue();
-        var tagPublishCalls = busMock.Invocations.Where(i => i.Arguments.Count > 0 && i.Arguments[0] is AssignTagsToPinMessage).ToList();
-        tagPublishCalls.Count.ShouldBe(3);
+        outgoingMessages.Count(x => x is AssignTagsToPinMessage).ShouldBe(3);
     }
 
     [Test]

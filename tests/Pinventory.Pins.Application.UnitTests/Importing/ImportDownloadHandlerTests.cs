@@ -14,7 +14,6 @@ using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Shouldly;
 
@@ -45,12 +44,12 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<CheckJobMessage>();
+        response.CheckJobMessage.ShouldNotBeNull();
+        response.DownloadMessage.ShouldBeNull();
     }
 
     [Test]
@@ -76,12 +75,12 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<DownloadArchiveMessage>();
+        response.DownloadMessage.ShouldNotBeNull();
+        response.CheckJobMessage.ShouldBeNull();
     }
 
     [Test]
@@ -215,17 +214,18 @@ public class ImportDownloadHandlerTests
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://a", "https://b"]);
 
         // Act
-        await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(4);
+        busMock.Invocations.Count.ShouldBe(3);
         var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
         published.UserId.ShouldBe(userId);
         published.ArchiveJobId.ShouldBe(archiveJobId);
         busMock.Invocations[1].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
         busMock.Invocations[2].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
-        busMock.Invocations[3].Arguments[0].ShouldBeOfType<ExpectedBatchesMessage>();
+
+        responseMessage.ShouldNotBeNull();
     }
 
     [Test]

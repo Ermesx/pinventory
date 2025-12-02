@@ -25,19 +25,20 @@ public sealed class ImportCommandHandler(
     IMessageContext bus,
     IImportConcurrencyPolicy concurrencyPolicy) : ApplicationHandler(bus)
 {
-    public async Task<ResultDto<string>> HandleAsync(StartImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<(ResultDto<string> Result, CheckJobMessage? Message)> HandleAsync(StartImportCommand command,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting import for {UserId}", command.UserId);
         var periodResult = Period.Create(command.Start, command.End);
         if (periodResult.IsFailed)
         {
-            return Result.Fail<string>(periodResult.Errors).ToResultDto();
+            return (Result.Fail<string>(periodResult.Errors).ToResultDto(), null);
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);
         if (clientResult.IsFailed)
         {
-            return Result.Fail<string>(clientResult.Errors).ToResultDto();
+            return (Result.Fail<string>(clientResult.Errors).ToResultDto(), null);
         }
 
         var client = clientResult.Value;
@@ -59,35 +60,35 @@ public sealed class ImportCommandHandler(
         else
         {
             logger.LogError("Failed to initiate archive job: {Errors}", archiveJobIdResult.Errors);
-            return Result.Fail<string>(archiveJobIdResult.Errors).ToResultDto();
+            return (Result.Fail<string>(archiveJobIdResult.Errors).ToResultDto(), null);
         }
 
         var import = new Import(command.UserId, periodResult.Value);
         if (await import.StartAsync(archiveJobId, concurrencyPolicy) is { IsFailed: true } result)
         {
-            return Result.Fail<string>(result.Errors).ToResultDto();
+            return (Result.Fail<string>(result.Errors).ToResultDto(), null);
         }
 
         await dbContext.Imports.AddAsync(import, cancellationToken);
         await RaiseEventsAsync(import);
 
-        await bus.ScheduleAsync(new CheckJobMessage(import.Id, import.UserId, archiveJobId), CheckJobMessage.CheckInterval);
-
-        return Result.Ok(archiveJobId).ToResultDto();
+        return (Result.Ok(archiveJobId).ToResultDto(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
     }
 
     // TODO: Get Import and Saga by ID as parameters
-    public async Task<ResultDto> HandleAsync(RenewImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<(ResultDto Result, CheckJobMessage? Message)> HandleAsync(RenewImportCommand command,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
-            return Result.Fail<string>(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
+            var error = Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId);
+            return (Result.Fail<string>(error).ToResultDto(), null);
         }
 
         if (import.ClearPlaces() is { IsFailed: true } result)
         {
-            return Result.Fail<string>(result.Errors).ToResultDto();
+            return (Result.Fail<string>(result.Errors).ToResultDto(), null);
         }
 
         // Check if saga exists, if not, create it by event
@@ -99,9 +100,7 @@ public sealed class ImportCommandHandler(
 
         await RaiseEventsAsync(import);
 
-        await bus.ScheduleAsync(new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!), CheckJobMessage.CheckInterval);
-
-        return ResultDto.Ok();
+        return (ResultDto.Ok(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
     }
 
     public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)

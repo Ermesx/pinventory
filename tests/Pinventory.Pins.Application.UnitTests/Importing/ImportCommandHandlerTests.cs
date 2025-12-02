@@ -7,7 +7,6 @@ using Moq;
 
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Commands;
-using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
@@ -35,11 +34,11 @@ public class ImportCommandHandlerTests
         var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act
-        var result = await handler.HandleAsync(command);
+        var response = await handler.HandleAsync(command);
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(archiveJobId);
+        response.Result.IsSuccess.ShouldBeTrue();
+        response.Result.Value.ShouldBe(archiveJobId);
 
         await dbContext.SaveChangesAsync();
         var import = await dbContext.Imports.FirstOrDefaultAsync(i => i.UserId == userId);
@@ -47,9 +46,9 @@ public class ImportCommandHandlerTests
         import.ArchiveJobId.ShouldBe(archiveJobId);
         import.State.ShouldBe(ImportState.InProgress);
 
-        busMock.Invocations.Count.ShouldBe(2);
+        busMock.Invocations.Count.ShouldBe(1);
         busMock.Invocations.Any(i => i.Arguments[0] is ImportStarted).ShouldBeTrue();
-        busMock.Invocations.Any(i => i.Arguments[0] is CheckJobMessage).ShouldBeTrue();
+        response.Message.ShouldNotBeNull();
     }
 
     [Test]
@@ -66,11 +65,11 @@ public class ImportCommandHandlerTests
         var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act
-        var result = await handler.HandleAsync(command);
+        var response = await handler.HandleAsync(command);
 
         // Assert
         await dbContext.SaveChangesAsync();
-        result.IsFailed.ShouldBeTrue();
+        response.Result.IsFailed.ShouldBeTrue();
         (await dbContext.Imports.CountAsync()).ShouldBe(0);
         busMock.Invocations.Count.ShouldBe(0);
     }
@@ -138,10 +137,10 @@ public class ImportCommandHandlerTests
         var command = new StartImportCommand(userId, period.Start, period.End);
 
         // Act
-        var result = await handler.HandleAsync(command);
+        var response = await handler.HandleAsync(command);
 
         // Assert
-        result.IsFailed.ShouldBeTrue();
+        response.Result.IsFailed.ShouldBeTrue();
         (await dbContext.Imports.CountAsync()).ShouldBe(0);
         busMock.Invocations.Count.ShouldBe(0);
     }
@@ -173,10 +172,10 @@ public class ImportCommandHandlerTests
         var command = new RenewImportCommand(userId, archiveJobId);
 
         // Act
-        var result = await handler.HandleAsync(command);
+        var response = await handler.HandleAsync(command);
 
         // Assert
-        result.IsSuccess.ShouldBeTrue();
+        response.Result.IsSuccess.ShouldBeTrue();
 
         var reloaded = await dbContext.Imports.Include(i => i.StarredPlaces)
             .SingleAsync(i => i.UserId == userId);
@@ -184,7 +183,7 @@ public class ImportCommandHandlerTests
         reloaded.Total.ShouldBe(0);
 
         busMock.Invocations.Any(i => i.Arguments[0] is ImportPlacesCleared).ShouldBeTrue();
-        busMock.Invocations.Any(i => i.Arguments[0] is CheckJobMessage).ShouldBeTrue();
+        response.Message.ShouldNotBeNull();
     }
 
     [Test]
@@ -195,11 +194,11 @@ public class ImportCommandHandlerTests
         var command = new RenewImportCommand("user-1", "job-404");
 
         // Act
-        var result = await handler.HandleAsync(command);
+        var response = await handler.HandleAsync(command);
 
         // Assert
-        result.IsFailed.ShouldBeTrue();
-        result.Errors.ShouldContain(e => e.Message.Contains("not found"));
+        response.Result.IsFailed.ShouldBeTrue();
+        response.Result.Errors.ShouldContain(e => e.Message.Contains("not found"));
         busMock.Invocations.Count.ShouldBe(0);
     }
 
