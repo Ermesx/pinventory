@@ -1,6 +1,5 @@
 ﻿using FluentResults;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Importing.Commands;
@@ -10,31 +9,32 @@ using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
-using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Sagas;
+
+using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.Importing;
 
-// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public sealed class ImportCommandHandler(
     ILogger<ImportCommandHandler> logger,
     IImportServiceFactory factory,
-    PinsDbContext dbContext,
     IImportConcurrencyPolicy concurrencyPolicy)
 {
-    public async Task<(ResultDto<Guid> Result, CheckJobMessage? Message)> HandleAsync(StartImportCommand command,
+    public async Task<(ResultDto<Guid> Result, CheckJobMessage? Message, IStorageAction<Import> Storage)> HandleAsync(
+        StartImportCommand command,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting import for {UserId}", command.UserId);
         var periodResult = Period.Create(command.Start, command.End);
         if (periodResult.IsFailed)
         {
-            return (Result.Fail<Guid>(periodResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(periodResult.Errors).ToResultDto(), null, Storage.Nothing<Import>());
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);
         if (clientResult.IsFailed)
         {
-            return (Result.Fail<Guid>(clientResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(clientResult.Errors).ToResultDto(), null, Storage.Nothing<Import>());
         }
 
         var client = clientResult.Value;
@@ -46,9 +46,8 @@ public sealed class ImportCommandHandler(
         {
             archiveJobId = archiveJobIdResult.Value;
         }
-        // If an archive job already exists and there is no running import, use the existing job
+        // If an archive job already exists for the user, use the existing job
         else if (archiveJobIdResult.HasError<Errors.ImportHandler.ArchiveJobExists>(out var errors)
-                 && await dbContext.GetCurrentImport(command.UserId, cancellationToken) is null
                  && errors.First().ArchiveJobId is { } extractedArchiveJobId)
         {
             archiveJobId = extractedArchiveJobId;
@@ -56,39 +55,40 @@ public sealed class ImportCommandHandler(
         else
         {
             logger.LogError("Failed to initiate archive job: {Errors}", archiveJobIdResult.Errors);
-            return (Result.Fail<Guid>(archiveJobIdResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(archiveJobIdResult.Errors).ToResultDto(), null, Storage.Nothing<Import>());
         }
 
         var import = new Import(command.UserId, periodResult.Value);
         if (await import.StartAsync(archiveJobId, concurrencyPolicy) is { IsFailed: true } result)
         {
-            return (Result.Fail<Guid>(result.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(result.Errors).ToResultDto(), null, Storage.Nothing<Import>());
         }
 
-        await dbContext.Imports.AddAsync(import, cancellationToken);
-
-        return (Result.Ok(import.Id).ToResultDto(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
+        return (Result.Ok(import.Id).ToResultDto(),
+            new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!),
+            Storage.Insert(import));
     }
 
-    // TODO: Get Import and Saga by ID as parameters
-    public async Task<(ResultDto Result, CheckJobMessage? Message, ImportStarted? Event)> HandleAsync(RenewImportCommand command,
-        CancellationToken cancellationToken = default)
+    public (ResultDto Result, CheckJobMessage? Message, ImportStarted? Event) Handle(
+        RenewImportCommand command,
+        Import? import,
+        ImportProcess? saga)
     {
         logger.LogInformation("Renewing import '{ImportId}' for {UserId}", command.ImportId, command.UserId);
-        if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
+        if (import is null)
         {
             var error = Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ImportId);
-            return (Result.Fail<string>(error).ToResultDto(), null, null);
+            return (Result.Fail(error).ToResultDto(), null, null);
         }
 
         if (import.ClearPlaces() is { IsFailed: true } result)
         {
-            return (Result.Fail<string>(result.Errors).ToResultDto(), null, null);
+            return (Result.Fail(result.Errors).ToResultDto(), null, null);
         }
 
         // Check if saga exists, if not, create it by event
         ImportStarted? @event = null;
-        if (!await dbContext.ImportProcesses.AnyAsync(x => x.Id == import.Id, cancellationToken))
+        if (saga is null)
         {
             logger.LogWarning("Import process [Saga] not found for {ImportId}", import.Id);
             @event = new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!);
@@ -97,10 +97,13 @@ public sealed class ImportCommandHandler(
         return (ResultDto.Ok(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!), @event);
     }
 
-    public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
+    public async Task<ResultDto> HandleAsync(
+        CancelImportCommand command,
+        Import? import,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Cancelling import '{ImportId}' for {UserId}", command.ImportId, command.UserId);
-        if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
+        if (import is null)
         {
             return Result.Fail(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ImportId)).ToResultDto();
         }

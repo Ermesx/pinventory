@@ -3,7 +3,6 @@
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 namespace Pinventory.Pins.Application.Importing;
@@ -12,16 +11,17 @@ namespace Pinventory.Pins.Application.Importing;
 public sealed class ImportDownloadHandler(
     ILogger<ImportDownloadHandler> logger,
     IImportServiceFactory factory,
-    PinsDbContext dbContext,
     IStarredPlacesProvider placesProvider)
 {
-    public async Task<(DownloadArchiveMessage? DownloadMessage, CheckJobMessage? CheckJobMessage)> HandleAsync(CheckJobMessage check,
+    public async Task<(DownloadArchiveMessage? DownloadMessage, CheckJobMessage? CheckJobMessage)> HandleAsync(
+        CheckJobMessage check,
+        Import? import,
         CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.ImportId);
-        if (await dbContext.GetCurrentImport(check.ImportId, cancellationToken) is not { } import)
+        logger.LogInformation("Checking archive job {ImportId} for {UserId}", check.ImportId, check.UserId);
+        if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.ImportId);
+            logger.LogError("Running import {ImportId} not found for {UserId}", check.ImportId, check.UserId);
             return (null, null);
         }
 
@@ -43,28 +43,31 @@ public sealed class ImportDownloadHandler(
         switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
-                logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.ImportId);
+                logger.LogInformation("Archive {ImportId} is still in progress for {UserId}", check.ImportId, check.ImportId);
                 return (null, check);
             case ImportState.Failed:
-                logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);
+                logger.LogWarning("Archive {ImportId} failed for {UserId}", check.ImportId, check.ImportId);
                 import.Fail(Errors.ImportHandler.ExternalJobFailed());
-                break;
+                return (null, null);
             case ImportState.Cancelled:
-                logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.ImportId);
+                logger.LogInformation("Archive {ImportId} cancelled for {UserId}", check.ImportId, check.ImportId);
                 import.Cancel();
-                break;
+                return (null, null);
         }
 
         var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
         return (DownloadArchiveMessage.Create(check, urls), null);
     }
 
-    public async Task<ExpectedBatchesMessage?> HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
+    public async Task<ExpectedBatchesMessage?> HandleAsync(
+        DownloadArchiveMessage download,
+        Import? import,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
-        if (await dbContext.GetCurrentImport(download.ImportId, cancellationToken) is not { } import)
+        if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
+            logger.LogError("Running import {ImportId} not found for {UserId}", download.ImportId, download.UserId);
             return null;
         }
 

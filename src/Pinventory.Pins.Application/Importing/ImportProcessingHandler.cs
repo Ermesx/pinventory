@@ -20,13 +20,22 @@ public class ImportProcessingHandler(
 {
     public const int MaxBatchSize = 300;
 
-    public async Task<OutgoingMessages> HandleAsync(PlacesProcessingBatchMessage batch, CancellationToken cancellationToken = default)
+    // TODO: Consider this when move pins creations and updates as side effects
+
+    // public async Task<IEnumerable<Pin>> LoadAsync(IUserMessage message, PinsDbContext dbContext,
+    //     CancellationToken cancellationToken = default) =>
+    //     await dbContext.Pins
+    //         .Where(x => x.OwnerId == message.UserId)
+    //         .ToListAsync(cancellationToken);
+
+
+    public async Task<OutgoingMessages> HandleAsync(PlacesProcessingBatchMessage batch, Import? import,
+        CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batch.ArchiveJobId,
-            batch.UserId);
-        if (await dbContext.GetCurrentImport(batch.ImportId, cancellationToken) is not { } import)
+        logger.LogInformation("Import {ImportId}: Processing places into pins for user {UserId}", batch.ImportId, batch.UserId);
+        if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
+            logger.LogError("Running import {ImportId} not found for {UserId}", batch.ImportId, batch.UserId);
             return [];
         }
 
@@ -34,30 +43,32 @@ public class ImportProcessingHandler(
         var processResult = await import.ProcessPlacesAsync(placesIds, validator, cancellationToken);
         if (processResult.IsFailed)
         {
-            logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batch.ArchiveJobId,
-                batch.UserId);
+            logger.LogError("Processing places in job {ImportId} failed for user {UserId}", batch.ImportId, batch.UserId);
             return [];
         }
 
         var (toCreate, toUpdate) = processResult.Value;
 
-        var newPins = await CreatePins(toCreate);
-        var updatedPins = await UpdatePins(toUpdate);
+        Guid[] ids = [..CreatePins(toCreate), ..await UpdatePins(toUpdate)];
 
-        var messages = GetIdsForChangedPins().Select(pinId => new AssignTagsToPinMessage(pinId)).ToList();
+        var messages = ids.Select(pinId => new AssignTagsToPinMessage(pinId)).ToList();
         return [new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId), ..messages];
 
-        IEnumerable<Guid> GetIdsForChangedPins() => updatedPins.Select(x => x.Id).Concat(newPins.Select(x => x.Id)).ToList();
-
-        async Task<List<Pin>> CreatePins(IEnumerable<StarredPlace> create)
+        IEnumerable<Guid> CreatePins(IEnumerable<StarredPlace> create)
         {
             var pinsToCreate = create.Select(x => Pin.Create(import.UserId, GooglePlaceId.Parse(x.GoogleMapsUrl), x)).ToList();
-            await dbContext.Pins.AddRangeAsync(pinsToCreate, cancellationToken);
-            return pinsToCreate;
+            dbContext.Pins.AddRange(pinsToCreate);
+
+            return pinsToCreate.Select(x => x.Id).ToList();
         }
 
-        async Task<List<Pin>> UpdatePins(IEnumerable<StarredPlace> update)
+        async Task<List<Guid>> UpdatePins(IReadOnlyList<StarredPlace> update)
         {
+            if (!update.Any())
+            {
+                return [];
+            }
+
             var placesToUpdate = update.ToDictionary(x => GooglePlaceId.Parse(x.GoogleMapsUrl));
 
             var allUserPins = await dbContext.Pins
@@ -77,18 +88,17 @@ public class ImportProcessingHandler(
                 }
             }
 
-            return pinsToUpdate;
+            return pinsToUpdate.Select(x => x.Id).ToList();
         }
     }
 
-    public async Task HandleAsync(ImportProcessCompleted completed, CancellationToken cancellationToken = default)
+    public void Handle(ImportProcessCompleted completed, Import? import)
     {
-        logger.LogInformation("Import {ArchiveJobId}: try complete process for user {UserId}", completed.ArchiveJobId, completed.UserId);
+        logger.LogInformation("Import {ImportId}: try complete process for user {UserId}", completed.ImportId, completed.UserId);
 
-        var import = await dbContext.GetCurrentImport(completed.ImportId, cancellationToken);
         if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", completed.ArchiveJobId, completed.UserId);
+            logger.LogError("Running import {ImportId} not found for {UserId}", completed.ImportId, completed.UserId);
             return;
         }
 
@@ -100,6 +110,6 @@ public class ImportProcessingHandler(
             return;
         }
 
-        logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", completed.ArchiveJobId, completed.UserId);
+        logger.LogInformation("Import {ImportId} completed for {UserId}", completed.ImportId, completed.UserId);
     }
 }

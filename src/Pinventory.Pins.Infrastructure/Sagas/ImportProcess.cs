@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
+using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
@@ -17,7 +18,7 @@ public class ImportProcess : Saga
     {
         logger.LogInformation("Import process [Saga] created for {ArchiveJobId} for {UserId}", @event.ArchiveJobId, @event.UserId);
 
-        return (new ImportProcess { Id = @event.Id }, new ImportProcessTimeout(@event.Id));
+        return (new ImportProcess { Id = @event.Id }, new ImportProcessTimeout(@event.Id, @event.UserId));
     }
 
     public void Handle(ExpectedBatchesMessage message, ILogger<ImportProcess> logger)
@@ -67,12 +68,17 @@ public class ImportProcess : Saga
         MarkCompleted();
     }
 
-    public void Handle(ImportProcessTimeout timeout, ILogger<ImportProcess> logger)
+    public void Handle(ImportProcessTimeout timeout, Import? import, ILogger<ImportProcess> logger)
     {
         logger.LogInformation("Import process [Saga] timed out for {ImportId}", timeout.ImportId);
 
         MarkCompleted();
+
+        import?.Fail(Errors.ImportProcess.ImportProcessTimeout(import.Id));
     }
 
-    // TODO: Add NotFound to handle timeouts when import is completed
+    public static void NotFound(ImportProcessTimeout timeout, ILogger<ImportProcess> logger)
+    {
+        logger.LogInformation("Import process [Saga] not found for {ImportId}", timeout.ImportId);
+    }
 }

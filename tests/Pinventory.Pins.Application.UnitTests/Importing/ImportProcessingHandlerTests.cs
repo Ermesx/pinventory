@@ -37,6 +37,7 @@ public class ImportProcessingHandlerTests
         var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow);
         var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow);
         await dbContext.Pins.AddRangeAsync(conflictPin, updatePin);
+        await dbContext.SaveChangesAsync();
 
         var places = new[]
         {
@@ -52,9 +53,6 @@ public class ImportProcessingHandlerTests
         };
 
         var registerResult = import.RegisterPlaces(places);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         // Set up a validator to return appropriate states
         validatorMock.Setup(v =>
@@ -74,17 +72,16 @@ public class ImportProcessingHandlerTests
         var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
-        var outgoingMessages = await handler.HandleAsync(message);
+        var outgoingMessages = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         registerResult.IsSuccess.ShouldBeTrue();
-        var reloadedImport = await dbContext.Imports.SingleAsync(i => i.UserId == userId);
-        reloadedImport.Processed.ShouldBe(4);
-        reloadedImport.Created.ShouldBe(1);
-        reloadedImport.Updated.ShouldBe(1);
-        reloadedImport.Failed.ShouldBe(1);
-        reloadedImport.Conflicts.ShouldBe(1);
+        import.Processed.ShouldBe(4);
+        import.Created.ShouldBe(1);
+        import.Updated.ShouldBe(1);
+        import.Failed.ShouldBe(1);
+        import.Conflicts.ShouldBe(1);
 
         // Two pins should be tagged (created + updated)
         outgoingMessages.Count(x => x is AssignTagsToPinMessage).ShouldBe(2);
@@ -107,6 +104,7 @@ public class ImportProcessingHandlerTests
         var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
         var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
         await dbContext.Pins.AddRangeAsync(conflictPin, updatePin);
+        await dbContext.SaveChangesAsync();
 
         var places = new[]
         {
@@ -126,10 +124,6 @@ public class ImportProcessingHandlerTests
                 null)
         ]);
 
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
-
         // Set up a validator to return appropriate states
         validatorMock.Setup(v =>
                 v.ValidateAsync(It.IsAny<Import>(), It.Is<StarredPlace>(p => p.Name == "SameName"), It.IsAny<CancellationToken>()))
@@ -145,13 +139,12 @@ public class ImportProcessingHandlerTests
         var message = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, placeIds);
 
         // Act
-        var outgoingMessages = await handler.HandleAsync(message);
+        var outgoingMessages = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         registerResult.IsSuccess.ShouldBeTrue();
-        var reloadedImport = await dbContext.Imports.FirstAsync(i => i.UserId == userId);
-        reloadedImport.State.ShouldBe(ImportState.InProgress);
+        import.State.ShouldBe(ImportState.InProgress);
         dbContext.Pins.Local.Any(p => p.Name == "Created").ShouldBeTrue();
         outgoingMessages.Count(x => x is AssignTagsToPinMessage).ShouldBe(3);
     }
@@ -164,7 +157,7 @@ public class ImportProcessingHandlerTests
         var message = new PlacesProcessingBatchMessage(Guid.NewGuid(), "user-1", "job-404", [Guid.NewGuid()]);
 
         // Act
-        var outgoingMessages = await handler.HandleAsync(message);
+        var outgoingMessages = await handler.HandleAsync(message, null);
 
         // Assert
         outgoingMessages.ShouldBeEmpty();
@@ -176,7 +169,7 @@ public class ImportProcessingHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, policyMock, validatorMock) = await CreateHandlerAsync();
+        var (handler, _, policyMock, validatorMock) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -193,32 +186,25 @@ public class ImportProcessingHandlerTests
         var placesToProcess = new HashSet<Guid> { placeId };
         var processResult = await import.ProcessPlacesAsync(placesToProcess, validatorMock.Object);
 
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
-
         // Set up a validator
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Import>(), It.IsAny<StarredPlace>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(StarredPlaceState.New);
 
         // First process the place to set Processed count
         var processingMessage = new PlacesProcessingBatchMessage(import.Id, userId, archiveJobId, [placeId]);
-        await handler.HandleAsync(processingMessage);
-
-        dbContext.ChangeTracker.Clear();
+        await handler.HandleAsync(processingMessage, import);
 
         // Now trigger TryComplete
         var message = new ImportProcessCompleted(import.Id, userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        handler.Handle(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         registerResult.IsSuccess.ShouldBeTrue();
         processResult.IsSuccess.ShouldBeTrue();
-        var reloadedImport = await dbContext.Imports.SingleAsync(i => i.UserId == userId);
-        reloadedImport.State.ShouldBe(ImportState.Complete);
+        import.State.ShouldBe(ImportState.Complete);
     }
 
     private static async Task<(ImportProcessingHandler handler, PinsDbContext dbContext,

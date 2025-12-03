@@ -10,7 +10,7 @@ using Pinventory.Pins.Application;
 using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Eventing;
+using Pinventory.Pins.Infrastructure.Middlewares;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 

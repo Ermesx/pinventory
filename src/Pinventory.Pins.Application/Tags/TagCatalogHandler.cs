@@ -67,6 +67,7 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
             : Result.Ok();
     }
 
+    // TODO: remove OwnerCommand and use IUserMessage
     private async Task<TagCatalog?> GetTagCatalogAsync(OwnerCommand command, CancellationToken cancellationToken)
     {
         return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == command.OwnerId, cancellationToken);

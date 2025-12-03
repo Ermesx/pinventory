@@ -15,7 +15,8 @@ using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Import.Worker.DataPortability.Archive;
 using Pinventory.Pins.Import.Worker.Handlers;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Eventing;
+using Pinventory.Pins.Infrastructure.Messages;
+using Pinventory.Pins.Infrastructure.Middlewares;
 using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.Pins.Infrastructure.Services.Downloading;
@@ -73,6 +74,7 @@ if (!CodeGeneration.IsGenerating)
         }).UseDurableInbox();
 
         options.Policies.AddMiddleware<DomainEventsPublisherMiddleware>();
+        options.Policies.ForMessagesOfType<IUserMessage>().AddMiddleware<CurrentImportLoaderMiddleware>();
 
         options.Services.AddDebugWolverineRouting();
     });

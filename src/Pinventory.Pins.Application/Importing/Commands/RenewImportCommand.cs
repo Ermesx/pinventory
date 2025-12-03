@@ -1,4 +1,5 @@
-﻿namespace Pinventory.Pins.Application.Importing.Commands;
+﻿using Pinventory.Pins.Infrastructure.Messages;
 
-// TODO: Switch from ArchiveJobId to ImportId as Id to manage Imports and Sagas directly
-public record RenewImportCommand(string UserId, Guid ImportId);
+namespace Pinventory.Pins.Application.Importing.Commands;
+
+public record RenewImportCommand(string UserId, Guid ImportId) : IUserMessage;

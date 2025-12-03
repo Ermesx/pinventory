@@ -97,7 +97,7 @@ namespace Pinventory.Pins.Domain.Importing
             bool IsInPeriod(StarredPlace place) => place.AddedDate >= Period.Start && place.AddedDate <= Period.End;
         }
 
-        public async Task<Result<(IEnumerable<StarredPlace> ToCreate, IEnumerable<StarredPlace> ToUpdate)>> ProcessPlacesAsync(
+        public async Task<Result<(IReadOnlyList<StarredPlace> ToCreate, IReadOnlyList<StarredPlace> ToUpdate)>> ProcessPlacesAsync(
             IReadOnlySet<Guid> placeIds,
             IStarredPlaceValidator validator, CancellationToken cancellationToken = default)
         {

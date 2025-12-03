@@ -1,6 +1,5 @@
 ﻿using FluentResults;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -12,7 +11,6 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure;
 
 using Shouldly;
 
@@ -26,14 +24,11 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, _, serviceMock, policyMock, _) = CreateHandlerAsync();
 
         // Seed running import
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.InProgress, [])));
@@ -41,7 +36,7 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        var response = await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
@@ -55,14 +50,11 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, _, serviceMock, policyMock, _) = CreateHandlerAsync();
 
         // Seed running import
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Complete, [
@@ -72,7 +64,7 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        var response = await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
@@ -86,13 +78,10 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, _, serviceMock, policyMock, _) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Failed, [])));
@@ -100,10 +89,13 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
+        import.State.ShouldBe(ImportState.Failed);
+        response.CheckJobMessage.ShouldBeNull();
+        response.DownloadMessage.ShouldBeNull();
     }
 
     [Test]
@@ -112,13 +104,10 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, _, serviceMock, policyMock, _) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         serviceMock.Setup(s => s.CheckJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok<(ImportState State, IEnumerable<Uri> Urls)>((ImportState.Cancelled, [])));
@@ -126,10 +115,13 @@ public class ImportDownloadHandlerTests
         var message = new CheckJobMessage(import.Id, userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
+        import.State.ShouldBe(ImportState.Cancelled);
+        response.CheckJobMessage.ShouldBeNull();
+        response.DownloadMessage.ShouldBeNull();
     }
 
     [Test]
@@ -138,12 +130,12 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-404";
-        var (handler, _, _, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _) = CreateHandlerAsync();
 
         var message = new CheckJobMessage(Guid.NewGuid(), userId, archiveJobId);
 
         // Act
-        var response = await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message, null);
 
         // Assert
         response.CheckJobMessage.ShouldBeNull();
@@ -156,13 +148,10 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, _, _, policyMock, downloaderMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         var urls = new List<string> { "https://only-one" };
         downloaderMock.Setup(p => p.ProvideAsync(It.Is<IReadOnlyList<Uri>>(u => u.Count == urls.Count), It.IsAny<CancellationToken>()))
@@ -171,10 +160,11 @@ public class ImportDownloadHandlerTests
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, urls);
 
         // Act
-        await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
+        responseMessage.ShouldBeNull();
     }
 
     [Test]
@@ -183,13 +173,10 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, _, _, policyMock, downloaderMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         var places = new List<StarredPlace>
         {
@@ -206,7 +193,7 @@ public class ImportDownloadHandlerTests
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, ["https://a", "https://b"]);
 
         // Act
-        var responseMessage = await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
@@ -221,11 +208,11 @@ public class ImportDownloadHandlerTests
     public async Task DownloadArchive_does_nothing_when_running_import_not_found()
     {
         // Arrange
-        var (handler, _, _, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _) = CreateHandlerAsync();
         var message = new DownloadArchiveMessage(Guid.NewGuid(), "user-1", "job-404", new List<string> { "https://a", "https://b" });
 
         // Act
-        var responseMessage = await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message, null);
 
         // Assert
         responseMessage.ShouldBeNull();
@@ -237,13 +224,10 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, _, _, policyMock, downloaderMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
-        await dbContext.Imports.AddAsync(import);
-        await dbContext.SaveChangesAsync();
-        dbContext.ChangeTracker.Clear();
 
         downloaderMock.Setup(p => p.ProvideAsync(It.IsAny<IReadOnlyList<Uri>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail("download failed"));
@@ -251,26 +235,18 @@ public class ImportDownloadHandlerTests
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, new List<string> { "https://a", "https://b" });
 
         // Act
-        var responseMessage = await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message, import);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         responseMessage.ShouldBeNull();
     }
 
-    private static async Task<(ImportDownloadHandler handler, PinsDbContext dbContext,
+    private static (ImportDownloadHandler handler,
         Mock<IImportServiceFactory>
         factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStarredPlacesProvider>
-        downloaderMock)> CreateHandlerAsync()
+        downloaderMock) CreateHandlerAsync()
     {
-        var options = new DbContextOptionsBuilder<PinsDbContext>()
-            .UseSqlite(connectionString: "Data Source=:memory:")
-            .Options;
-
-        var dbContext = new PinsDbContext(options);
-        await dbContext.Database.OpenConnectionAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-
         var logger = Mock.Of<ILogger<ImportDownloadHandler>>();
         var factoryMock = new Mock<IImportServiceFactory>();
         var serviceMock = new Mock<IImportService>();
@@ -283,8 +259,8 @@ public class ImportDownloadHandlerTests
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var handler = new ImportDownloadHandler(logger, factoryMock.Object, dbContext, downloaderMock.Object);
+        var handler = new ImportDownloadHandler(logger, factoryMock.Object, downloaderMock.Object);
 
-        return (handler, dbContext, factoryMock, serviceMock, concurrencyPolicyMock, downloaderMock);
+        return (handler, factoryMock, serviceMock, concurrencyPolicyMock, downloaderMock);
     }
 }

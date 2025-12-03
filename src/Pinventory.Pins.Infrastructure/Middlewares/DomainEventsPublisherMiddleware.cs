@@ -2,7 +2,7 @@
 
 using Wolverine;
 
-namespace Pinventory.Pins.Infrastructure.Eventing;
+namespace Pinventory.Pins.Infrastructure.Middlewares;
 
 public class DomainEventsPublisherMiddleware
 {

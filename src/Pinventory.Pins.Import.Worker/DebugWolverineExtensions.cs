@@ -1,5 +1,5 @@
-﻿using Pinventory.Pins.Application.Commands;
-using Pinventory.Pins.Application.Importing.Messages;
+﻿using Pinventory.Pins.Application.Importing.Messages;
+using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
@@ -23,13 +23,13 @@ public static class DebugWolverineExtensions
             new ImportPlaceRegistered(Guid.NewGuid(), "test", "job-123", Guid.NewGuid()),
             new ImportPlaceProcessed(Guid.NewGuid(), "test", "job-123", Guid.NewGuid(), StarredPlaceState.New),
 
-            new AssignTags(Guid.NewGuid(), new List<string>(), "test", 1),
+            new AssignTagsToPinMessage(Guid.NewGuid()),
 
             new ImportPlacesCleared(Guid.NewGuid(), "test", "job-123"),
             new ImportCancelled(Guid.NewGuid(), "test", "job-123"),
             new ImportFailed(Guid.NewGuid(), "test", "job-123", "test"),
 
-            new ImportProcessTimeout(Guid.NewGuid()),
+            new ImportProcessTimeout(Guid.NewGuid(), "test"),
             new ImportProcessCompleted(Guid.NewGuid(), "test", "job-123")
         ]);
     }
