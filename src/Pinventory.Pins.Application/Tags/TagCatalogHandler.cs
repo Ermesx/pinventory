@@ -3,19 +3,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Tags.Commands;
 using Pinventory.Pins.Domain.Tags;
 using Pinventory.Pins.Infrastructure;
-
-using Wolverine;
 
 namespace Pinventory.Pins.Application.Tags;
 
 // dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 // FluentResults can be used because this handler is used as internal MediatR
-public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbContext dbContext, IMessageBus bus)
-    : ApplicationHandler(bus)
+public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbContext dbContext)
 {
     public async Task<Result<Guid>> HandleAsync(DefineTagCatalogCommand command, CancellationToken cancellationToken = default)
     {
@@ -35,7 +31,6 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
         }
 
         await dbContext.TagCatalogs.AddAsync(tagsCatalog, cancellationToken);
-        await RaiseEventsAsync(tagsCatalog);
 
         return Result.Ok(tagsCatalog.Id);
     }
@@ -51,14 +46,9 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
         }
 
         var result = tagCatalog.AddTag(command.Tag);
-        if (result.IsFailed)
-        {
-            return Result.Fail(result.Errors);
-        }
-
-        await RaiseEventsAsync(tagCatalog);
-
-        return Result.Ok();
+        return result.IsFailed
+            ? Result.Fail(result.Errors)
+            : Result.Ok();
     }
 
     public async Task<Result<Success>> HandleAsync(RemoveTagCommand command, CancellationToken cancellationToken = default)
@@ -72,14 +62,9 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
         }
 
         var result = tagCatalog.RemoveTag(command.Tag);
-        if (result.IsFailed)
-        {
-            return Result.Fail(result.Errors);
-        }
-
-        await RaiseEventsAsync(tagCatalog);
-
-        return Result.Ok();
+        return result.IsFailed
+            ? Result.Fail(result.Errors)
+            : Result.Ok();
     }
 
     private async Task<TagCatalog?> GetTagCatalogAsync(OwnerCommand command, CancellationToken cancellationToken)

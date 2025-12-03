@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
@@ -17,21 +16,18 @@ namespace Pinventory.Pins.Application.Importing;
 public class ImportProcessingHandler(
     ILogger<ImportProcessingHandler> logger,
     PinsDbContext dbContext,
-    IMessageContext bus,
-    IStarredPlaceValidator validator) : ApplicationHandler(bus)
+    IStarredPlaceValidator validator)
 {
     public const int MaxBatchSize = 300;
 
     public async Task<OutgoingMessages> HandleAsync(PlacesProcessingBatchMessage batch, CancellationToken cancellationToken = default)
     {
-        var outgoingMessages = new OutgoingMessages();
-
         logger.LogInformation("Import {ArchiveJobId}: Processing places into pins for user {UserId}", batch.ArchiveJobId,
             batch.UserId);
         if (await dbContext.GetCurrentImport(batch.ImportId, cancellationToken) is not { } import)
         {
             logger.LogError("Running import {ArchiveJobId} not found for {UserId}", batch.ArchiveJobId, batch.UserId);
-            return outgoingMessages;
+            return [];
         }
 
         var placesIds = batch.PlaceIds.ToHashSet();
@@ -40,7 +36,7 @@ public class ImportProcessingHandler(
         {
             logger.LogError("Processing places in job {ArchiveJobId} failed for user {UserId}", batch.ArchiveJobId,
                 batch.UserId);
-            return outgoingMessages;
+            return [];
         }
 
         var (toCreate, toUpdate) = processResult.Value;
@@ -48,12 +44,8 @@ public class ImportProcessingHandler(
         var newPins = await CreatePins(toCreate);
         var updatedPins = await UpdatePins(toUpdate);
 
-        await RaiseEventsAsync(import);
-
-        outgoingMessages.AddRange(GetIdsForChangedPins().Select(pinId => new AssignTagsToPinMessage(pinId)));
-        outgoingMessages.Add(new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId));
-
-        return outgoingMessages;
+        var messages = GetIdsForChangedPins().Select(pinId => new AssignTagsToPinMessage(pinId)).ToList();
+        return [new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId), ..messages];
 
         IEnumerable<Guid> GetIdsForChangedPins() => updatedPins.Select(x => x.Id).Concat(newPins.Select(x => x.Id)).ToList();
 
@@ -109,6 +101,5 @@ public class ImportProcessingHandler(
         }
 
         logger.LogInformation("Import {ArchiveJobId} completed for {UserId}", completed.ArchiveJobId, completed.UserId);
-        await RaiseEventsAsync(import);
     }
 }

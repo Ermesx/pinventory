@@ -12,12 +12,9 @@ using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
 
 using Shouldly;
-
-using Wolverine;
 
 namespace Pinventory.Pins.Application.UnitTests.Importing;
 
@@ -29,7 +26,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
 
         // Seed running import
         var import = new Import(userId, Period.AllTime);
@@ -58,7 +55,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
 
         // Seed running import
         var import = new Import(userId, Period.AllTime);
@@ -89,7 +86,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -107,8 +104,6 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
     }
 
     [Test]
@@ -117,7 +112,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock, _) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -135,8 +130,6 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportCancelled>();
     }
 
     [Test]
@@ -145,15 +138,16 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-404";
-        var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _, _) = await CreateHandlerAsync();
 
         var message = new CheckJobMessage(Guid.NewGuid(), userId, archiveJobId);
 
         // Act
-        await handler.HandleAsync(message);
+        var response = await handler.HandleAsync(message);
 
         // Assert
-        busMock.Invocations.Count.ShouldBe(0);
+        response.CheckJobMessage.ShouldBeNull();
+        response.DownloadMessage.ShouldBeNull();
     }
 
     [Test]
@@ -162,7 +156,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -181,8 +175,6 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
     }
 
     [Test]
@@ -191,7 +183,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -218,28 +210,25 @@ public class ImportDownloadHandlerTests
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(3);
-        var published = busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
-        published.UserId.ShouldBe(userId);
-        published.ArchiveJobId.ShouldBe(archiveJobId);
-        busMock.Invocations[1].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
-        busMock.Invocations[2].Arguments[0].ShouldBeOfType<ImportPlaceRegistered>();
-
         responseMessage.ShouldNotBeNull();
+        responseMessage.BatchesCount.ShouldBe(1);
+        responseMessage.Id.ShouldBe(import.Id);
+        responseMessage.UserId.ShouldBe(userId);
+        responseMessage.ArchiveJobId.ShouldBe(archiveJobId);
     }
 
     [Test]
     public async Task DownloadArchive_does_nothing_when_running_import_not_found()
     {
         // Arrange
-        var (handler, _, busMock, _, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _, _) = await CreateHandlerAsync();
         var message = new DownloadArchiveMessage(Guid.NewGuid(), "user-1", "job-404", new List<string> { "https://a", "https://b" });
 
         // Act
-        await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message);
 
         // Assert
-        busMock.Invocations.Count.ShouldBe(0);
+        responseMessage.ShouldBeNull();
     }
 
     [Test]
@@ -248,7 +237,7 @@ public class ImportDownloadHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock, downloaderMock) = await CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -262,15 +251,14 @@ public class ImportDownloadHandlerTests
         var message = new DownloadArchiveMessage(import.Id, userId, archiveJobId, new List<string> { "https://a", "https://b" });
 
         // Act
-        await handler.HandleAsync(message);
+        var responseMessage = await handler.HandleAsync(message);
 
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportFailed>();
+        responseMessage.ShouldBeNull();
     }
 
-    private static async Task<(ImportDownloadHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,
+    private static async Task<(ImportDownloadHandler handler, PinsDbContext dbContext,
         Mock<IImportServiceFactory>
         factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStarredPlacesProvider>
         downloaderMock)> CreateHandlerAsync()
@@ -284,7 +272,6 @@ public class ImportDownloadHandlerTests
         await dbContext.Database.EnsureCreatedAsync();
 
         var logger = Mock.Of<ILogger<ImportDownloadHandler>>();
-        var busMock = new Mock<IMessageContext>();
         var factoryMock = new Mock<IImportServiceFactory>();
         var serviceMock = new Mock<IImportService>();
         var concurrencyPolicyMock = new Mock<IImportConcurrencyPolicy>();
@@ -296,8 +283,8 @@ public class ImportDownloadHandlerTests
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var handler = new ImportDownloadHandler(logger, factoryMock.Object, dbContext, busMock.Object, downloaderMock.Object);
+        var handler = new ImportDownloadHandler(logger, factoryMock.Object, dbContext, downloaderMock.Object);
 
-        return (handler, dbContext, busMock, factoryMock, serviceMock, concurrencyPolicyMock, downloaderMock);
+        return (handler, dbContext, factoryMock, serviceMock, concurrencyPolicyMock, downloaderMock);
     }
 }

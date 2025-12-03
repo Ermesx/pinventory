@@ -3,17 +3,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Abstractions;
-using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
+using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
-
-using Wolverine;
 
 namespace Pinventory.Pins.Application.Importing;
 
@@ -22,8 +19,7 @@ public sealed class ImportCommandHandler(
     ILogger<ImportCommandHandler> logger,
     IImportServiceFactory factory,
     PinsDbContext dbContext,
-    IMessageContext bus,
-    IImportConcurrencyPolicy concurrencyPolicy) : ApplicationHandler(bus)
+    IImportConcurrencyPolicy concurrencyPolicy)
 {
     public async Task<(ResultDto<string> Result, CheckJobMessage? Message)> HandleAsync(StartImportCommand command,
         CancellationToken cancellationToken = default)
@@ -70,37 +66,35 @@ public sealed class ImportCommandHandler(
         }
 
         await dbContext.Imports.AddAsync(import, cancellationToken);
-        await RaiseEventsAsync(import);
 
         return (Result.Ok(archiveJobId).ToResultDto(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
     }
 
     // TODO: Get Import and Saga by ID as parameters
-    public async Task<(ResultDto Result, CheckJobMessage? Message)> HandleAsync(RenewImportCommand command,
+    public async Task<(ResultDto Result, CheckJobMessage? Message, ImportStarted? Event)> HandleAsync(RenewImportCommand command,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
             var error = Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId);
-            return (Result.Fail<string>(error).ToResultDto(), null);
+            return (Result.Fail<string>(error).ToResultDto(), null, null);
         }
 
         if (import.ClearPlaces() is { IsFailed: true } result)
         {
-            return (Result.Fail<string>(result.Errors).ToResultDto(), null);
+            return (Result.Fail<string>(result.Errors).ToResultDto(), null, null);
         }
 
         // Check if saga exists, if not, create it by event
+        ImportStarted? @event = null;
         if (!await dbContext.ImportProcesses.AnyAsync(x => x.Id == import.Id, cancellationToken))
         {
             logger.LogError("Import process [Saga] not found for {ImportId}", import.Id);
-            await bus.PublishAsync(new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!));
+            @event = new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!);
         }
 
-        await RaiseEventsAsync(import);
-
-        return (ResultDto.Ok(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
+        return (ResultDto.Ok(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!), @event);
     }
 
     public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
@@ -136,7 +130,6 @@ public sealed class ImportCommandHandler(
             return Result.Fail(result.Errors).ToResultDto();
         }
 
-        await RaiseEventsAsync(import);
         return ResultDto.Ok();
     }
 }

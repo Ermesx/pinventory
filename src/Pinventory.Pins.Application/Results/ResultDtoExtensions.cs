@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace Pinventory.Pins.Application.Abstractions.Results;
+namespace Pinventory.Pins.Application.Results;
 
 public static class ResultDtoExtensions
 {

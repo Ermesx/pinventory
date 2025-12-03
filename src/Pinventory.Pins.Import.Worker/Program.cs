@@ -15,6 +15,7 @@ using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Import.Worker.DataPortability.Archive;
 using Pinventory.Pins.Import.Worker.Handlers;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Eventing;
 using Pinventory.Pins.Infrastructure.Sagas;
 using Pinventory.Pins.Infrastructure.Services;
 using Pinventory.Pins.Infrastructure.Services.Downloading;
@@ -70,6 +71,8 @@ if (!CodeGeneration.IsGenerating)
             batching.BatchSize = ImportProcessingHandler.MaxBatchSize;
             batching.TriggerTime = 1.Seconds();
         }).UseDurableInbox();
+
+        options.Policies.AddMiddleware<DomainEventsPublisherMiddleware>();
 
         options.Services.AddDebugWolverineRouting();
     });

@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
-
-using Wolverine;
 
 namespace Pinventory.Pins.Application.Importing;
 
@@ -16,8 +13,7 @@ public sealed class ImportDownloadHandler(
     ILogger<ImportDownloadHandler> logger,
     IImportServiceFactory factory,
     PinsDbContext dbContext,
-    IMessageContext bus,
-    IStarredPlacesProvider placesProvider) : ApplicationHandler(bus)
+    IStarredPlacesProvider placesProvider)
 {
     public async Task<(DownloadArchiveMessage? DownloadMessage, CheckJobMessage? CheckJobMessage)> HandleAsync(CheckJobMessage check,
         CancellationToken cancellationToken = default)
@@ -59,8 +55,6 @@ public sealed class ImportDownloadHandler(
                 break;
         }
 
-        await RaiseEventsAsync(import);
-
         var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
         return (DownloadArchiveMessage.Create(check, urls), null);
     }
@@ -80,7 +74,6 @@ public sealed class ImportDownloadHandler(
         {
             logger.LogError("Failed to download archive: {Errors}", dataResult.Errors);
             import.Fail(dataResult.Errors[0]);
-            await RaiseEventsAsync(import);
             return null;
         }
 
@@ -92,8 +85,6 @@ public sealed class ImportDownloadHandler(
             logger.LogError("Failed to register places: {Errors}", result.Errors);
             import.Fail(result.Errors[0]);
         }
-
-        await RaiseEventsAsync(import);
 
         var batchesCount = (import.Total + ImportProcessingHandler.MaxBatchSize - 1) / ImportProcessingHandler.MaxBatchSize;
         return new ExpectedBatchesMessage(import.Id, import.UserId, import.ArchiveJobId!, batchesCount);

@@ -10,12 +10,9 @@ using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
 
 using Shouldly;
-
-using Wolverine;
 
 namespace Pinventory.Pins.Application.UnitTests.Importing;
 
@@ -29,7 +26,7 @@ public class ImportCommandHandlerTests
         var period = Period.AllTime;
         var archiveJobId = "job-123";
 
-        var (handler, dbContext, busMock, _, _, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, _) = await CreateHandlerAsync();
 
         var command = new StartImportCommand(userId, period.Start, period.End);
 
@@ -46,8 +43,6 @@ public class ImportCommandHandlerTests
         import.ArchiveJobId.ShouldBe(archiveJobId);
         import.State.ShouldBe(ImportState.InProgress);
 
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations.Any(i => i.Arguments[0] is ImportStarted).ShouldBeTrue();
         response.Message.ShouldNotBeNull();
     }
 
@@ -56,7 +51,7 @@ public class ImportCommandHandlerTests
     {
         // Arrange
         var userId = "user-1";
-        var (handler, dbContext, busMock, _, _, policyMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock) = await CreateHandlerAsync();
 
         policyMock.Setup(p => p.CanStartImportAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -71,7 +66,6 @@ public class ImportCommandHandlerTests
         await dbContext.SaveChangesAsync();
         response.Result.IsFailed.ShouldBeTrue();
         (await dbContext.Imports.CountAsync()).ShouldBe(0);
-        busMock.Invocations.Count.ShouldBe(0);
     }
 
     [Test]
@@ -80,7 +74,7 @@ public class ImportCommandHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, serviceMock, policyMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock) = await CreateHandlerAsync();
 
         // The cancel request must succeed externally for the import to be cancelled
         serviceMock.Setup(s => s.CancelJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
@@ -102,15 +96,13 @@ public class ImportCommandHandlerTests
         // Assert
         startResult.IsSuccess.ShouldBeTrue();
         result.IsSuccess.ShouldBeTrue();
-        busMock.Invocations.Count.ShouldBe(1);
-        busMock.Invocations[0].Arguments[0].ShouldBeOfType<ImportCancelled>();
     }
 
     [Test]
     public async Task CancelImport_fails_when_running_import_not_found()
     {
         // Arrange
-        var (handler, _, busMock, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _) = await CreateHandlerAsync();
 
         var command = new CancelImportCommand("user-1", "job-404");
 
@@ -120,7 +112,6 @@ public class ImportCommandHandlerTests
         // Assert
         result.IsFailed.ShouldBeTrue();
         result.Errors.ShouldContain(e => e.Message.Contains("not found"));
-        busMock.Invocations.Count.ShouldBe(0);
     }
 
     [Test]
@@ -128,7 +119,7 @@ public class ImportCommandHandlerTests
     {
         // Arrange
         var userId = "user-1";
-        var (handler, dbContext, busMock, factoryMock, _, _) = await CreateHandlerAsync();
+        var (handler, dbContext, factoryMock, _, _) = await CreateHandlerAsync();
 
         factoryMock.Setup(f => f.CreateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<IImportService>("factory failed"));
@@ -142,7 +133,6 @@ public class ImportCommandHandlerTests
         // Assert
         response.Result.IsFailed.ShouldBeTrue();
         (await dbContext.Imports.CountAsync()).ShouldBe(0);
-        busMock.Invocations.Count.ShouldBe(0);
     }
 
     [Test]
@@ -151,7 +141,7 @@ public class ImportCommandHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, busMock, _, _, policyMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock) = await CreateHandlerAsync();
 
         // Seed running import with places
         var import = new Import(userId, Period.AllTime);
@@ -182,7 +172,6 @@ public class ImportCommandHandlerTests
         reloaded.StarredPlaces.Count.ShouldBe(0);
         reloaded.Total.ShouldBe(0);
 
-        busMock.Invocations.Any(i => i.Arguments[0] is ImportPlacesCleared).ShouldBeTrue();
         response.Message.ShouldNotBeNull();
     }
 
@@ -190,7 +179,7 @@ public class ImportCommandHandlerTests
     public async Task RenewImport_fails_when_running_import_not_found()
     {
         // Arrange
-        var (handler, _, busMock, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _, _) = await CreateHandlerAsync();
         var command = new RenewImportCommand("user-1", "job-404");
 
         // Act
@@ -199,13 +188,15 @@ public class ImportCommandHandlerTests
         // Assert
         response.Result.IsFailed.ShouldBeTrue();
         response.Result.Errors.ShouldContain(e => e.Message.Contains("not found"));
-        busMock.Invocations.Count.ShouldBe(0);
     }
 
 
-    private static async Task<(ImportCommandHandler handler, PinsDbContext dbContext, Mock<IMessageContext> busMock,
-        Mock<IImportServiceFactory>
-        factoryMock, Mock<IImportService> serviceMock, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock)> CreateHandlerAsync()
+    private static async Task<(
+        ImportCommandHandler handler,
+        PinsDbContext dbContext,
+        Mock<IImportServiceFactory> factoryMock,
+        Mock<IImportService> serviceMock,
+        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock)> CreateHandlerAsync()
     {
         var options = new DbContextOptionsBuilder<PinsDbContext>()
             .UseSqlite(connectionString: "Data Source=:memory:")
@@ -216,7 +207,6 @@ public class ImportCommandHandlerTests
         await dbContext.Database.EnsureCreatedAsync();
 
         var logger = Mock.Of<ILogger<ImportCommandHandler>>();
-        var busMock = new Mock<IMessageContext>();
         var factoryMock = new Mock<IImportServiceFactory>();
         var serviceMock = new Mock<IImportService>();
         var concurrencyPolicyMock = new Mock<IImportConcurrencyPolicy>();
@@ -229,8 +219,8 @@ public class ImportCommandHandlerTests
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var handler = new ImportCommandHandler(logger, factoryMock.Object, dbContext, busMock.Object, concurrencyPolicyMock.Object);
+        var handler = new ImportCommandHandler(logger, factoryMock.Object, dbContext, concurrencyPolicyMock.Object);
 
-        return (handler, dbContext, busMock, factoryMock, serviceMock, concurrencyPolicyMock);
+        return (handler, dbContext, factoryMock, serviceMock, concurrencyPolicyMock);
     }
 }

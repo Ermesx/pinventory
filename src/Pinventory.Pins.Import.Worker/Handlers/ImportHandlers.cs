@@ -1,8 +1,9 @@
 ﻿using Pinventory.Pins.Application;
-using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing;
 using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
+using Pinventory.Pins.Application.Results;
+using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 using Wolverine;
@@ -19,7 +20,7 @@ public static class ImportHandlers
         await app.HandleAsync(command, cancellationToken);
 
     // Add => [Entity(Required = false)] ImportProcess? saga
-    public static async Task<(ResultDto, CheckJobMessage?)> HandleAsync(RenewImportCommand command,
+    public static async Task<(ResultDto, CheckJobMessage?, ImportStarted?)> HandleAsync(RenewImportCommand command,
         ImportCommandHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);

@@ -10,6 +10,7 @@ using Pinventory.Pins.Application;
 using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Eventing;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 
@@ -56,6 +57,8 @@ if (!CodeGeneration.IsGenerating)
             batching.BatchSize = 25;
             batching.TriggerTime = 1.Seconds();
         }).BufferedInMemory();
+
+        options.Policies.AddMiddleware<DomainEventsPublisherMiddleware>();
 
         options.Services.AddDebugWolverineRouting();
     });

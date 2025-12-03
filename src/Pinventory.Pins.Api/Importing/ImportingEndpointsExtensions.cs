@@ -9,8 +9,8 @@ using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Api.Importing.Realtime;
 using Pinventory.Pins.Application;
-using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
+using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
