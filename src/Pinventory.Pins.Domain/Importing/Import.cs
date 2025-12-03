@@ -78,12 +78,13 @@ namespace Pinventory.Pins.Domain.Importing
                 return Result.Fail(Errors.Import.CannotRegisterPlaces(State));
             }
 
-            if (!places.Any())
+            var validPlaces = places.Where(IsInPeriod).ToList();
+            if (validPlaces.Count == 0)
             {
                 return Result.Fail(Errors.Import.PlacesCannotBeEmpty());
             }
 
-            foreach (var place in places.Where(IsInPeriod))
+            foreach (var place in validPlaces)
             {
                 if (_starredPlaces.Add(place))
                 {

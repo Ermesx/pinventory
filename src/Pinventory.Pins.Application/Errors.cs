@@ -22,8 +22,8 @@ public static class Errors
 
     public static class ImportHandler
     {
-        public static Error RunningImportNotFound(string userId, string archiveJobId) =>
-            new NotFoundError($"Import {archiveJobId} not found for user {userId}");
+        public static Error RunningImportNotFound(string userId, Guid importId) =>
+            new NotFoundError($"Import {importId} not found for user {userId}");
 
         public static Error ExternalJobFailed() => new("Archive job failed externally");
 

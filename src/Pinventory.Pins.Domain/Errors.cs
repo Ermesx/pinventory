@@ -33,7 +33,7 @@ public static class Errors
         public static Error CannotRegisterPlaces(ImportState state) =>
             new($"Cannot register places because is not 'In Progress' (actual: '{state}')");
 
-        public static Error PlacesCannotBeEmpty() => new("Places cannot be empty");
+        public static Error PlacesCannotBeEmpty() => new EmptyPlacesError();
 
         public static Error ThereIsNoPlacesToProcess(Importing.Import import) =>
             new($"There is no places to process for import '{import.ArchiveJobId}' for user '{import.UserId}'");
@@ -43,6 +43,8 @@ public static class Errors
 
         public class NotInProgressError(Importing.Import import)
             : Error($"Import {import.ArchiveJobId} is not in progress: {import.State} for user {import.UserId}");
+
+        public class EmptyPlacesError() : Error("Places cannot be empty");
     }
 
     public static class Period

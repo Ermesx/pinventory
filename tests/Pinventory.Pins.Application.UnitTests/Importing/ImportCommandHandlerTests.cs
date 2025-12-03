@@ -26,7 +26,7 @@ public class ImportCommandHandlerTests
         var period = Period.AllTime;
         var archiveJobId = "job-123";
 
-        var (handler, dbContext, _, _, _) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, _) = await CreateHandlerAsync(archiveJobId);
 
         var command = new StartImportCommand(userId, period.Start, period.End);
 
@@ -35,7 +35,6 @@ public class ImportCommandHandlerTests
 
         // Assert
         response.Result.IsSuccess.ShouldBeTrue();
-        response.Result.Value.ShouldBe(archiveJobId);
 
         await dbContext.SaveChangesAsync();
         var import = await dbContext.Imports.FirstOrDefaultAsync(i => i.UserId == userId);
@@ -74,7 +73,7 @@ public class ImportCommandHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, serviceMock, policyMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, serviceMock, policyMock) = await CreateHandlerAsync(archiveJobId);
 
         // The cancel request must succeed externally for the import to be cancelled
         serviceMock.Setup(s => s.CancelJobAsync(archiveJobId, It.IsAny<CancellationToken>()))
@@ -88,7 +87,7 @@ public class ImportCommandHandlerTests
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear(); // detach to avoid carrying previous domain events
 
-        var command = new CancelImportCommand(userId, archiveJobId);
+        var command = new CancelImportCommand(userId, import.Id);
 
         // Act
         var result = await handler.HandleAsync(command);
@@ -104,7 +103,7 @@ public class ImportCommandHandlerTests
         // Arrange
         var (handler, _, _, _, _) = await CreateHandlerAsync();
 
-        var command = new CancelImportCommand("user-1", "job-404");
+        var command = new CancelImportCommand("user-1", Guid.NewGuid());
 
         // Act
         var result = await handler.HandleAsync(command);
@@ -141,7 +140,7 @@ public class ImportCommandHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, _, _, policyMock) = await CreateHandlerAsync();
+        var (handler, dbContext, _, _, policyMock) = await CreateHandlerAsync(archiveJobId);
 
         // Seed running import with places
         var import = new Import(userId, Period.AllTime);
@@ -159,7 +158,7 @@ public class ImportCommandHandlerTests
         await dbContext.SaveChangesAsync();
         dbContext.ChangeTracker.Clear();
 
-        var command = new RenewImportCommand(userId, archiveJobId);
+        var command = new RenewImportCommand(userId, import.Id);
 
         // Act
         var response = await handler.HandleAsync(command);
@@ -180,7 +179,7 @@ public class ImportCommandHandlerTests
     {
         // Arrange
         var (handler, _, _, _, _) = await CreateHandlerAsync();
-        var command = new RenewImportCommand("user-1", "job-404");
+        var command = new RenewImportCommand("user-1", Guid.NewGuid());
 
         // Act
         var response = await handler.HandleAsync(command);
@@ -196,7 +195,7 @@ public class ImportCommandHandlerTests
         PinsDbContext dbContext,
         Mock<IImportServiceFactory> factoryMock,
         Mock<IImportService> serviceMock,
-        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock)> CreateHandlerAsync()
+        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock)> CreateHandlerAsync(string archiveJobId = "job-123")
     {
         var options = new DbContextOptionsBuilder<PinsDbContext>()
             .UseSqlite(connectionString: "Data Source=:memory:")
@@ -213,7 +212,7 @@ public class ImportCommandHandlerTests
 
         // sensible defaults
         serviceMock.Setup(s => s.InitiateAsync(It.IsAny<Period?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Ok("job-123"));
+            .ReturnsAsync(Result.Ok(archiveJobId));
         factoryMock.Setup(f => f.CreateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(serviceMock.Object));
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

@@ -21,20 +21,20 @@ public sealed class ImportCommandHandler(
     PinsDbContext dbContext,
     IImportConcurrencyPolicy concurrencyPolicy)
 {
-    public async Task<(ResultDto<string> Result, CheckJobMessage? Message)> HandleAsync(StartImportCommand command,
+    public async Task<(ResultDto<Guid> Result, CheckJobMessage? Message)> HandleAsync(StartImportCommand command,
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Starting import for {UserId}", command.UserId);
         var periodResult = Period.Create(command.Start, command.End);
         if (periodResult.IsFailed)
         {
-            return (Result.Fail<string>(periodResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(periodResult.Errors).ToResultDto(), null);
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);
         if (clientResult.IsFailed)
         {
-            return (Result.Fail<string>(clientResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(clientResult.Errors).ToResultDto(), null);
         }
 
         var client = clientResult.Value;
@@ -56,28 +56,28 @@ public sealed class ImportCommandHandler(
         else
         {
             logger.LogError("Failed to initiate archive job: {Errors}", archiveJobIdResult.Errors);
-            return (Result.Fail<string>(archiveJobIdResult.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(archiveJobIdResult.Errors).ToResultDto(), null);
         }
 
         var import = new Import(command.UserId, periodResult.Value);
         if (await import.StartAsync(archiveJobId, concurrencyPolicy) is { IsFailed: true } result)
         {
-            return (Result.Fail<string>(result.Errors).ToResultDto(), null);
+            return (Result.Fail<Guid>(result.Errors).ToResultDto(), null);
         }
 
         await dbContext.Imports.AddAsync(import, cancellationToken);
 
-        return (Result.Ok(archiveJobId).ToResultDto(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
+        return (Result.Ok(import.Id).ToResultDto(), new CheckJobMessage(import.Id, import.UserId, import.ArchiveJobId!));
     }
 
     // TODO: Get Import and Saga by ID as parameters
     public async Task<(ResultDto Result, CheckJobMessage? Message, ImportStarted? Event)> HandleAsync(RenewImportCommand command,
         CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Renewing import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
+        logger.LogInformation("Renewing import '{ImportId}' for {UserId}", command.ImportId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
-            var error = Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId);
+            var error = Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ImportId);
             return (Result.Fail<string>(error).ToResultDto(), null, null);
         }
 
@@ -90,7 +90,7 @@ public sealed class ImportCommandHandler(
         ImportStarted? @event = null;
         if (!await dbContext.ImportProcesses.AnyAsync(x => x.Id == import.Id, cancellationToken))
         {
-            logger.LogError("Import process [Saga] not found for {ImportId}", import.Id);
+            logger.LogWarning("Import process [Saga] not found for {ImportId}", import.Id);
             @event = new ImportStarted(import.Id, import.UserId, import.ArchiveJobId!);
         }
 
@@ -99,10 +99,10 @@ public sealed class ImportCommandHandler(
 
     public async Task<ResultDto> HandleAsync(CancelImportCommand command, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Cancelling import '{ArchiveJobId}' for {UserId}", command.ArchiveJobId, command.UserId);
+        logger.LogInformation("Cancelling import '{ImportId}' for {UserId}", command.ImportId, command.UserId);
         if (await dbContext.GetCurrentImport(command.UserId, cancellationToken) is not { } import)
         {
-            return Result.Fail(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ArchiveJobId)).ToResultDto();
+            return Result.Fail(Errors.ImportHandler.RunningImportNotFound(command.UserId, command.ImportId)).ToResultDto();
         }
 
         var clientResult = await factory.CreateAsync(command.UserId, cancellationToken);
@@ -112,7 +112,7 @@ public sealed class ImportCommandHandler(
         }
 
         var client = clientResult.Value;
-        if (await client.CancelJobAsync(command.ArchiveJobId, cancellationToken) is { IsFailed: true } cancelResult)
+        if (await client.CancelJobAsync(import.ArchiveJobId!, cancellationToken) is { IsFailed: true } cancelResult)
         {
             var failResult = import.Fail(cancelResult.Errors[0]);
             if (failResult.IsFailed)

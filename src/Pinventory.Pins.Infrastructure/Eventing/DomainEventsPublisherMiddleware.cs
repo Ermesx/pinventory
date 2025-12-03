@@ -6,11 +6,14 @@ namespace Pinventory.Pins.Infrastructure.Eventing;
 
 public class DomainEventsPublisherMiddleware
 {
-    public OutgoingMessages PostProcessAsync(PinsDbContext dbContext) =>
-    [
-        dbContext.ChangeTracker
-            .Entries<AggregateRoot>()
-            .SelectMany(x => x.Entity.DomainEvents)
-            .ToList()
-    ];
+    public async Task PostProcessAsync(PinsDbContext dbContext, IMessageBus bus)
+    {
+        foreach (var @event in dbContext.ChangeTracker
+                     .Entries<AggregateRoot>()
+                     .SelectMany(x => x.Entity.DomainEvents)
+                     .ToList())
+        {
+            await bus.PublishAsync(@event);
+        }
+    }
 }

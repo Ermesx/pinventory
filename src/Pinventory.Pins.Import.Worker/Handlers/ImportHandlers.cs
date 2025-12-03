@@ -15,7 +15,7 @@ namespace Pinventory.Pins.Import.Worker.Handlers;
 [WolverineHandler]
 public static class ImportHandlers
 {
-    public static async Task<(ResultDto<string>, CheckJobMessage?)> HandleAsync(StartImportCommand command, ImportCommandHandler app,
+    public static async Task<(ResultDto<Guid>, CheckJobMessage?)> HandleAsync(StartImportCommand command, ImportCommandHandler app,
         CancellationToken cancellationToken = default) =>
         await app.HandleAsync(command, cancellationToken);
 

@@ -82,8 +82,16 @@ public sealed class ImportDownloadHandler(
 
         if (result.IsFailed)
         {
+            if (result.HasError<Domain.Errors.Import.EmptyPlacesError>())
+            {
+                logger.LogWarning("No places to import for {ImportId} for {UserId}", import.Id, import.UserId);
+                import.Complete();
+                return null;
+            }
+
             logger.LogError("Failed to register places: {Errors}", result.Errors);
-            import.Fail(result.Errors[0]);
+            import.Fail(result.Errors.First());
+            return null;
         }
 
         var batchesCount = (import.Total + ImportProcessingHandler.MaxBatchSize - 1) / ImportProcessingHandler.MaxBatchSize;

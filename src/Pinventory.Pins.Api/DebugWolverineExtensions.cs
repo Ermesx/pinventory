@@ -13,8 +13,8 @@ public static class DebugWolverineExtensions
         services.AddSingleton<MessagesProvider>(() =>
         [
             new StartImportCommand("test", null, null),
-            new RenewImportCommand("test", "job-123"),
-            new CancelImportCommand("test", "job-123"),
+            new RenewImportCommand("test", Guid.NewGuid()),
+            new CancelImportCommand("test", Guid.NewGuid()),
 
             new DefineTagCatalogCommand("test", new List<string>()),
             new AddTagCommand("test", "tag"),

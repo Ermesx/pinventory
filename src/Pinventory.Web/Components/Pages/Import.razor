@@ -56,8 +56,8 @@
 
 <form class="form-horizontal" action="Google/PerformGoogleDataPortabilityConsent" method="post">
     <div>
-        <AntiforgeryToken />
-        <input type="hidden" name="ReturnUrl" value="/import" />
+        <AntiforgeryToken/>
+        <input type="hidden" name="ReturnUrl" value="/import"/>
         <p>
             <button type="submit" class="btn btn-primary">Grant Google permission</button>
         </p>
@@ -67,7 +67,9 @@
 <p>
     When access is expired or is revoked, you can renew it from your Google account.
 </p>
-<a href="https://myaccount.google.com/connections/link?project_number=@Options.Value.ProjectId" target="_blank"><button class="btn btn-primary">Renew access</button></a>
+<a href="https://myaccount.google.com/connections/link?project_number=@Options.Value.ProjectId" target="_blank">
+    <button class="btn btn-primary">Renew access</button>
+</a>
 
 <hr/>
 
@@ -124,6 +126,7 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Archive Job</th>
                     <th>State</th>
                     <th>Started</th>
@@ -142,7 +145,8 @@
                     var completed = j.CompletedAt?.ToLocalTime().ToString("g");
                     var pct = j.Total > 0 ? Math.Min(100, (int)Math.Round((double)j.Processed * 100 / j.Total)) : 0;
                     <tr>
-                        <td>@(string.IsNullOrWhiteSpace(j.ArchiveJobId) ? "-" : j.ArchiveJobId)</td>
+                        <td>@j.Id</td>
+                        <td>@j.ArchiveJobId</td>
                         <td>@GetStateName(j.State)</td>
                         <td>@(started ?? "-")</td>
                         <td>@(completed ?? "-")</td>
@@ -161,6 +165,7 @@
 
 
 @code {
+
     [SupplyParameterFromQuery]
     private bool consentDenied { get; set; }
 
@@ -186,7 +191,9 @@
     private string? successMessage;
 
     private record ImportProgressDto(Guid ImportId, string ArchiveJobId, int Processed, int Created, int Updated, int Failed, int Conflicts);
+
     private record ImportCompletedDto(Guid ImportId, string ArchiveJobId);
+
     private record ImportFailedDto(Guid ImportId, string ArchiveJobId, string Error);
 
     protected override async Task OnInitializedAsync()
@@ -288,6 +295,7 @@
             {
                 isImportRunning = true;
                 archiveJobId = running.ArchiveJobId;
+                importId = running.Id;
             }
             else
             {
@@ -332,8 +340,12 @@
             ResetCounters();
             importId = null;
             statusMessage = "Starting import...";
-            var request = new StartImportDto { Start = importJobs.Where(j => j.CompletedAt != null).Select(j => j.CompletedAt!.Value).DefaultIfEmpty(DateTimeOffset.UnixEpoch).Max() };
-            archiveJobId = await PinsClient.StartImport(request);
+            var request = new StartImportDto
+            {
+                Start = importJobs.Where(j => j.CompletedAt != null).Select(j => j.CompletedAt!.Value)
+                    .DefaultIfEmpty(DateTimeOffset.UnixEpoch).Max().AddDays(-10)
+            };
+            importId = await PinsClient.StartImport(request);
             isImportRunning = true;
             statusMessage = "Preparing data...";
             successMessage = "Import started.";
@@ -362,7 +374,7 @@
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(archiveJobId))
+        if (importId is null)
         {
             errorMessage = "No import job is available to renew.";
             return;
@@ -375,9 +387,8 @@
         try
         {
             ResetCounters();
-            importId = null;
             statusMessage = "Renewing import...";
-            await PinsClient.RenewImport(archiveJobId!);
+            await PinsClient.RenewImport(importId!.Value);
             isImportRunning = true;
             successMessage = "Import renewal requested.";
             await LoadJobsAsync();
@@ -408,7 +419,7 @@
 
     private async Task OnCancelImportAsync()
     {
-        if (!isImportRunning || string.IsNullOrWhiteSpace(archiveJobId) || isProcessing)
+        if (!isImportRunning || importId is null || isProcessing)
         {
             return;
         }
@@ -419,7 +430,7 @@
 
         try
         {
-            await PinsClient.CancelImport(archiveJobId!);
+            await PinsClient.CancelImport(importId!.Value);
             successMessage = "Cancel requested.";
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -469,14 +480,15 @@
         successMessage = null;
     }
 
-    // TODO: Fixed mapping in .net 10
+    // TODO: Fixed mapping in .net 10 check Refitter
     private static string GetStateName(int state) => state switch
     {
         0 => "Unspecified",
         1 => "In Progress",
-        2 => "Complete",
+        2 => "Completed",
         3 => "Failed",
         4 => "Cancelled",
         _ => "Unknown"
     };
+
 }

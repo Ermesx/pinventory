@@ -38,19 +38,19 @@ namespace Pinventory.Web.ApiClients.Pins.GeneratedCode
 
         [Headers("Accept: application/problem+json, application/json", "Content-Type: application/json")]
         [Post("/imports")]
-        Task<string> StartImport([Body] StartImportDto body);
+        Task<System.Guid> StartImport([Body] StartImportDto body);
 
         [Headers("Accept: application/problem+json, application/json")]
-        [Get("/imports/{archiveJobId}")]
-        Task<ImportDto> GetImport(string archiveJobId);
+        [Get("/imports/{importId}")]
+        Task<ImportDto> GetImport(System.Guid importId);
 
         [Headers("Accept: application/problem+json, application/json")]
-        [Post("/imports/{archiveJobId}/renew")]
-        Task RenewImport(string archiveJobId);
+        [Post("/imports/{importId}/renew")]
+        Task RenewImport(System.Guid importId);
 
         [Headers("Accept: application/problem+json")]
-        [Post("/imports/{archiveJobId}/cancel")]
-        Task CancelImport(string archiveJobId);
+        [Post("/imports/{importId}/cancel")]
+        Task CancelImport(System.Guid importId);
 
 
     }
