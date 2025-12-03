@@ -1,45 +1,37 @@
 ﻿using FluentResults;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Tags.Commands;
 using Pinventory.Pins.Domain.Tags;
-using Pinventory.Pins.Infrastructure;
+
+using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.Tags;
 
-// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
-// FluentResults can be used because this handler is used as internal MediatR
-public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbContext dbContext)
+public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger)
 {
-    public async Task<Result<Guid>> HandleAsync(DefineTagCatalogCommand command, CancellationToken cancellationToken = default)
+    public (Result<Guid> Result, IStorageAction<TagCatalog> Storage) Handle(DefineTagCatalogCommand command, TagCatalog? tagCatalog)
     {
         logger.LogInformation("Defining tag catalog for {OwnerId}", command.OwnerId);
-
-        var tagsCatalog = await GetTagCatalogAsync(command, cancellationToken);
-        if (tagsCatalog is not null)
+        if (tagCatalog is not null)
         {
-            return Result.Fail(Errors.TagCatalogHandler.CatalogAlreadyExists(command));
+            return (Result.Fail(Errors.TagCatalogHandler.CatalogAlreadyExists(command)), Storage.Nothing<TagCatalog>());
         }
 
-        tagsCatalog = new TagCatalog(command.OwnerId);
-        var result = tagsCatalog.DefineTags(command.Tags);
+        tagCatalog = new TagCatalog(command.OwnerId);
+        var result = tagCatalog.DefineTags(command.Tags);
         if (result.IsFailed)
         {
-            return Result.Fail(result.Errors);
+            return (Result.Fail(result.Errors), Storage.Nothing<TagCatalog>());
         }
 
-        await dbContext.TagCatalogs.AddAsync(tagsCatalog, cancellationToken);
-
-        return Result.Ok(tagsCatalog.Id);
+        return (Result.Ok(tagCatalog.Id), Storage.Insert(tagCatalog));
     }
 
-    public async Task<Result<Success>> HandleAsync(AddTagCommand command, CancellationToken cancellationToken = default)
+    public Result<Success> Handle(AddTagCommand command, TagCatalog? tagCatalog)
     {
         logger.LogInformation("Adding tag {Tag} to catalog for {OwnerId}", command.Tag, command.OwnerId);
-
-        var tagCatalog = await GetTagCatalogAsync(command, cancellationToken);
         if (tagCatalog is null)
         {
             return Result.Fail(Errors.TagCatalogHandler.CatalogNotFound(command));
@@ -51,11 +43,9 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
             : Result.Ok();
     }
 
-    public async Task<Result<Success>> HandleAsync(RemoveTagCommand command, CancellationToken cancellationToken = default)
+    public Result<Success> Handle(RemoveTagCommand command, TagCatalog? tagCatalog)
     {
         logger.LogInformation("Removing tag {Tag} from catalog for {OwnerId}", command.Tag, command.OwnerId);
-
-        var tagCatalog = await GetTagCatalogAsync(command, cancellationToken);
         if (tagCatalog is null)
         {
             return Result.Fail(Errors.TagCatalogHandler.CatalogNotFound(command));
@@ -65,11 +55,5 @@ public sealed class TagCatalogHandler(ILogger<TagCatalogHandler> logger, PinsDbC
         return result.IsFailed
             ? Result.Fail(result.Errors)
             : Result.Ok();
-    }
-
-    // TODO: remove OwnerCommand and use IUserMessage
-    private async Task<TagCatalog?> GetTagCatalogAsync(OwnerCommand command, CancellationToken cancellationToken)
-    {
-        return await dbContext.TagCatalogs.FirstOrDefaultAsync(c => c.OwnerId == command.OwnerId, cancellationToken);
     }
 }

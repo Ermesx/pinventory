@@ -1,3 +1,5 @@
-﻿namespace Pinventory.Pins.Application.Tags.Commands;
+﻿using Pinventory.Pins.Infrastructure.Messages;
 
-public record RemoveTagCommand(string? OwnerId, string Tag) : OwnerCommand(OwnerId);
+namespace Pinventory.Pins.Application.Tags.Commands;
+
+public record RemoveTagCommand(string? OwnerId, string Tag) : IOwnerCommand;

@@ -1,3 +1,5 @@
-﻿namespace Pinventory.Pins.Application.Tags.Commands;
+﻿using Pinventory.Pins.Infrastructure.Messages;
 
-public record DefineTagCatalogCommand(string? OwnerId, IEnumerable<string> Tags) : OwnerCommand(OwnerId);
+namespace Pinventory.Pins.Application.Tags.Commands;
+
+public record DefineTagCatalogCommand(string? OwnerId, IEnumerable<string> Tags) : IOwnerCommand;
