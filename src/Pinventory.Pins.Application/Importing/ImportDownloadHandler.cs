@@ -7,7 +7,6 @@ using Pinventory.Pins.Infrastructure.Sagas.Messages;
 
 namespace Pinventory.Pins.Application.Importing;
 
-// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public sealed class ImportDownloadHandler(
     ILogger<ImportDownloadHandler> logger,
     IImportServiceFactory factory,
@@ -43,14 +42,14 @@ public sealed class ImportDownloadHandler(
         switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
-                logger.LogInformation("Archive {ImportId} is still in progress for {UserId}", check.ImportId, check.ImportId);
+                logger.LogInformation("Archive {ImportId} is still in progress for {UserId}", check.ImportId, check.UserId);
                 return (null, check);
             case ImportState.Failed:
-                logger.LogWarning("Archive {ImportId} failed for {UserId}", check.ImportId, check.ImportId);
+                logger.LogWarning("Archive {ImportId} failed for {UserId}", check.ImportId, check.UserId);
                 import.Fail(Errors.ImportHandler.ExternalJobFailed());
                 return (null, null);
             case ImportState.Cancelled:
-                logger.LogInformation("Archive {ImportId} cancelled for {UserId}", check.ImportId, check.ImportId);
+                logger.LogInformation("Archive {ImportId} cancelled for {UserId}", check.ImportId, check.UserId);
                 import.Cancel();
                 return (null, null);
         }

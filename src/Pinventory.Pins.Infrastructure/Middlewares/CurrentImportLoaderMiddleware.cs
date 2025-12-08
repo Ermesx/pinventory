@@ -15,7 +15,7 @@ public class CurrentImportLoaderMiddleware
     {
         if (await dbContext.GetCurrentImportAsync(message.UserId, cancellationToken) is not { } import)
         {
-            logger.LogError("Running import not found for {UserId}", message.UserId);
+            logger.LogWarning("Running import not found for {UserId}", message.UserId);
             return null;
         }
 
