@@ -2,7 +2,7 @@
 
 using Pinventory.Pins.Domain.Importing;
 
-namespace Pinventory.Pins.Infrastructure.Services;
+namespace Pinventory.Pins.Infrastructure.Importing.Services;
 
 public sealed class ImportConcurrencyPolicy(PinsDbContext dbContext) : IImportConcurrencyPolicy
 {

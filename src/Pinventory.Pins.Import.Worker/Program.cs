@@ -15,11 +15,13 @@ using Pinventory.Pins.Import.Worker.DataPortability;
 using Pinventory.Pins.Import.Worker.DataPortability.Archive;
 using Pinventory.Pins.Import.Worker.Handlers;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Downloading;
+using Pinventory.Pins.Infrastructure.Importing.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Middlewares;
+using Pinventory.Pins.Infrastructure.Importing.Sagas;
+using Pinventory.Pins.Infrastructure.Importing.Services;
 using Pinventory.Pins.Infrastructure.Messages;
 using Pinventory.Pins.Infrastructure.Middlewares;
-using Pinventory.Pins.Infrastructure.Sagas;
-using Pinventory.Pins.Infrastructure.Services;
-using Pinventory.Pins.Infrastructure.Services.Downloading;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 

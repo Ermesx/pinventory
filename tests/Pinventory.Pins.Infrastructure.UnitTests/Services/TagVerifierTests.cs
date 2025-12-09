@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 
 using Pinventory.Pins.Domain.Tags;
-using Pinventory.Pins.Infrastructure.Services;
+using Pinventory.Pins.Infrastructure.Tags;
 
 using Shouldly;
 

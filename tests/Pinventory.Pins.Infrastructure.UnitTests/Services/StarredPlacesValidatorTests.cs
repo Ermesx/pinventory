@@ -7,7 +7,7 @@ using Nager.Country;
 
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
-using Pinventory.Pins.Infrastructure.Services;
+using Pinventory.Pins.Infrastructure.Importing.Services;
 
 using Shouldly;
 

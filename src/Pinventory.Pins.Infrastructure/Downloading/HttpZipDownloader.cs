@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace Pinventory.Pins.Infrastructure.Services.Downloading;
+namespace Pinventory.Pins.Infrastructure.Downloading;
 
 public class HttpZipDownloader(IHttpClientFactory httpClientFactory) : IZipDownloader
 {

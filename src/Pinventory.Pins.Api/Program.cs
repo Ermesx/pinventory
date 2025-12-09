@@ -12,6 +12,7 @@ using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Messages;
 using Pinventory.Pins.Infrastructure.Middlewares;
+using Pinventory.Pins.Infrastructure.Tags;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 

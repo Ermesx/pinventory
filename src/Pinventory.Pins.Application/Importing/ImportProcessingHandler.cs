@@ -1,18 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 using Wolverine;
 
 namespace Pinventory.Pins.Application.Importing;
 
-// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public class ImportProcessingHandler(
     ILogger<ImportProcessingHandler> logger,
     PinsDbContext dbContext,
@@ -71,6 +70,7 @@ public class ImportProcessingHandler(
 
             var placesToUpdate = update.ToDictionary(x => GooglePlaceId.Parse(x.GoogleMapsUrl));
 
+            // TODO: Create pin projection as interface and filter only needed pins
             var allUserPins = await dbContext.Pins
                 .Where(x => x.OwnerId == import.UserId)
                 .ToListAsync(cancellationToken);

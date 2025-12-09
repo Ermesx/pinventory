@@ -4,8 +4,9 @@ using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Domain.Importing.Events;
-using Pinventory.Pins.Infrastructure.Sagas;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Sagas;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 using Wolverine;
 using Wolverine.Attributes;

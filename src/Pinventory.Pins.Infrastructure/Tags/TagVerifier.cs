@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 using Pinventory.Pins.Domain.Places;
 
-namespace Pinventory.Pins.Infrastructure.Services;
+namespace Pinventory.Pins.Infrastructure.Tags;
 
 public sealed class TagVerifier(PinsDbContext dbContext, IMemoryCache cache) : ITagVerifier
 {

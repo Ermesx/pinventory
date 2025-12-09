@@ -1,6 +1,6 @@
 ﻿using Pinventory.Pins.Domain.Importing;
 
-namespace Pinventory.Pins.Infrastructure.ReadModels;
+namespace Pinventory.Pins.Infrastructure.Importing.ReadModels;
 
 public sealed class ImportSummary
 {

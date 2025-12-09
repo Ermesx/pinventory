@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 
 using Moq;
 
-using Pinventory.Pins.Infrastructure.Services.Downloading;
+using Pinventory.Pins.Infrastructure.Downloading;
 
 using Shouldly;
 

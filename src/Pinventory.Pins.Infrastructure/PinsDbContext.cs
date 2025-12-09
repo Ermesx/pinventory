@@ -3,8 +3,8 @@
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Domain.Tags;
-using Pinventory.Pins.Infrastructure.ReadModels;
-using Pinventory.Pins.Infrastructure.Sagas;
+using Pinventory.Pins.Infrastructure.Importing.ReadModels;
+using Pinventory.Pins.Infrastructure.Importing.Sagas;
 
 namespace Pinventory.Pins.Infrastructure;
 

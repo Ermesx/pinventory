@@ -1,4 +1,4 @@
-﻿namespace Pinventory.Pins.Infrastructure.Services.Downloading;
+﻿namespace Pinventory.Pins.Infrastructure.Downloading;
 
 public interface IZipDownloader
 {

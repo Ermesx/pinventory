@@ -6,13 +6,13 @@ using Moq;
 using Nager.Country;
 
 using Pinventory.Pins.Application.Importing;
-using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 using Shouldly;
 

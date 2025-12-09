@@ -2,11 +2,11 @@
 
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 using Wolverine;
 
-namespace Pinventory.Pins.Infrastructure.Sagas;
+namespace Pinventory.Pins.Infrastructure.Importing.Sagas;
 
 public class ImportProcess : Saga
 {

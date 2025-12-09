@@ -3,7 +3,7 @@
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 namespace Pinventory.Pins.Application.Importing;
 

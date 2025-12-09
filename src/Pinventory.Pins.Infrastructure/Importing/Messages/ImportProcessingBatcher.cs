@@ -1,12 +1,11 @@
 ﻿using JasperFx.Core.Reflection;
 
-using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Domain.Importing.Events;
 
 using Wolverine;
 using Wolverine.Runtime.Batching;
 
-namespace Pinventory.Pins.Application.Importing.Services;
+namespace Pinventory.Pins.Infrastructure.Importing.Messages;
 
 public class ImportProcessingBatcher : IMessageBatcher
 {

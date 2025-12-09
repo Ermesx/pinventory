@@ -9,7 +9,7 @@ using Pinventory.Pins.Application.Importing.Commands;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure.Sagas;
+using Pinventory.Pins.Infrastructure.Importing.Sagas;
 
 using Shouldly;
 

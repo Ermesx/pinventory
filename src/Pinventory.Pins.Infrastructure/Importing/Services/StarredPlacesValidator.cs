@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
 
-namespace Pinventory.Pins.Infrastructure.Services;
+namespace Pinventory.Pins.Infrastructure.Importing.Services;
 
 public class StarredPlacesValidator(PinsDbContext dbContext, IMemoryCache cache) : IStarredPlaceValidator
 {

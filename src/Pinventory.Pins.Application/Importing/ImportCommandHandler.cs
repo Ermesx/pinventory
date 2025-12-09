@@ -9,7 +9,7 @@ using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Importing.Events;
-using Pinventory.Pins.Infrastructure.Sagas;
+using Pinventory.Pins.Infrastructure.Importing.Sagas;
 
 using Wolverine.Persistence;
 

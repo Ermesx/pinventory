@@ -3,7 +3,7 @@
 using Pinventory.Pins.Domain.Tags;
 using Pinventory.Pins.Infrastructure.Messages;
 
-namespace Pinventory.Pins.Infrastructure.Middlewares;
+namespace Pinventory.Pins.Infrastructure.Tags;
 
 public class UserTagCatalogLoaderMiddleware
 {
