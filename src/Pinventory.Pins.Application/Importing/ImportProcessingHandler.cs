@@ -1,20 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
-using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Importing.Messages;
 using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Services;
 
 using Wolverine;
+using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.Importing;
 
 public class ImportProcessingHandler(
     ILogger<ImportProcessingHandler> logger,
-    PinsDbContext dbContext,
+    IPinsToUpdateProvider pinsToUpdateProvider,
     IStarredPlaceValidator validator)
 {
     public const int MaxBatchSize = 300;
@@ -48,15 +48,20 @@ public class ImportProcessingHandler(
 
         var (toCreate, toUpdate) = processResult.Value;
 
+        UnitOfWork<Pin> unitOfWork = [];
         Guid[] ids = [..CreatePins(toCreate), ..await UpdatePins(toUpdate)];
 
         var messages = ids.Select(pinId => new AssignTagsToPinMessage(pinId)).ToList();
-        return [new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId), ..messages];
+        return [new BatchCompletedMessage(batch.ImportId, batch.UserId, batch.ArchiveJobId), ..messages, unitOfWork];
 
         IEnumerable<Guid> CreatePins(IEnumerable<StarredPlace> create)
         {
             var pinsToCreate = create.Select(x => Pin.Create(import.UserId, GooglePlaceId.Parse(x.GoogleMapsUrl), x)).ToList();
-            dbContext.Pins.AddRange(pinsToCreate);
+
+            foreach (var pin in pinsToCreate)
+            {
+                unitOfWork.Insert(pin);
+            }
 
             return pinsToCreate.Select(x => x.Id).ToList();
         }
@@ -69,15 +74,7 @@ public class ImportProcessingHandler(
             }
 
             var placesToUpdate = update.ToDictionary(x => GooglePlaceId.Parse(x.GoogleMapsUrl));
-
-            // TODO: Create pin projection as interface and filter only needed pins
-            var allUserPins = await dbContext.Pins
-                .Where(x => x.OwnerId == import.UserId)
-                .ToListAsync(cancellationToken);
-
-            var pinsToUpdate = allUserPins
-                .Where(x => placesToUpdate.ContainsKey(x.PlaceId))
-                .ToList();
+            var pinsToUpdate = await pinsToUpdateProvider.GetPinsAsync(import.UserId, placesToUpdate.Keys, cancellationToken);
 
             foreach (var pin in pinsToUpdate)
             {

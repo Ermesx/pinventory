@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using Moq;
 
@@ -10,11 +9,13 @@ using Pinventory.Pins.Application.Tagging.Messages;
 using Pinventory.Pins.Domain;
 using Pinventory.Pins.Domain.Importing;
 using Pinventory.Pins.Domain.Places;
-using Pinventory.Pins.Infrastructure;
 using Pinventory.Pins.Infrastructure.Importing.Messages;
 using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
+using Pinventory.Pins.Infrastructure.Importing.Services;
 
 using Shouldly;
+
+using Wolverine.Persistence;
 
 namespace Pinventory.Pins.Application.UnitTests.Importing;
 
@@ -26,7 +27,7 @@ public class ImportProcessingHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, policyMock, validatorMock) = await CreateHandlerAsync();
+        var (handler, pinsToUpdateProviderMock, policyMock, validatorMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -34,10 +35,9 @@ public class ImportProcessingHandlerTests
         // existing pins: one for conflict by name, one to update by place id
         var address = new Address("Addr X", Alpha2Code.PL);
         var location = new Location(10, 20);
-        var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow);
         var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow);
-        await dbContext.Pins.AddRangeAsync(conflictPin, updatePin);
-        await dbContext.SaveChangesAsync();
+        pinsToUpdateProviderMock.Setup(p => p.GetPinsAsync(userId, It.IsAny<IEnumerable<GooglePlaceId>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([updatePin]);
 
         var places = new[]
         {
@@ -93,7 +93,7 @@ public class ImportProcessingHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, dbContext, policyMock, validatorMock) = await CreateHandlerAsync();
+        var (handler, pinsToUpdateProviderMock, policyMock, validatorMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -101,10 +101,9 @@ public class ImportProcessingHandlerTests
         // existing pins: one for conflict by name, one to update by place id
         var address = new Address("Addr X", Alpha2Code.PL);
         var location = new Location(10, 20);
-        var conflictPin = new Pin(userId, "SameName", new GooglePlaceId("111"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
         var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
-        await dbContext.Pins.AddRangeAsync(conflictPin, updatePin);
-        await dbContext.SaveChangesAsync();
+        pinsToUpdateProviderMock.Setup(p => p.GetPinsAsync(userId, It.IsAny<IEnumerable<GooglePlaceId>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([updatePin]);
 
         var places = new[]
         {
@@ -145,7 +144,7 @@ public class ImportProcessingHandlerTests
         startResult.IsSuccess.ShouldBeTrue();
         registerResult.IsSuccess.ShouldBeTrue();
         import.State.ShouldBe(ImportState.InProgress);
-        dbContext.Pins.Local.Any(p => p.Name == "Created").ShouldBeTrue();
+        outgoingMessages.OfType<UnitOfWork<Pin>>().Single().Any(x => x.Entity.Name == "Created").ShouldBeTrue();
         outgoingMessages.Count(x => x is AssignTagsToPinMessage).ShouldBe(3);
     }
 
@@ -153,7 +152,7 @@ public class ImportProcessingHandlerTests
     public async Task ProcessPlaces_does_nothing_when_running_import_not_found()
     {
         // Arrange
-        var (handler, _, _, _) = await CreateHandlerAsync();
+        var (handler, _, _, _) = CreateHandlerAsync();
         var message = new PlacesProcessingBatchMessage(Guid.NewGuid(), "user-1", "job-404", [Guid.NewGuid()]);
 
         // Act
@@ -169,7 +168,7 @@ public class ImportProcessingHandlerTests
         // Arrange
         var userId = "user-1";
         var archiveJobId = "job-123";
-        var (handler, _, policyMock, validatorMock) = await CreateHandlerAsync();
+        var (handler, _, policyMock, validatorMock) = CreateHandlerAsync();
 
         var import = new Import(userId, Period.AllTime);
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
@@ -207,27 +206,20 @@ public class ImportProcessingHandlerTests
         import.State.ShouldBe(ImportState.Complete);
     }
 
-    private static async Task<(ImportProcessingHandler handler, PinsDbContext dbContext,
-        Mock<IImportConcurrencyPolicy> concurrencyPolicyMock, Mock<IStarredPlaceValidator> validatorMock)> CreateHandlerAsync()
+    private static (ImportProcessingHandler handler, Mock<IPinsToUpdateProvider>, Mock<IImportConcurrencyPolicy> concurrencyPolicyMock,
+        Mock<IStarredPlaceValidator> validatorMock) CreateHandlerAsync()
     {
-        var options = new DbContextOptionsBuilder<PinsDbContext>()
-            .UseSqlite(connectionString: "Data Source=:memory:")
-            .Options;
-
-        var dbContext = new PinsDbContext(options);
-        await dbContext.Database.OpenConnectionAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-
         var logger = Mock.Of<ILogger<ImportProcessingHandler>>();
         var concurrencyPolicyMock = new Mock<IImportConcurrencyPolicy>();
         var validatorMock = new Mock<IStarredPlaceValidator>();
+        var pinsToUpdateProviderMock = new Mock<IPinsToUpdateProvider>();
 
         // sensible defaults
         concurrencyPolicyMock.Setup(p => p.CanStartImportAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var handler = new ImportProcessingHandler(logger, dbContext, validatorMock.Object);
+        var handler = new ImportProcessingHandler(logger, pinsToUpdateProviderMock.Object, validatorMock.Object);
 
-        return (handler, dbContext, concurrencyPolicyMock, validatorMock);
+        return (handler, pinsToUpdateProviderMock, concurrencyPolicyMock, validatorMock);
     }
 }

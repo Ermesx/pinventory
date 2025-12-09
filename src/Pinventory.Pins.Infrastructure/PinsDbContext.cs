@@ -32,7 +32,7 @@ public sealed class PinsDbContext(DbContextOptions<PinsDbContext> options) : DbC
             entity.Property(x => x.Name).IsRequired().HasMaxLength(500);
 
             entity.Property(x => x.PlaceId)
-                .HasConversion(id => id.Id, id => new GooglePlaceId(id))
+                .HasConversion(placeId => placeId.Id, id => new GooglePlaceId(id))
                 .IsRequired()
                 .HasMaxLength(100);
             entity.HasIndex(x => x.PlaceId).IsUnique();
