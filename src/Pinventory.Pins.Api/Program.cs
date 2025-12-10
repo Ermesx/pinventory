@@ -10,6 +10,9 @@ using Pinventory.Pins.Application;
 using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing.Events;
 using Pinventory.Pins.Infrastructure;
+using Pinventory.Pins.Infrastructure.Messages;
+using Pinventory.Pins.Infrastructure.Middlewares;
+using Pinventory.Pins.Infrastructure.Tags;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 
@@ -56,6 +59,9 @@ if (!CodeGeneration.IsGenerating)
             batching.BatchSize = 25;
             batching.TriggerTime = 1.Seconds();
         }).BufferedInMemory();
+
+        options.Policies.AddMiddleware<DomainEventsPublisherMiddleware>();
+        options.Policies.ForMessagesOfType<IOwnerCommand>().AddMiddleware<UserTagCatalogLoaderMiddleware>();
 
         options.Services.AddDebugWolverineRouting();
     });

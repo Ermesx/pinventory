@@ -1,39 +1,34 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using Pinventory.Pins.Application.Abstractions;
 using Pinventory.Pins.Application.Importing.Messages;
 using Pinventory.Pins.Application.Importing.Services;
 using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Sagas.Messages;
-
-using Wolverine;
+using Pinventory.Pins.Infrastructure.Importing.Sagas.Messages;
 
 namespace Pinventory.Pins.Application.Importing;
 
-// dbContext.SaveChangesAsync() is not used because Wolverine handles transactional outbox 
 public sealed class ImportDownloadHandler(
     ILogger<ImportDownloadHandler> logger,
     IImportServiceFactory factory,
-    PinsDbContext dbContext,
-    IMessageContext bus,
-    IStarredPlacesProvider placesProvider) : ApplicationHandler(bus)
+    IStarredPlacesProvider placesProvider)
 {
-    public async Task HandleAsync(CheckJobMessage check, CancellationToken cancellationToken = default)
+    public async Task<(DownloadArchiveMessage? DownloadMessage, CheckJobMessage? CheckJobMessage)> HandleAsync(
+        CheckJobMessage check,
+        Import? import,
+        CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Checking archive job {ArchiveJobId} for {UserId}", check.ArchiveJobId, check.ImportId);
-        if (await dbContext.GetCurrentImport(check.ImportId, cancellationToken) is not { } import)
+        logger.LogInformation("Checking archive job {ImportId} for {UserId}", check.ImportId, check.UserId);
+        if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", check.ArchiveJobId, check.ImportId);
-            return;
+            logger.LogError("Running import {ImportId} not found for {UserId}", check.ImportId, check.UserId);
+            return (null, null);
         }
 
         var clientResult = await factory.CreateAsync(import.UserId, cancellationToken);
         if (clientResult.IsFailed)
         {
             logger.LogError("Failed to create import service: {Errors}", clientResult.Errors);
-            await ReSchedule();
-            return;
+            return (null, check);
         }
 
         var client = clientResult.Value;
@@ -41,44 +36,38 @@ public sealed class ImportDownloadHandler(
         if (archiveResult.IsFailed)
         {
             logger.LogError("Failed to check archive job: {Errors}", archiveResult.Errors);
-            await ReSchedule();
-            return;
+            return (null, check);
         }
 
         switch (archiveResult.Value.State)
         {
             case ImportState.InProgress:
-                logger.LogInformation("Archive {ArchiveJobId} is still in progress for {UserId}", check.ArchiveJobId, check.ImportId);
-                await ReSchedule();
-                return;
+                logger.LogInformation("Archive {ImportId} is still in progress for {UserId}", check.ImportId, check.UserId);
+                return (null, check);
             case ImportState.Failed:
-                logger.LogWarning("Archive {ArchiveJobId} failed for {UserId}", check.ArchiveJobId, check.ImportId);
+                logger.LogWarning("Archive {ImportId} failed for {UserId}", check.ImportId, check.UserId);
                 import.Fail(Errors.ImportHandler.ExternalJobFailed());
-                break;
+                return (null, null);
             case ImportState.Cancelled:
-                logger.LogInformation("Archive {ArchiveJobId} cancelled for {UserId}", check.ArchiveJobId, check.ImportId);
+                logger.LogInformation("Archive {ImportId} cancelled for {UserId}", check.ImportId, check.UserId);
                 import.Cancel();
-                break;
-            default:
-                var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
-                await bus.SendAsync(DownloadArchiveMessage.Create(check, urls));
-                break;
+                return (null, null);
         }
 
-        await RaiseEventsAsync(import);
-
-        return;
-
-        async Task ReSchedule() => await bus.ScheduleAsync(check with { }, CheckJobMessage.CheckInterval);
+        var urls = archiveResult.Value.Urls.Select(x => x.ToString()).ToList();
+        return (DownloadArchiveMessage.Create(check, urls), null);
     }
 
-    public async Task HandleAsync(DownloadArchiveMessage download, CancellationToken cancellationToken = default)
+    public async Task<ExpectedBatchesMessage?> HandleAsync(
+        DownloadArchiveMessage download,
+        Import? import,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Downloading archive {Urls}", download.Urls.Select(x => x.ToString()));
-        if (await dbContext.GetCurrentImport(download.ImportId, cancellationToken) is not { } import)
+        if (import is null)
         {
-            logger.LogError("Running import {ArchiveJobId} not found for {UserId}", download.ArchiveJobId, download.UserId);
-            return;
+            logger.LogError("Running import {ImportId} not found for {UserId}", download.ImportId, download.UserId);
+            return null;
         }
 
         var uris = download.Urls.Select(x => new Uri(x)).ToList();
@@ -87,8 +76,7 @@ public sealed class ImportDownloadHandler(
         {
             logger.LogError("Failed to download archive: {Errors}", dataResult.Errors);
             import.Fail(dataResult.Errors[0]);
-            await RaiseEventsAsync(import);
-            return;
+            return null;
         }
 
         var starredPlaces = dataResult.Value;
@@ -96,13 +84,19 @@ public sealed class ImportDownloadHandler(
 
         if (result.IsFailed)
         {
+            if (result.HasError<Domain.Errors.Import.EmptyPlacesError>())
+            {
+                logger.LogWarning("No places to import for {ImportId} for {UserId}", import.Id, import.UserId);
+                import.Complete();
+                return null;
+            }
+
             logger.LogError("Failed to register places: {Errors}", result.Errors);
-            import.Fail(result.Errors[0]);
+            import.Fail(result.Errors.First());
+            return null;
         }
 
-        await RaiseEventsAsync(import);
-
         var batchesCount = (import.Total + ImportProcessingHandler.MaxBatchSize - 1) / ImportProcessingHandler.MaxBatchSize;
-        await bus.SendAsync(new ExpectedBatchesMessage(import.Id, import.UserId, import.ArchiveJobId!, batchesCount));
+        return new ExpectedBatchesMessage(import.Id, import.UserId, import.ArchiveJobId!, batchesCount);
     }
 }

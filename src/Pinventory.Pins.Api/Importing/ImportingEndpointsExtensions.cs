@@ -9,8 +9,8 @@ using Pinventory.ApiDefaults;
 using Pinventory.Pins.Api.Importing.Dtos;
 using Pinventory.Pins.Api.Importing.Realtime;
 using Pinventory.Pins.Application;
-using Pinventory.Pins.Application.Abstractions.Results;
 using Pinventory.Pins.Application.Importing.Commands;
+using Pinventory.Pins.Application.Results;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
@@ -34,25 +34,25 @@ public static class ImportingEndpointsExtensions
             .WithName("GetImports")
             .Produces<List<ImportDto>>();
 
-        importsEndpoint.MapGet("/{archiveJobId}", GetImport)
+        importsEndpoint.MapGet("/{importId}", GetImport)
             .WithName("GetImport")
             .Produces<ImportDto>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         importsEndpoint.MapPost("/", StartImport)
             .WithName("StartImport")
-            .Produces<string>(StatusCodes.Status201Created)
+            .Produces<Guid>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem();
 
-        importsEndpoint.MapPost("/{archiveJobId}/renew", RenewImport)
+        importsEndpoint.MapPost("/{importId}/renew", RenewImport)
             .WithName("RenewImport")
             .Produces(StatusCodes.Status200OK)
-            .Produces<string>(StatusCodes.Status404NotFound)
+            .Produces<Guid>(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesValidationProblem();
 
-        importsEndpoint.MapPost("/{archiveJobId}/cancel", CancelImport)
+        importsEndpoint.MapPost("/{importId}/cancel", CancelImport)
             .WithName("CancelImport")
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -78,12 +78,12 @@ public static class ImportingEndpointsExtensions
         return Results.Ok(imports);
     }
 
-    private static async Task<IResult> GetImport(string archiveJobId, ClaimsPrincipal user, [FromServices] PinsDbContext dbContext,
+    private static async Task<IResult> GetImport(Guid importId, ClaimsPrincipal user, [FromServices] PinsDbContext dbContext,
         CancellationToken cancellationToken)
     {
         var userId = user.GetIdentifier();
         var import = await dbContext.ImportSummaries
-            .Where(x => x.UserId == userId && x.ArchiveJobId == archiveJobId)
+            .Where(x => x.UserId == userId && x.Id == importId)
             .Select(x => ImportDto.From(x))
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
 
@@ -97,27 +97,28 @@ public static class ImportingEndpointsExtensions
     {
         var userId = user.GetIdentifier();
 
-        var archiveJobIdResult =
-            await bus.InvokeAsync<ResultDto<string>>(new StartImportCommand(userId, request.Start, request.End), cancellationToken,
+        var importResult =
+            await bus.InvokeAsync<ResultDto<Guid>>(new StartImportCommand(userId, request.Start, request.End), cancellationToken,
                 CommandsTimeout);
 
-        return archiveJobIdResult.IsSuccess
-            ? Results.Created($"/imports/{archiveJobIdResult.Value}", archiveJobIdResult.Value)
-            : archiveJobIdResult.HasError<Domain.Errors.Period.IncorrectPeriodDates>()
-                ? Results.BadRequest(archiveJobIdResult.Errors)
-                : Results.Conflict(archiveJobIdResult.Errors);
+        return importResult.IsSuccess
+            ? Results.Created($"/imports/{importResult.Value}", importResult.Value)
+            : importResult.HasError<Domain.Errors.Period.IncorrectPeriodDates>()
+                ? Results.BadRequest(importResult.Errors)
+                : Results.Conflict(importResult.Errors);
     }
 
-    private static async Task<IResult> RenewImport(string archiveJobId, ClaimsPrincipal user, [FromServices] IMessageBus bus,
+    private static async Task<IResult> RenewImport(Guid? importId, ClaimsPrincipal user, [FromServices] IMessageBus bus,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(archiveJobId))
+        // TODO: in net 10 add required for import id instead of null check
+        if (importId is null)
         {
             return Results.BadRequest();
         }
 
         var userId = user.GetIdentifier();
-        var result = await bus.InvokeAsync<ResultDto>(new RenewImportCommand(userId, archiveJobId), cancellationToken, CommandsTimeout);
+        var result = await bus.InvokeAsync<ResultDto>(new RenewImportCommand(userId, importId.Value), cancellationToken, CommandsTimeout);
 
         return result.IsSuccess
             ? Results.Ok()
@@ -126,16 +127,16 @@ public static class ImportingEndpointsExtensions
                 : Results.Conflict(result.Errors);
     }
 
-    private static async Task<IResult> CancelImport(string archiveJobId, ClaimsPrincipal user, [FromServices] IMessageBus bus,
+    private static async Task<IResult> CancelImport(Guid? importId, ClaimsPrincipal user, [FromServices] IMessageBus bus,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(archiveJobId))
+        if (importId is null)
         {
             return Results.BadRequest();
         }
 
         var userId = user.GetIdentifier();
-        var result = await bus.InvokeAsync<ResultDto>(new CancelImportCommand(userId, archiveJobId), cancellationToken, CommandsTimeout);
+        var result = await bus.InvokeAsync<ResultDto>(new CancelImportCommand(userId, importId.Value), cancellationToken, CommandsTimeout);
 
         return result.IsSuccess
             ? Results.Ok()

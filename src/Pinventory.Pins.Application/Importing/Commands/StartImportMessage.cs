@@ -1,3 +1,5 @@
-﻿namespace Pinventory.Pins.Application.Importing.Commands;
+﻿using Pinventory.Pins.Infrastructure.Messages;
 
-public record StartImportCommand(string UserId, DateTimeOffset? Start, DateTimeOffset? End);
+namespace Pinventory.Pins.Application.Importing.Commands;
+
+public record StartImportCommand(string UserId, DateTimeOffset? Start, DateTimeOffset? End) : IUserMessage;

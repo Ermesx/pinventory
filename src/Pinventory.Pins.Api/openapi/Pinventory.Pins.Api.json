@@ -298,7 +298,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 }
               }
             }
@@ -326,7 +327,7 @@
         }
       }
     },
-    "/imports/{archiveJobId}": {
+    "/imports/{importId}": {
       "get": {
         "tags": [
           "ImportingEndpointsExtensions"
@@ -334,11 +335,12 @@
         "operationId": "GetImport",
         "parameters": [
           {
-            "name": "archiveJobId",
+            "name": "importId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -376,7 +378,7 @@
         }
       }
     },
-    "/imports/{archiveJobId}/renew": {
+    "/imports/{importId}/renew": {
       "post": {
         "tags": [
           "ImportingEndpointsExtensions"
@@ -384,11 +386,12 @@
         "operationId": "RenewImport",
         "parameters": [
           {
-            "name": "archiveJobId",
+            "name": "importId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -411,7 +414,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 }
               }
             }
@@ -439,7 +443,7 @@
         }
       }
     },
-    "/imports/{archiveJobId}/cancel": {
+    "/imports/{importId}/cancel": {
       "post": {
         "tags": [
           "ImportingEndpointsExtensions"
@@ -447,11 +451,12 @@
         "operationId": "CancelImport",
         "parameters": [
           {
-            "name": "archiveJobId",
+            "name": "importId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],

@@ -3,7 +3,7 @@
 using FluentResults;
 
 using Pinventory.Pins.Import.Worker.DataPortability.Archive.Dtos;
-using Pinventory.Pins.Infrastructure.Services.Downloading;
+using Pinventory.Pins.Infrastructure.Downloading;
 
 namespace Pinventory.Pins.Import.Worker.DataPortability.Archive;
 

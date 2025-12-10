@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.Pins.Domain.Places;
 using Pinventory.Pins.Infrastructure;
-using Pinventory.Pins.Infrastructure.Services;
+using Pinventory.Pins.Infrastructure.Tags;
 using Pinventory.ServiceDefaults;
 using Pinventory.ServiceDefaults.Wolverine;
 

@@ -1,5 +1,5 @@
 ﻿using Pinventory.Pins.Domain.Importing;
-using Pinventory.Pins.Infrastructure.ReadModels;
+using Pinventory.Pins.Infrastructure.Importing.ReadModels;
 
 namespace Pinventory.Pins.Api.Importing.Dtos;
 

@@ -7,7 +7,7 @@ using Nager.Country;
 
 using Pinventory.Pins.Import.Worker.DataPortability.Archive;
 using Pinventory.Pins.Import.Worker.DataPortability.Archive.Dtos;
-using Pinventory.Pins.Infrastructure.Services.Downloading;
+using Pinventory.Pins.Infrastructure.Downloading;
 
 using Shouldly;
 

@@ -5,11 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 using Pinventory.ApiDefaults.Authorization;
 using Pinventory.Pins.Api.Tags.Dtos;
-using Pinventory.Pins.Application;
 using Pinventory.Pins.Application.Tags.Commands;
 using Pinventory.Pins.Infrastructure;
 
 using Wolverine;
+
+using Errors = Pinventory.Pins.Application.Errors;
 
 namespace Pinventory.Pins.Api.Tags;
 
