@@ -1,18 +1,38 @@
-﻿using FluentResults;
+﻿using System.Text.RegularExpressions;
+
+using FluentResults;
 
 namespace Pinventory.Pins.Domain;
 
-public sealed record Tag
+public sealed partial record Tag
 {
-    private Tag(string value)
-    {
-        Value = value.Trim().ToLower();
-    }
+    public const int MaxLength = 50;
+
+    [GeneratedRegex("^[a-zA-Z0-9\\s\\-_]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex ValidFormat();
+
+    private Tag(string value) => Value = value;
 
     public string Value { get; }
 
-    public static Result<Tag> Create(string value) =>
-        string.IsNullOrWhiteSpace(value)
-            ? Result.Fail(Errors.Tag.TagCannotBeEmpty())
-            : new Tag(value);
+    public static Result<Tag> Create(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Result.Fail(Errors.Tag.TagCannotBeEmpty());
+        }
+
+        var normalized = value.Trim();
+        if (normalized.Length > MaxLength)
+        {
+            return Result.Fail(Errors.Tag.TagTooLong(MaxLength));
+        }
+
+        if (!ValidFormat().IsMatch(normalized))
+        {
+            return Result.Fail(Errors.Tag.TagInvalidFormat());
+        }
+
+        return new Tag(normalized.ToLower());
+    }
 }

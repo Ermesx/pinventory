@@ -104,8 +104,8 @@ public class StarredPlacesValidatorTests
         var (validator, dbContext, _) = await CreateValidatorAsync();
         var import = await CreateStartedImportAsync(userId);
 
-        var existingPin = new Pin(userId, "Existing Place", new GooglePlaceId("123"),
-            new Address("123 Main St", Alpha2Code.PL), new Location(1.0, 2.0), DateTimeOffset.UtcNow);
+        var existingPin = new Pin(userId, "Existing Place", GooglePlaceId.From("123"),
+            Address.From("123 Main St", Alpha2Code.PL), Location.From(1.0, 2.0), DateTimeOffset.UtcNow);
         await dbContext.Pins.AddAsync(existingPin);
         await dbContext.SaveChangesAsync();
 
@@ -127,8 +127,8 @@ public class StarredPlacesValidatorTests
         var (validator, dbContext, _) = await CreateValidatorAsync();
         var import = await CreateStartedImportAsync(userId);
 
-        var existingPin = new Pin(userId, "Same Name", new GooglePlaceId("123"),
-            new Address("123 Main St", Alpha2Code.PL), new Location(1.0, 2.0), DateTimeOffset.UtcNow);
+        var existingPin = new Pin(userId, "Same Name", GooglePlaceId.From("123"),
+            Address.From("123 Main St", Alpha2Code.PL), Location.From(1.0, 2.0), DateTimeOffset.UtcNow);
         await dbContext.Pins.AddAsync(existingPin);
         await dbContext.SaveChangesAsync();
 
@@ -150,8 +150,8 @@ public class StarredPlacesValidatorTests
         var (validator, dbContext, _) = await CreateValidatorAsync();
         var import = await CreateStartedImportAsync(userId);
 
-        var existingPin = new Pin(userId, "Different Place", new GooglePlaceId("123"),
-            new Address("123 Main St", Alpha2Code.PL), new Location(1.0, 2.0), DateTimeOffset.UtcNow);
+        var existingPin = new Pin(userId, "Different Place", GooglePlaceId.From("123"),
+            Address.From("123 Main St", Alpha2Code.PL), Location.From(1.0, 2.0), DateTimeOffset.UtcNow);
         await dbContext.Pins.AddAsync(existingPin);
         await dbContext.SaveChangesAsync();
 
@@ -173,8 +173,8 @@ public class StarredPlacesValidatorTests
         var (validator, dbContext, _) = await CreateValidatorAsync();
         var import = await CreateStartedImportAsync(userId);
 
-        var existingPin = new Pin(userId, "Existing Place", new GooglePlaceId("123"),
-            new Address("123 Main St", Alpha2Code.PL), new Location(1.0, 2.0), DateTimeOffset.UtcNow);
+        var existingPin = new Pin(userId, "Existing Place", GooglePlaceId.From("123"),
+            Address.From("123 Main St", Alpha2Code.PL), Location.From(1.0, 2.0), DateTimeOffset.UtcNow);
         await dbContext.Pins.AddAsync(existingPin);
         await dbContext.SaveChangesAsync();
 
@@ -187,8 +187,8 @@ public class StarredPlacesValidatorTests
         var result1 = await validator.ValidateAsync(import, place1);
 
         // Add another pin after first validation - should not be seen due to cache
-        var newPin = new Pin(userId, "New Place", new GooglePlaceId("789"),
-            new Address("456 Main St", Alpha2Code.PL), new Location(3.0, 4.0), DateTimeOffset.UtcNow);
+        var newPin = new Pin(userId, "New Place", GooglePlaceId.From("789"),
+            Address.From("456 Main St", Alpha2Code.PL), Location.From(3.0, 4.0), DateTimeOffset.UtcNow);
         await dbContext.Pins.AddAsync(newPin);
         await dbContext.SaveChangesAsync();
 

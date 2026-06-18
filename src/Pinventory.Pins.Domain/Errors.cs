@@ -19,6 +19,30 @@ public static class Errors
         public static Error TagCannotBeEmpty() => new("Tag cannot be empty");
 
         public static Error TagAlreadyExists(string tag) => new($"Tag '{tag}' already exists");
+
+        public static Error TagTooLong(int maxLength) => new($"Tag cannot be longer than {maxLength} characters");
+
+        public static Error TagInvalidFormat() =>
+            new("Tag can only contain letters, digits, spaces, hyphens and underscores");
+    }
+
+    public static class Location
+    {
+        public static Error InvalidLatitude(double latitude) =>
+            new($"Latitude ({latitude}) must be between -90 and 90");
+
+        public static Error InvalidLongitude(double longitude) =>
+            new($"Longitude ({longitude}) must be between -180 and 180");
+    }
+
+    public static class Address
+    {
+        public static Error AddressLineCannotBeEmpty() => new("Address line cannot be empty");
+    }
+
+    public static class GooglePlaceId
+    {
+        public static Error GooglePlaceIdCannotBeEmpty() => new("Google place id cannot be empty");
     }
 
     public static class Import

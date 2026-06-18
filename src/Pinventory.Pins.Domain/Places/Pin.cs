@@ -35,8 +35,8 @@ public sealed class Pin(
         return new Pin(ownerId,
             place.Name!,
             placeId,
-            new Address(place.Address!, place.CountryCode!.Value),
-            new Location(place.Latitude!.Value, place.Longitude!.Value),
+            Address.From(place.Address!, place.CountryCode!.Value),
+            Location.From(place.Latitude!.Value, place.Longitude!.Value),
             place.AddedDate);
     }
 

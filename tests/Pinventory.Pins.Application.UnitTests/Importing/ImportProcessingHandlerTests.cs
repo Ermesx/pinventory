@@ -33,9 +33,9 @@ public class ImportProcessingHandlerTests
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
 
         // existing pins: one for conflict by name, one to update by place id
-        var address = new Address("Addr X", Alpha2Code.PL);
-        var location = new Location(10, 20);
-        var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow);
+        var address = Address.From("Addr X", Alpha2Code.PL);
+        var location = Location.From(10, 20);
+        var updatePin = new Pin(userId, "OldName", GooglePlaceId.From("333"), address, location, DateTimeOffset.UtcNow);
         pinsToUpdateProviderMock.Setup(p => p.GetPinsAsync(userId, It.IsAny<IEnumerable<GooglePlaceId>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([updatePin]);
 
@@ -99,9 +99,9 @@ public class ImportProcessingHandlerTests
         var startResult = await import.StartAsync(archiveJobId, policyMock.Object);
 
         // existing pins: one for conflict by name, one to update by place id
-        var address = new Address("Addr X", Alpha2Code.PL);
-        var location = new Location(10, 20);
-        var updatePin = new Pin(userId, "OldName", new GooglePlaceId("333"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
+        var address = Address.From("Addr X", Alpha2Code.PL);
+        var location = Location.From(10, 20);
+        var updatePin = new Pin(userId, "OldName", GooglePlaceId.From("333"), address, location, DateTimeOffset.UtcNow.AddDays(-1));
         pinsToUpdateProviderMock.Setup(p => p.GetPinsAsync(userId, It.IsAny<IEnumerable<GooglePlaceId>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([updatePin]);
 
