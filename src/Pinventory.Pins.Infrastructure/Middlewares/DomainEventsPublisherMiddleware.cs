@@ -8,12 +8,20 @@ public class DomainEventsPublisherMiddleware
 {
     public async Task PostProcessAsync(PinsDbContext dbContext, IMessageBus bus)
     {
-        foreach (var @event in dbContext.ChangeTracker
-                     .Entries<AggregateRoot>()
-                     .SelectMany(x => x.Entity.DomainEvents)
-                     .ToList())
+        var aggregates = dbContext.ChangeTracker
+            .Entries<AggregateRoot>()
+            .Select(x => x.Entity)
+            .Where(x => x.DomainEvents.Count > 0)
+            .ToList();
+
+        foreach (var @event in aggregates.SelectMany(x => x.DomainEvents).ToList())
         {
             await bus.PublishAsync(@event);
+        }
+
+        foreach (var aggregate in aggregates)
+        {
+            aggregate.ClearDomainEvents();
         }
     }
 }

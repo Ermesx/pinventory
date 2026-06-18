@@ -1,4 +1,6 @@
-﻿using FluentResults;
+﻿using System.Collections.Immutable;
+
+using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
 using Pinventory.Pins.Domain.Importing;
@@ -26,7 +28,7 @@ public sealed class Pin(
     public PinStatus Status { get; private set; } = status;
     public DateTimeOffset StatusUpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset AddedAt { get; private set; } = addedAt;
-    public IReadOnlyCollection<Tag> Tags => _tags;
+    public IReadOnlyCollection<Tag> Tags => _tags.ToImmutableHashSet();
 
     public static Pin Create(string ownerId, GooglePlaceId placeId, StarredPlace place)
     {

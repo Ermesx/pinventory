@@ -1,4 +1,6 @@
-﻿using FluentResults;
+﻿using System.Collections.Immutable;
+
+using FluentResults;
 
 using Pinventory.Pins.Domain.Abstractions;
 
@@ -13,7 +15,7 @@ public sealed class TagCatalog(
     private readonly HashSet<Tag> _tags = [];
 
     public string? OwnerId { get; private set; } = ownerId;
-    public IReadOnlyCollection<Tag> Tags => _tags;
+    public IReadOnlyCollection<Tag> Tags => _tags.ToImmutableHashSet();
 
     public Result<IEnumerable<Tag>> DefineTags(IEnumerable<string> tags)
     {

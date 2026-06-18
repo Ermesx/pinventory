@@ -14,4 +14,6 @@ public abstract class AggregateRoot(Guid? id) : Entity(id)
     public uint Version { get; protected set; }
 
     protected void Raise(DomainEvent @event) => _domainEvents.Add(@event);
+
+    public void ClearDomainEvents() => _domainEvents.Clear();
 }
